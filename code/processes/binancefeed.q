@@ -6,6 +6,8 @@
 
 .binance.prev:([]time:`timestamp$(); sym:`g#`symbol$(); exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
+h:.servers.gethandlebytype[`tickerplant;`any];
+
 feed:{
   if[10h~type .binance.syms;.binance.syms:enlist .binance.syms];
   qt:.binance.quotes'[.binance.syms];
@@ -14,19 +16,18 @@ feed:{
   t:select time:.z.p,
            sym:`$sym,
            exchangeTime:serverTime,
-           exchange:`$"binance",
+           exchange:`binance,
            bid:"F"$bid,
            bidSize:"F"$bidSize,
            ask:asc each "F"$ask,
            askSize:asc each "F"$askSize
   from qt;
-  if[count ts:@[t;(),where not max (~\:/:/)`time`exchangeTime _/:tl:(t;$[c:count .binance.prev;c;1]#.binance.prev)];
-    h:.servers.gethandlebytype[`tickerplant;`any];
-    h(`.u.upd;`exchange;get flip ts);
-    h(`.u.upd;`binance;get flip ![ts;();0b;enlist `exchange]);
-    ts:@[tt 0;(),where not max (~\:/:/)`time`exchangeTime _/:tt:{@[x;where 0=type each flip x;first each]}each tl];
-    if[count ts; h(`.u.upd;`exchange_top;get flip ts)];
-    .binance.prev:t];
+  if[0=count ts:@[t;where not max (~\:/:/)`time`exchangeTime _/:tl:(t;{(1|count x)#x}.binance.prev)];:()];
+    h(`.u.upd;`exchange;value flip ts);
+    h(`.u.upd;`binance;value flip delete exchange from ts);
+    ts:@[tt 0;where not max (~\:/:/)`time`exchangeTime _/:tt:{@[x;where 0=type each flip x;first each]}each tl];
+    if[count ts; h(`.u.upd;`exchange_top;value flip ts)];
+    .binance.prev:t;
  }
 
 quotes:{[x]
