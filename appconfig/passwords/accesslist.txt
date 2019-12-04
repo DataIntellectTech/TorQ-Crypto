@@ -14,5 +14,4 @@ sortslave:pass
 admin:admin
 finexfeed:pass
 okexfeed:pass
-zbfeed.txt
-binancefeed:pass
+zbfeed:pass

@@ -12,12 +12,10 @@ localhost,{KDBBASEPORT}+9,monitor,monitor1,,1,0,,,${KDBCODE}/processes/monitor.q
 localhost,{KDBBASEPORT}+10,tickerlogreplay,tpreplay1,,1,0,,,,0,,q
 localhost,{KDBBASEPORT}+11,housekeeping,housekeeping1,${TORQHOME}/appconfig/passwords/accesslist.txt,1,0,,,${KDBCODE}/processes/housekeeping.q,1,,q
 localhost,{KDBBASEPORT}+12,reporter,reporter1,${TORQHOME}/appconfig/passwords/accesslist.txt,1,0,,,${KDBCODE}/processes/reporter.q,1,,q
-localhost,{KDBBASEPORT}+13,compression,compression1,,1,0,,,${KDBCODE}/processes/compression.q,1,,q
+localhost,{KDBBASEPORT}+13,compression,compression1,,1,0,,,${KDBCODE}/processes/compression.q,0,,q
 localhost,{KDBBASEPORT}+14,chainedtp,chainedtp1,${TORQHOME}/appconfig/passwords/accesslist.txt,1,0,,,${KDBCODE}/processes/chainedtp.q,1,,q
 localhost,{KDBBASEPORT}+15,sortslave,sortslave1,,1,1,,,${KDBCODE}/processes/wdb.q,1,,q
 localhost,{KDBBASEPORT}+16,sortslave,sortslave2,,1,1,,,${KDBCODE}/processes/wdb.q,1,,q
 localhost,{KDBBASEPORT}+17,finexfeed,finexfeed1,,1,0,,,${KDBCODE}/processes/finexfeed.q,1,-P 17,q
 localhost,{KDBBASEPORT}+18,okexfeed,okexfeed1,,1,0,,,${KDBCODE}/processes/okexfeed.q,1,-P 17,q
 localhost,{KDBBASEPORT}+19,zbfeed,zbfeed1,,1,0,,,${KDBCODE}/processes/zbfeed.q,1,-P 17,q
-localhost,{KDBBASEPORT}+20,binancefeed,binancefeed1,,1,0,,,${KDBCODE}/processes/binancefeed.q,1,-P 17,q
-

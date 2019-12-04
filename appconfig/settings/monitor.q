@@ -1,4 +1,4 @@
-// Bespoke Monitor config : Finance Starter Pack
+// Bespoke Monitor config : TorQ Crypto
 
 \d .servers
 // list of connections to make at start up

@@ -6,8 +6,6 @@
 
 .zb.prev:([]time:`timestamp$();sym:`g#`symbol$(); exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
-h:.servers.gethandlebytype[`tickerplant;`any];
-
 feed:{
   if[10h~type .zb.syms;.zb.syms:enlist .zb.syms];
   qt:.zb.quotes'[.zb.syms];  
@@ -22,6 +20,7 @@ feed:{
            askSize:asc each `float$askSize
   from qt;
   if[0=count ts:@[t;where not max (~\:/:/)`time`exchangeTime _/:tl:(t;{(1|count x)#x}.zb.prev)];:()];
+    h:neg .servers.gethandlebytype[`tickerplant;`any];
     h(`.u.upd;`exchange;value flip ts);
     h(`.u.upd;`zb;value flip delete exchange from ts);
     ts:@[tt 0;where not max (~\:/:/)`time`exchangeTime _/:tt:{@[x;where 0=type each flip x;first each]}each tl];
