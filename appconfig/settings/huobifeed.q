@@ -11,7 +11,7 @@ HOPENTIMEOUT:30000
 
 
 \d .huobi
-main_url:"https://api.huobi.pro/market/depth?symbol="                          // URL used for Huobi API requests
+main_url:"https://api.huobi.pro/market/depth?type=step1&symbol="               // URL used for Huobi API requests
 syms:("btcusdt";"ethusdt")                                                     // list of currency pairs to request prices for
 limit:"10"                                                                     // Bid/Ask quote limit
 

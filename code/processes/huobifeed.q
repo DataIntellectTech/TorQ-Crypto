@@ -29,7 +29,7 @@ feed:{
  }
 
 quotes:{
-  d:@[(.j.k .Q.hg`$.huobi.main_url,x,"&type=step1&depth=",.huobi.limit)`tick;`sym`limit;:;(upper x;.huobi.limit)];
+  d:@[(.j.k .Q.hg`$.huobi.main_url,x,"&depth=",.huobi.limit)`tick;`sym`limit;:;(upper x;.huobi.limit)];
   update bid:first each bids,
          bidSize:last each bids,
          ask:first each asks,
