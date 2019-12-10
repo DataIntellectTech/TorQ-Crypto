@@ -1,4 +1,4 @@
-// Bespoke Feed config : Torq Crypto
+// Bespoke Huobi Feed config : Torq Crypto
 
 \d .proc
 loadprocesscode:1b

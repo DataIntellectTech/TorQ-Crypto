@@ -1,4 +1,4 @@
-// Bespoke Feed config : Finance Starter Pack
+// Bespoke OKEX Feed config : TorQ Crypto
 
 \d .proc
 loadprocesscode:1b
