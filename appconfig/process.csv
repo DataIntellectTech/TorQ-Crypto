@@ -19,3 +19,4 @@ localhost,{KDBBASEPORT}+16,sortslave,sortslave2,,1,1,,,${KDBCODE}/processes/wdb.
 localhost,{KDBBASEPORT}+17,finexfeed,finexfeed1,,1,0,,,${KDBCODE}/processes/finexfeed.q,1,-P 17,q
 localhost,{KDBBASEPORT}+18,okexfeed,okexfeed1,,1,0,,,${KDBCODE}/processes/okexfeed.q,1,-P 17,q
 localhost,{KDBBASEPORT}+19,zbfeed,zbfeed1,,1,0,,,${KDBCODE}/processes/zbfeed.q,1,-P 17,q
+localhost,{KDBBASEPORT}+20,huobifeed,huobifeed1,,1,0,,,${KDBCODE}/processes/huobifeed.q,1,-P 17,q
