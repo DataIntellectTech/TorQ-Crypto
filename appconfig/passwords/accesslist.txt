@@ -16,3 +16,4 @@ finexfeed:pass
 okexfeed:pass
 zbfeed:pass
 huobifeed:pass
+bhexfeed:pass
