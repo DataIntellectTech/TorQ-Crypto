@@ -4,11 +4,8 @@
 
 \d .finex
 
-symconfig:("*BBBBB";enlist ",") 0:hsym first .proc.getconfigfile["symconfig.csv"];
-commonsyms:("******";enlist ",") 0:hsym first .proc.getconfigfile["commonsyms.csv"];
-
-syms:exec sym from symconfig where finexsym;
-exchangesyms:exec finexsym from commonsyms where sym in syms;
+syms:exec sym from .crypto.symconfig where finexsym;
+exchangesyms:exec finexsym from .crypto.commonsyms where sym in syms;
 
 .finex.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 

@@ -3,11 +3,8 @@
 
 \d .bhex
 
-symconfig:("*BBBBB";enlist ",") 0:hsym first .proc.getconfigfile["symconfig.csv"];
-commonsyms:("******";enlist ",") 0:hsym first .proc.getconfigfile["commonsyms.csv"];
-
-syms:exec sym from symconfig where bhexsym;
-exchangesyms:exec bhexsym from commonsyms where sym in syms;
+syms:exec sym from .crypto.symconfig where bhexsym;
+exchangesyms:exec bhexsym from .crypto.commonsyms where sym in syms;
 
 .bhex.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 

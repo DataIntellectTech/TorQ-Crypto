@@ -4,11 +4,8 @@
 
 \d .zb
 
-symconfig:("*BBBBB";enlist ",") 0:hsym first .proc.getconfigfile["symconfig.csv"];
-commonsyms:("******";enlist ",") 0:hsym first .proc.getconfigfile["commonsyms.csv"];
-
-syms:exec sym from symconfig where zbsym;
-exchangesyms:exec zbsym from commonsyms where sym in syms;
+syms:exec sym from .crypto.symconfig where zbsym;
+exchangesyms:exec zbsym from .crypto.commonsyms where sym in syms;
 
 .zb.prev:([]time:`timestamp$();sym:`g#`symbol$(); exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
