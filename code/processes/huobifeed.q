@@ -11,7 +11,7 @@ exchangesyms:exec huobisym from commonsyms where sym in syms;
 
 .huobi.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
-feed:{
+format:{
   if[10h~type .huobi.syms;.huobi.syms:enlist .huobi.syms];
   qt:.huobi.quotes'[.huobi.exchangesyms];
   if[99h~type qt;qt:enlist qt];
@@ -42,6 +42,8 @@ quotes:{
          date:"P"$string"i"$ts%1e3
   from d
  }
+
+feed:{@[format;`;{.lg.e[`timer;"error: ",x]}]}
 
 .timer.repeat[.proc.cp[];0Wp;0D00:00:30.000;(`.huobi.feed;`);"Publish Feed"];
 

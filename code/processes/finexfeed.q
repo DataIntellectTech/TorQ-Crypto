@@ -12,7 +12,7 @@ exchangesyms:exec finexsym from commonsyms where sym in syms;
 
 .finex.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
-feed:{
+format:{
   if[10h~type .finex.syms;.finex.syms:enlist .finex.syms];
   qt:.finex.quotes'[.finex.exchangesyms];
   if[99h~type qt;qt:enlist qt];
@@ -43,6 +43,8 @@ quotes:{[x]
          date:"P"$string"i"$date
   from d
  }
+
+feed:{@[format;`;{.lg.e[`timer;"error: ",x]}]}
 
 .timer.repeat[.proc.cp[];0Wp;0D00:00:30.000;(`.finex.feed;`);"Publish Feed"];
 

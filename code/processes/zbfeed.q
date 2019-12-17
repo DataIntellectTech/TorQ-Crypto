@@ -12,7 +12,7 @@ exchangesyms:exec zbsym from commonsyms where sym in syms;
 
 .zb.prev:([]time:`timestamp$();sym:`g#`symbol$(); exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
-feed:{
+format:{
   if[10h~type .zb.syms;.zb.syms:enlist .zb.syms];
   qt:.zb.quotes'[.zb.exchangesyms]; 
   if[99h~type qt;qt:enlist qt];
@@ -43,6 +43,8 @@ quotes:{[x]
          timestamp:"P"$string"i"$timestamp 
   from d
  }
+
+feed:{@[format;`;{.lg.e[`timer;"error: ",x]}]}
 
 .timer.repeat[.proc.cp[];0Wp;0D00:00:30.000;(`.zb.feed;`);"Publish Feed"];
 

@@ -12,7 +12,7 @@ exchangesyms:exec okexsym from commonsyms where sym in syms;
 
 .okex.prev:([]time:`timestamp$(); sym:`g#`symbol$(); exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
-feed:{[]
+format:{[]
   if[10h~type .okex.syms;.okex.syms:enlist .okex.syms];
   qt:.okex.quotes'[.okex.exchangesyms];
   if[99h~type qt;qt:enlist qt];
@@ -43,6 +43,8 @@ quotes:{[x]
           timestamp:"P"$-1_ssr/[timestamp;("-";"T");(".";"D")]
   from d
  }
+
+feed:{@[format;`;{.lg.e[`timer;"error: ",x]}]}
 
 .timer.repeat[.proc.cp[];0Wp;0D00:00:30.000;(`.okex.feed;`);"Publish Feed"];
 
