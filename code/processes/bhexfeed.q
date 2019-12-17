@@ -3,11 +3,17 @@
 
 \d .bhex
 
+symconfig:("*BBBBB";enlist ",") 0:hsym first .proc.getconfigfile["symconfig.csv"];
+commonsyms:("******";enlist ",") 0:hsym first .proc.getconfigfile["commonsyms.csv"];
+
+syms:exec sym from symconfig where bhexsym;
+exchangesyms:exec bhexsym from commonsyms where sym in syms;
+
 .bhex.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
 feed:{
   if[10h~type .bhex.syms;.bhex.syms:enlist .bhex.syms];
-  qt:.bhex.quotes'[.bhex.syms];
+  qt:.bhex.quotes'[.bhex.exchangesyms];
   if[99h~type qt;qt:enlist qt];
   t:select time:.z.p,
            sym:`$sym,

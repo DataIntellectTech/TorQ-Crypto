@@ -4,11 +4,17 @@
 
 \d .zb
 
+symconfig:("*BBBBB";enlist ",") 0:hsym first .proc.getconfigfile["symconfig.csv"];
+commonsyms:("******";enlist ",") 0:hsym first .proc.getconfigfile["commonsyms.csv"];
+
+syms:exec sym from symconfig where zbsym;
+exchangesyms:exec zbsym from commonsyms where sym in syms;
+
 .zb.prev:([]time:`timestamp$();sym:`g#`symbol$(); exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
 feed:{
   if[10h~type .zb.syms;.zb.syms:enlist .zb.syms];
-  qt:.zb.quotes'[.zb.syms];  
+  qt:.zb.quotes'[.zb.exchangesyms]; 
   if[99h~type qt;qt:enlist qt];
   t:select time:.z.p,
            sym:`$sym,

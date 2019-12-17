@@ -4,11 +4,17 @@
 
 \d .okex
 
+symconfig:("*BBBBB";enlist ",") 0:hsym first .proc.getconfigfile["symconfig.csv"];
+commonsyms:("******";enlist ",") 0:hsym first .proc.getconfigfile["commonsyms.csv"];
+
+syms:exec sym from symconfig where okexsym;
+exchangesyms:exec okexsym from commonsyms where sym in syms;
+
 .okex.prev:([]time:`timestamp$(); sym:`g#`symbol$(); exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
 feed:{[]
   if[10h~type .okex.syms;.okex.syms:enlist .okex.syms];
-  qt:.okex.quotes'[.okex.syms];
+  qt:.okex.quotes'[.okex.exchangesyms];
   if[99h~type qt;qt:enlist qt];
   t:select time:.z.p,
            sym:`$sym,

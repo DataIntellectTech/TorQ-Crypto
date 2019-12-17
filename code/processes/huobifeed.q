@@ -3,11 +3,17 @@
 
 \d .huobi
 
+symconfig:("*BBBBB";enlist ",") 0:hsym first .proc.getconfigfile["symconfig.csv"];
+commonsyms:("******";enlist ",") 0:hsym first .proc.getconfigfile["commonsyms.csv"];
+
+syms:exec sym from symconfig where huobisym;
+exchangesyms:exec huobisym from commonsyms where sym in syms;
+
 .huobi.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
 feed:{
   if[10h~type .huobi.syms;.huobi.syms:enlist .huobi.syms];
-  qt:.huobi.quotes'[.huobi.syms];
+  qt:.huobi.quotes'[.huobi.exchangesyms];
   if[99h~type qt;qt:enlist qt];
   t:select time:.z.p,
            sym:`$sym,
