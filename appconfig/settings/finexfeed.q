@@ -13,6 +13,5 @@ HOPENTIMEOUT:30000
 \d .finex
 main_url:"https://openapi.digifinex.vip/v3/order_book?symbol="                 // URL used for Coinbase API requests
 syms:("btc_usdt";"eth_usdt")                                                   // list of currency pairs to request prices for
-limit:"10"                                                                     // Bid/Ask quote limit
 \d .
 

@@ -31,7 +31,7 @@ format:{
  }
 
 quotes:{
-  d:@[(.j.k .Q.hg`$.bhex.main_url,x,"&limit=",.bhex.limit);`sym`limit;:;(upper x;.bhex.limit)];
+  d:@[(.j.k .Q.hg`$.bhex.main_url,x,"&limit=",.crypto.bhexlimit);`sym`limit;:;(upper x;.crypto.bhexlimit)];
   update bid:"F"$(first each bids),
          bidSize:"F"$(last each bids),
          ask:"F"$(first each asks),
@@ -42,6 +42,6 @@ quotes:{
 
 feed:{@[format;`;{.lg.e[`timer;"error: ",x]}]}
 
-.timer.repeat[.proc.cp[];0Wp;0D00:00:30.000;(`.bhex.feed;`);"Publish Feed"];
+.timer.repeat[.proc.cp[];0Wp;.crypto.bhexfreq;(`.bhex.feed;`);"Publish Feed"];
 
 \d .
