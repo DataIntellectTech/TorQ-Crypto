@@ -13,5 +13,7 @@ HOPENTIMEOUT:30000
 \d .bhex
 main_url:"https://api.bhex.com/openapi/quote/v1/depth?symbol="                              // URL used for API requests
 syms:("BTCUSDT";"ETHUSDT")                                                   // list of currency pairs to request prices for
+limit:.crypto.deflimit
+freq:.crypto.deffreq
 \d .
 

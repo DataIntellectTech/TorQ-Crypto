@@ -32,7 +32,7 @@ format:{
  }
 
 quotes:{[x]
-  d:@[(.j.k .Q.hg`$.zb.main_url,x,"&size=",.crypto.zblimit);`sym`limit;:;(upper x except "-_";.crypto.zblimit)];
+  d:@[(.j.k .Q.hg`$.zb.main_url,x,"&size=",.zb.limit);`sym`limit;:;(upper x except "-_";.zb.limit)];
   update bid:first each bids, 
          bidSize:last each bids,
          ask:first each asks, 
@@ -43,6 +43,6 @@ quotes:{[x]
 
 feed:{@[format;`;{.lg.e[`timer;"error: ",x]}]}
 
-.timer.repeat[.proc.cp[];0Wp;.crypto.zbfreq;(`.zb.feed;`);"Publish Feed"];
+.timer.repeat[.proc.cp[];0Wp;.zb.freq;(`.zb.feed;`);"Publish Feed"];
 
 \d .

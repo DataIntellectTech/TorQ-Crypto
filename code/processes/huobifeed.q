@@ -31,7 +31,7 @@ format:{
  }
 
 quotes:{
-  d:@[(.j.k .Q.hg`$.huobi.main_url,x,"&depth=",.crypto.huobilimit)`tick;`sym`limit;:;(upper x;.crypto.huobilimit)];
+  d:@[(.j.k .Q.hg`$.huobi.main_url,x,"&depth=",.huobi.limit)`tick;`sym`limit;:;(upper x;.huobi.limit)];
   update bid:first each bids,
          bidSize:last each bids,
          ask:first each asks,
@@ -42,7 +42,7 @@ quotes:{
 
 feed:{@[format;`;{.lg.e[`timer;"error: ",x]}]}
 
-.timer.repeat[.proc.cp[];0Wp;.crypto.huobifreq;(`.huobi.feed;`);"Publish Feed"];
+.timer.repeat[.proc.cp[];0Wp;.huobi.freq;(`.huobi.feed;`);"Publish Feed"];
 
 \d .
 

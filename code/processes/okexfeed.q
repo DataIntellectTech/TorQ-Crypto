@@ -32,7 +32,7 @@ format:{[]
  }
 
 quotes:{[x]
-  d:@[(.j.k .Q.hg `$.okex.main_url,x,"/book?size=",.crypto.okexlimit);`sym`limit;:;(upper x except "-_";.crypto.okexlimit)];
+  d:@[(.j.k .Q.hg `$.okex.main_url,x,"/book?size=",.okex.limit);`sym`limit;:;(upper x except "-_";.okex.limit)];
   update  bid:first each bids,
           bidSize:.[bids;(::;1)],
           ask:first each asks,
@@ -43,7 +43,7 @@ quotes:{[x]
 
 feed:{@[format;`;{.lg.e[`timer;"error: ",x]}]}
 
-.timer.repeat[.proc.cp[];0Wp;.crypto.okexfreq;(`.okex.feed;`);"Publish Feed"];
+.timer.repeat[.proc.cp[];0Wp;.okex.freq;(`.okex.feed;`);"Publish Feed"];
 
 \d .
 
