@@ -12,7 +12,6 @@ HOPENTIMEOUT:30000
 
 \d .okex
 main_url:"https://www.okex.com/api/spot/v3/instruments/"                       // URL used for Coinbase API requests
-syms:("BTC-USDT";"ETH-USDT")                                                   // list of currency pairs to request prices for
 limit:.crypto.deflimit
 freq:.crypto.deffreq
 
