@@ -3,14 +3,13 @@
 
 \d .huobi
 
-syms:exec sym from .crypto.symconfig where huobisym;
-exchangesyms:exec huobisym from .crypto.commonsyms where sym in syms;
+syms.crypto.symmap'[:exec sym from .crypto.symconfig where huobisym;`huobisym]
 
 .huobi.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
 format:{
   if[10h~type .huobi.syms;.huobi.syms:enlist .huobi.syms];
-  qt:.huobi.quotes'[.huobi.exchangesyms];
+  qt:.huobi.quotes'[.huobi.syms];
   if[99h~type qt;qt:enlist qt];
   t:select time:.z.p,
            sym:`$sym,

@@ -4,14 +4,13 @@
 
 \d .zb
 
-syms:exec sym from .crypto.symconfig where zbsym;
-exchangesyms:exec zbsym from .crypto.commonsyms where sym in syms;
+syms:.crypto.symmap'[exec sym from .crypto.symconfig where zbsym;`zbsym]
 
 .zb.prev:([]time:`timestamp$();sym:`g#`symbol$(); exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
 format:{
   if[10h~type .zb.syms;.zb.syms:enlist .zb.syms];
-  qt:.zb.quotes'[.zb.exchangesyms]; 
+  qt:.zb.quotes'[.zb.syms]; 
   if[99h~type qt;qt:enlist qt];
   t:select time:.z.p,
            sym:`$sym,

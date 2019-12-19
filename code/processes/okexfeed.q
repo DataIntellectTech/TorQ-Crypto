@@ -4,14 +4,13 @@
 
 \d .okex
 
-syms:exec sym from .crypto.symconfig where okexsym;
-exchangesyms:exec okexsym from .crypto.commonsyms where sym in syms;
+syms:.crypto.symmap'[exec sym from .crypto.symconfig where okexsym;`okexsym]
 
 .okex.prev:([]time:`timestamp$(); sym:`g#`symbol$(); exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
 format:{[]
   if[10h~type .okex.syms;.okex.syms:enlist .okex.syms];
-  qt:.okex.quotes'[.okex.exchangesyms];
+  qt:.okex.quotes'[.okex.syms];
   if[99h~type qt;qt:enlist qt];
   t:select time:.z.p,
            sym:`$sym,

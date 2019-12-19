@@ -3,14 +3,13 @@
 
 \d .bhex
 
-syms:exec sym from .crypto.symconfig where bhexsym;
-exchangesyms:exec bhexsym from .crypto.commonsyms where sym in syms;
+syms:.crypto.symmap'[exec sym from .crypto.symconfig where bhexsym;`bhexsym]
 
 .bhex.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
 format:{
   if[10h~type .bhex.syms;.bhex.syms:enlist .bhex.syms];
-  qt:.bhex.quotes'[.bhex.exchangesyms];
+  qt:.bhex.quotes'[.bhex.syms];
   if[99h~type qt;qt:enlist qt];
   t:select time:.z.p,
            sym:`$sym,

@@ -4,14 +4,13 @@
 
 \d .finex
 
-syms:exec sym from .crypto.symconfig where finexsym;
-exchangesyms:exec finexsym from .crypto.commonsyms where sym in syms;
+syms:.crypto.symmap'[exec sym from .crypto.symconfig where finexsym;`finexsym]
 
 .finex.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
 format:{
   if[10h~type .finex.syms;.finex.syms:enlist .finex.syms];
-  qt:.finex.quotes'[.finex.exchangesyms];
+  qt:.finex.quotes'[.finex.syms];
   if[99h~type qt;qt:enlist qt];
   t:select time:.z.p,
            sym:`$sym,
