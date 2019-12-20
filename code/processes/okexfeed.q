@@ -8,7 +8,7 @@ syms:.crypto.symmap'[exec sym from .crypto.symconfig where okexsym;`okexsym]
 
 .okex.prev:([]time:`timestamp$(); sym:`g#`symbol$(); exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
-format:{[]
+feed:{[]
   if[10h~type .okex.syms;.okex.syms:enlist .okex.syms];
   qt:.okex.quotes'[.okex.syms];
   if[99h~type qt;qt:enlist qt];
@@ -40,9 +40,9 @@ quotes:{[x]
   from d
  }
 
-feed:{@[format;`;{.lg.e[`timer;"error: ",x]}]}
+runfeed:{@[feed;`;{.lg.e[`timer;"error: ",x]}]}
 
-.timer.repeat[.proc.cp[];0Wp;.okex.freq;(`.okex.feed;`);"Publish Feed"];
+.timer.repeat[.proc.cp[];0Wp;.okex.freq;(`.okex.runfeed;`);"Publish Feed"];
 
 \d .
 

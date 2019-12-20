@@ -7,7 +7,7 @@ syms:.crypto.symmap'[exec sym from .crypto.symconfig where bhexsym;`bhexsym]
 
 .bhex.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
-format:{
+feed:{
   if[10h~type .bhex.syms;.bhex.syms:enlist .bhex.syms];
   qt:.bhex.quotes'[.bhex.syms];
   if[99h~type qt;qt:enlist qt];
@@ -39,8 +39,8 @@ quotes:{
   from d
  }
 
-feed:{@[format;`;{.lg.e[`timer;"error: ",x]}]}
+runfeed:{@[feed;`;{.lg.e[`timer;"error: ",x]}]}
 
-.timer.repeat[.proc.cp[];0Wp;.bhex.freq;(`.bhex.feed;`);"Publish Feed"];
+.timer.repeat[.proc.cp[];0Wp;.bhex.freq;(`.bhex.runfeed;`);"Publish Feed"];
 
 \d .

@@ -8,7 +8,7 @@ syms:.crypto.symmap'[exec sym from .crypto.symconfig where zbsym;`zbsym]
 
 .zb.prev:([]time:`timestamp$();sym:`g#`symbol$(); exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
-format:{
+feed:{
   if[10h~type .zb.syms;.zb.syms:enlist .zb.syms];
   qt:.zb.quotes'[.zb.syms]; 
   if[99h~type qt;qt:enlist qt];
@@ -40,8 +40,8 @@ quotes:{[x]
   from d
  }
 
-feed:{@[format;`;{.lg.e[`timer;"error: ",x]}]}
+runfeed:{@[feed;`;{.lg.e[`timer;"error: ",x]}]}
 
-.timer.repeat[.proc.cp[];0Wp;.zb.freq;(`.zb.feed;`);"Publish Feed"];
+.timer.repeat[.proc.cp[];0Wp;.zb.freq;(`.zb.runfeed;`);"Publish Feed"];
 
 \d .

@@ -7,7 +7,7 @@ syms.crypto.symmap'[:exec sym from .crypto.symconfig where huobisym;`huobisym]
 
 .huobi.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
-format:{
+feed:{
   if[10h~type .huobi.syms;.huobi.syms:enlist .huobi.syms];
   qt:.huobi.quotes'[.huobi.syms];
   if[99h~type qt;qt:enlist qt];
@@ -39,9 +39,9 @@ quotes:{
   from d
  }
 
-feed:{@[format;`;{.lg.e[`timer;"error: ",x]}]}
+runfeed:{@[feed;`;{.lg.e[`timer;"error: ",x]}]}
 
-.timer.repeat[.proc.cp[];0Wp;.huobi.freq;(`.huobi.feed;`);"Publish Feed"];
+.timer.repeat[.proc.cp[];0Wp;.huobi.freq;(`.huobi.runfeed;`);"Publish Feed"];
 
 \d .
 

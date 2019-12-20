@@ -8,7 +8,7 @@ syms:.crypto.symmap'[exec sym from .crypto.symconfig where finexsym;`finexsym]
 
 .finex.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
-format:{
+feed:{
   if[10h~type .finex.syms;.finex.syms:enlist .finex.syms];
   qt:.finex.quotes'[.finex.syms];
   if[99h~type qt;qt:enlist qt];
@@ -40,8 +40,8 @@ quotes:{[x]
   from d
  }
 
-feed:{@[format;`;{.lg.e[`timer;"error: ",x]}]}
+runfeed:{@[feed;`;{.lg.e[`timer;"error: ",x]}]}
 
-.timer.repeat[.proc.cp[];0Wp;.finex.freq;(`.finex.feed;`);"Publish Feed"];
+.timer.repeat[.proc.cp[];0Wp;.finex.freq;(`.finex.runfeed;`);"Publish Feed"];
 
 \d .
