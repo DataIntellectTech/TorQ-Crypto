@@ -4,6 +4,8 @@
 
 \d .finex
 
+syms:.crypto.symmap'[exec sym from .crypto.symconfig where finexsym;`finexsym]
+
 .finex.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
 feed:{
@@ -38,6 +40,8 @@ quotes:{[x]
   from d
  }
 
-.timer.repeat[.proc.cp[];0Wp;0D00:00:30.000;(`.finex.feed;`);"Publish Feed"];
+runfeed:{@[feed;`;{.lg.e[`timer;"error: ",x]}]}
+
+.timer.repeat[.proc.cp[];0Wp;.finex.freq;(`.finex.runfeed;`);"Publish Feed"];
 
 \d .

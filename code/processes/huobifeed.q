@@ -3,6 +3,8 @@
 
 \d .huobi
 
+syms.crypto.symmap'[:exec sym from .crypto.symconfig where huobisym;`huobisym]
+
 .huobi.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
 feed:{
@@ -37,7 +39,9 @@ quotes:{
   from d
  }
 
-.timer.repeat[.proc.cp[];0Wp;0D00:00:30.000;(`.huobi.feed;`);"Publish Feed"];
+runfeed:{@[feed;`;{.lg.e[`timer;"error: ",x]}]}
+
+.timer.repeat[.proc.cp[];0Wp;.huobi.freq;(`.huobi.runfeed;`);"Publish Feed"];
 
 \d .
 

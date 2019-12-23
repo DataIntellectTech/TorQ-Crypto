@@ -3,6 +3,8 @@
 
 \d .bhex
 
+syms:.crypto.symmap'[exec sym from .crypto.symconfig where bhexsym;`bhexsym]
+
 .bhex.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
 feed:{
@@ -37,6 +39,8 @@ quotes:{
   from d
  }
 
-.timer.repeat[.proc.cp[];0Wp;0D00:00:30.000;(`.bhex.feed;`);"Publish Feed"];
+runfeed:{@[feed;`;{.lg.e[`timer;"error: ",x]}]}
+
+.timer.repeat[.proc.cp[];0Wp;.bhex.freq;(`.bhex.runfeed;`);"Publish Feed"];
 
 \d .

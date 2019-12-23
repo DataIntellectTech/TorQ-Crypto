@@ -4,11 +4,13 @@
 
 \d .zb
 
+syms:.crypto.symmap'[exec sym from .crypto.symconfig where zbsym;`zbsym]
+
 .zb.prev:([]time:`timestamp$();sym:`g#`symbol$(); exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
 feed:{
   if[10h~type .zb.syms;.zb.syms:enlist .zb.syms];
-  qt:.zb.quotes'[.zb.syms];  
+  qt:.zb.quotes'[.zb.syms]; 
   if[99h~type qt;qt:enlist qt];
   t:select time:.z.p,
            sym:`$sym,
@@ -38,6 +40,8 @@ quotes:{[x]
   from d
  }
 
-.timer.repeat[.proc.cp[];0Wp;0D00:00:30.000;(`.zb.feed;`);"Publish Feed"];
+runfeed:{@[feed;`;{.lg.e[`timer;"error: ",x]}]}
+
+.timer.repeat[.proc.cp[];0Wp;.zb.freq;(`.zb.runfeed;`);"Publish Feed"];
 
 \d .

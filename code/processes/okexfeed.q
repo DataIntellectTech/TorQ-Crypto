@@ -4,6 +4,8 @@
 
 \d .okex
 
+syms:.crypto.symmap'[exec sym from .crypto.symconfig where okexsym;`okexsym]
+
 .okex.prev:([]time:`timestamp$(); sym:`g#`symbol$(); exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
 feed:{[]
@@ -38,7 +40,9 @@ quotes:{[x]
   from d
  }
 
-.timer.repeat[.proc.cp[];0Wp;0D00:00:30.000;(`.okex.feed;`);"Publish Feed"];
+runfeed:{@[feed;`;{.lg.e[`timer;"error: ",x]}]}
+
+.timer.repeat[.proc.cp[];0Wp;.okex.freq;(`.okex.runfeed;`);"Publish Feed"];
 
 \d .
 
