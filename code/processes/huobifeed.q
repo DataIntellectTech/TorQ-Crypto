@@ -3,7 +3,7 @@
 
 \d .huobi
 
-syms.crypto.symmap'[:exec sym from .crypto.symconfig where huobisym;`huobisym]
+syms:.crypto.symmap'[exec sym from .crypto.symconfig where huobisym;`huobisym]
 
 .huobi.prev:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
