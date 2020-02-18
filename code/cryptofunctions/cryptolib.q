@@ -8,24 +8,27 @@
 // h(`.gw.syncexec;"orderbook[(enlist `sym)!enlist (`BTCUSDT)]";`rdb)
 // h(`.gw.syncexec;"orderbook[(`sym`timestamp)!(`BTCUSDT;2020.02.09D11:30:00)]";`hdb)
 // h(`.gw.syncexec;"orderbook[(`sym`exchanges)!(`BTCUSDT;`finex`huobi)]";`rdb)
-// h(`.gw.syncexec;"orderbook[(`sym`timestamp`exchanges`window)!(`BTCUSDT;.z.p];`bhex;00:01:30)]";`rdb)
+// h(`.gw.syncexec;"orderbook[(`sym`timestamp`exchanges`window)!(`BTCUSDT;.z.p;`bhex;00:01:30)]";`rdb)
 
 orderbook:{[dict]
-  typecheck[(`sym`timestamp`exchanges`window)!(11h;12h;11h;18h);1000b;dict;99h];                             			// check required keys are present and all keys are of correct type
-  d:`sym`timestamp`exchanges`window!(`;0Np;`;0Nv);                                                           			// default null dictionary. Allows user to omit keys
-  d:d,dict;                                                                                                  			// join user-passed dictionary to default dictionary
-  validcheck[d;`sym;`exchange;`sym];                                                                         			// check a valid sym is passed
+  typecheck[`sym`timestamp`exchanges`window!11 12 11 18h;1000b;dict];                                        // check required keys are present and all keys are of correct type
+  d:`sym`timestamp`exchanges`window!(`;0Np;`;0Nv);                                                           // default null dictionary. Allows user to omit keys
+  d:d,dict;                                                                                                  // join user-passed dictionary to default dictionary
+  validcheck[d;`sym;`exchange;`sym];                                                                         // check a valid sym is passed
+  $[`rdb in .proc.proctype;                                                                                  // if current process is rdb
+    defaulttime:exec last time from exchange;                                                                // set default time to be last time from exchange
+    defaulttime:first exec time from select last time from exchange where date=.z.d-1];                      // if in hdb, set default time to be last time from yesterday
   // if any of timestamp, exchanges or window are not specified by user, update d to the default values. Pass preferred default values as dictionary to the assign function.
-  d:assign[d;(`timestamp`exchanges`window)!(first exec time from select last time from exchange;execcol[`exchange;`exchange];2*.crypto.deffreq)];
-  validcheck[d;`exchanges;`exchange;`exchange];                                                              			// check valid exchanges have been passed
+  d:assign[d;`timestamp`exchanges`window!(defaulttime;execcol[`exchange;`exchange];2*.crypto.deffreq)];
+  validcheck[d;`exchanges;`exchange;`exchange];                                                              // check valid exchanges have been passed
   // create book: select columns by exchange from exchange where time within(timestamp-`second$window;timestamp),sym=sym,exchange in exchanges
   book:{[sym;timestamp;exchanges;window;columns];
     ungroup ungroup ?[`exchange;((within;`time;(enlist;(-;`timestamp;($;enlist`second;window));`timestamp));(=;`sym;enlist sym);(in;`exchange;enlist exchanges));(enlist `exchange)!enlist `exchange;columns!columns]
     }[d`sym;d`timestamp;d`exchanges;d`window;];
-  bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`bid`bidSize];                          			// create bid book
-  ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`ask`askSize];                           			// create ask book
-  orderbook:bid,'ask;                                                                                        			// join bid and ask to create orderbook
-  $[(0=count orderbook) & .proc.cd[]>`date$d`timestamp;'":no data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only."; orderbook]
+  bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`bid`bidSize];                          // create bid book
+  ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`ask`askSize];                           // create ask book
+  orderbook:bid,'ask;                                                                                        // join bid and ask to create orderbook
+  $[(0=count orderbook) & .z.d>`date$d`timestamp;'":no data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only."; orderbook]
  }
 
 // function to exec a column. Eg exec sym from select distinct sym from exchange
@@ -34,12 +37,12 @@ execcol:{[table;column]
  }
 
 // function for checking types of dictionary values
-typecheck:{[typedict;booleanlist;dict;dicttype]
-  if[not dicttype=type dict;'"error - arguement passed must be of type ",.Q.s1 dicttype];                    			// check type of argument passed to original function
-  requiredkeys:(key typedict) where booleanlist;                                                             			// create list of required keys, given in boolean list
+typecheck:{[typedict;requiredkeylist;dict]
+  if[not 99=type dict;'"error - arguement passed must be a dictionary"];                                     // check type of argument passed to original function
+  requiredkeys:(key typedict) where requiredkeylist;                                                         // create list of required keys, given in requiredkeylist
   //error if any required keys are missing
   if[not all requiredkeys in key dict;'"error - the following keys must be included: ",", " sv  string requiredkeys];
-  typematch:typedict[key dict]=abs type each dict;                                                           			// create dictionary showing where types match
+  typematch:typedict[key dict]=abs type each dict;                                                           // create dictionary showing where types match
   //error if any dict types do not match
   if[not all typematch;'"error - dictionary parameter ",(", "sv string where not typematch)," must be of type: ",", "sv string {key'[x$\:()]}typedict where not typematch];
  }
@@ -61,7 +64,7 @@ assign:{[d;nulldict]                                                            
 //creates an open, high,low close table
 
 ohlc:{[d]
-  typecheck[`date`sym`exchange`quote!(14h;11h;11h;11h);1111b;d;99h];
+  typecheck[`date`sym`exchange`quote!(14h;11h;11h;11h);1111b;d];
   if[not all .proc.cd[]>=d`date;'"Enter a valid date i.e on or before ",string .proc.cd[]];					//checks the date is valid
   //checks that the symbol passed exists in our table
   if[not d[`sym] in execcol[exchange_top;`sym]; '"This sym is not in the exchange_top table, please enter a valid one"];
