@@ -106,11 +106,10 @@ ohlc:{[d]
 createarbtable:{[d]
   if[not 99h=type d; '"the arguement passed needs to be a dictionary"];								//checks a dictionary has been passed
   if[not `symbol in key d; '"You need to have symbol as a key"];
-  d2:`symbol`starttimestamp`endtimestamp`bucketsize`exchanges!`````;								//default dictionary
+  d2:`symbol`starttimestamp`endtimestamp`bucketsize`exchanges!(`;0Np;0Np;0Nv;`);								//default dictionary
   d:d2,d;
   if[not all keyresult:key[d] in dictkeys:`symbol`starttimestamp`endtimestamp`bucketsize`exchanges;				//checks the correct keys have been passed
     '"The following keys are incorrect ", ", " sv string key[d] where 0=keyresult,". Valid keys are symbol, starttimestamp, endtimestamp, bucketsize and exchanges"];
-  d:enlist each d;														//allows us to amedn the dictionary regardless of type
   d:assign[d;(`starttimestamp`endtimestamp`bucketsize)!(`timestamp$.proc.cd[];.proc.cp[];`second$2*.crypto.deffreq)];		//gives default values if nulls inserted
   d:@[d;`symbol`starttimestamp`endtimestamp`bucketsize;first];									//reassigns the dictionary keys to atoms
   //gets the distinct list of exchanges in the time period
