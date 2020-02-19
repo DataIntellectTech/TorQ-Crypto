@@ -14,14 +14,12 @@ orderbook:{[dict]
   typecheck[`sym`timestamp`exchanges`window!11 12 11 18h;1000b;dict];								// check required keys are present and all keys are of correct type
   d:`sym`timestamp`exchanges`window!(`;0Np;`;0Nv);										// default null dictionary. Allows user to omit keys
   d:d,dict;															// join user-passed dictionary to default dictionary
-  break;
   validcheck[d;`sym;`exchange;`sym];												// check a valid sym is passed
   $[`rdb in .proc.proctype;													// if current process is rdb
     defaulttime:exec last time from exchange;											// set default time to be last time from exchange
     defaulttime:first exec time from select last time from exchange where date=.z.d-1];						// if in hdb, set default time to be last time from yesterday
   // if any of timestamp, exchanges or window are not specified by user, update d to the default values. Pass preferred default values as dictionary to the assign function.
   d:assign[d;`timestamp`exchanges`window!(defaulttime;execcol[`exchange;`exchange];2*.crypto.deffreq)];
-  break;
   validcheck[d;`exchanges;`exchange;`exchange];											// check valid exchanges have been passed
   //create book. If in the rdb process, exclude date clause from the select statement
   book:$[`rdb in .proc.proctype;
