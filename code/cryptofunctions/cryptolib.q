@@ -6,27 +6,34 @@
 // window must be passed in as type -18h (second)
 // examples through handle to gateway:
 // h(`.gw.syncexec;"orderbook[(enlist `sym)!enlist (`BTCUSDT)]";`rdb)
-// h(`.gw.syncexec;"orderbook[(`sym`timestamp)!(`BTCUSDT;2020.02.09D11:30:00)]";`hdb)
-// h(`.gw.syncexec;"orderbook[(`sym`exchanges)!(`BTCUSDT;`finex`huobi)]";`rdb)
-// h(`.gw.syncexec;"orderbook[(`sym`timestamp`exchanges`window)!(`BTCUSDT;.z.p;`bhex;00:01:30)]";`rdb)
+// h(`.gw.syncexec;"orderbook[`sym`timestamp!(`BTCUSDT;2020.02.09D11:30:00)]";`hdb)
+// h(`.gw.syncexec;"orderbook[`sym`exchanges!(`BTCUSDT;`finex`huobi)]";`rdb)
+// h(`.gw.syncexec;"orderbook[`sym`timestamp`exchanges`window!(`BTCUSDT;.z.p;`bhex;00:01:30)]";`rdb)
 
 orderbook:{[dict]
   typecheck[`sym`timestamp`exchanges`window!11 12 11 18h;1000b;dict];								// check required keys are present and all keys are of correct type
   d:`sym`timestamp`exchanges`window!(`;0Np;`;0Nv);										// default null dictionary. Allows user to omit keys
   d:d,dict;															// join user-passed dictionary to default dictionary
+  break;
   validcheck[d;`sym;`exchange;`sym];												// check a valid sym is passed
   $[`rdb in .proc.proctype;													// if current process is rdb
     defaulttime:exec last time from exchange;											// set default time to be last time from exchange
     defaulttime:first exec time from select last time from exchange where date=.z.d-1];						// if in hdb, set default time to be last time from yesterday
   // if any of timestamp, exchanges or window are not specified by user, update d to the default values. Pass preferred default values as dictionary to the assign function.
   d:assign[d;`timestamp`exchanges`window!(defaulttime;execcol[`exchange;`exchange];2*.crypto.deffreq)];
+  break;
   validcheck[d;`exchanges;`exchange;`exchange];											// check valid exchanges have been passed
-  // create book: select columns by exchange from exchange where time within(timestamp-`second$window;timestamp),sym=sym,exchange in exchanges
-  book:{[sym;timestamp;exchanges;window;columns];
-    ungroup ungroup ?[`exchange;((within;`time;(enlist;(-;`timestamp;($;enlist`second;window));`timestamp));(=;`sym;enlist sym);(in;`exchange;enlist exchanges));(enlist `exchange)!enlist `exchange;columns!columns]
-    }[d`sym;d`timestamp;d`exchanges;d`window;];
-  bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`bid`bidSize];						// create bid book
-  ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`ask`askSize];						// create ask book
+  //create book. If in the rdb process, exclude date clause from the select statement
+  book:$[`rdb in .proc.proctype;
+    {[symbol;timestamp;exchanges;window;columns]
+      ungroup columns#0!select by exchange from exchange where time within(timestamp-`second$window;timestamp),sym=symbol,exchange in exchanges
+     };
+    {[symbol;timestamp;exchanges;window;columns]
+      ungroup columns#0!select by exchange from exchange where date=`date$timestamp,time within(timestamp-`second$window;timestamp),sym=symbol,exchange in exchanges
+     }
+   ][d`sym;d`timestamp;d`exchanges;d`window;];
+  bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`exchange`bid`bidSize];					// create bid book
+  ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`exchange`ask`askSize];					// create ask book
   orderbook:bid,'ask;														// join bid and ask to create orderbook
   $[(0=count orderbook) & .z.d>`date$d`timestamp;'":no data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only."; orderbook]
  }
@@ -55,7 +62,7 @@ validcheck:{[dict;dictkey;table;column]
 // function to assign default values to dictionary where null values occur
 assign:{[d;nulldict]														// pass in a dictionary with matching keys to d, with the preferred default values
   // assign new values to d where null with the values of nulldict
-  if[any (raze/) null d; d:@[d;where 1=sum each any each null d;:;nulldict[where 1=sum each any each null d]]];
+  if[any raze null d; d:@[d;where any each null d;:;nulldict[where any each null d]]];
   :d
  }
 
@@ -91,7 +98,7 @@ ohlc:{[d]
     enlist d`exchange];
   result:$[any .proc.cd[]=d`date;
     ?[exchange_top; ((in;`sym; syms);(in;`exchange; exchanges)); `date`sym!(($;enlist `date;`time);`sym); coldict];		//select z by date,sym from table where sym in x, exchange in y
-    //select colDict by date, sym from table where date in dates, sym in Syms, exchange in Excahnges
+    //select colDict by date, sym from table where date in dates, sym in Syms, exchange in Exchanges
     ?[exchange_top; ((in;`date;enlist d`date);(in;`sym;syms);(in;`exchange;exchanges)); `date`sym!(($;enlist`date;`time);`sym); coldict]
     ];
   result
@@ -106,7 +113,7 @@ ohlc:{[d]
 createarbtable:{[d]
   if[not 99h=type d; '"the arguement passed needs to be a dictionary"];								//checks a dictionary has been passed
   if[not `symbol in key d; '"You need to have symbol as a key"];
-  d2:`symbol`starttimestamp`endtimestamp`bucketsize`exchanges!(`;0Np;0Np;0Nv;`);								//default dictionary
+  d2:`symbol`starttimestamp`endtimestamp`bucketsize`exchanges!(`;0Np;0Np;0Nv;`);						//default dictionary
   d:d2,d;
   if[not all keyresult:key[d] in dictkeys:`symbol`starttimestamp`endtimestamp`bucketsize`exchanges;				//checks the correct keys have been passed
     '"The following keys are incorrect ", ", " sv string key[d] where 0=keyresult,". Valid keys are symbol, starttimestamp, endtimestamp, bucketsize and exchanges"];
