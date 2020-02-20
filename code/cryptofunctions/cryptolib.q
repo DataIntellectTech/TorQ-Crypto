@@ -22,14 +22,11 @@ orderbook:{[dict]
   d:assign[d;`timestamp`exchanges`window!(defaulttime;execcol[`exchange;`exchange];2*.crypto.deffreq)];
   validcheck[d;`exchanges;`exchange;`exchange];											// check valid exchanges have been passed
   //create book. If in the rdb process, exclude date clause from the select statement
-  book:$[`rdb in .proc.proctype;
-    {[symbol;timestamp;exchanges;window;columns]
-      ungroup columns#0!select by exchange from exchange where time within(timestamp-`second$window;timestamp),sym=symbol,exchange in exchanges
-     };
-    {[symbol;timestamp;exchanges;window;columns]
-      ungroup columns#0!select by exchange from exchange where date=`date$timestamp,time within(timestamp-`second$window;timestamp),sym=symbol,exchange in exchanges
-     }
-   ][d`sym;d`timestamp;d`exchanges;d`window;];
+  book:{[symbol;timestamp;exchanges;window;columns]
+    $[`rdb in .proc.proctype;
+      ungroup columns#0!select by exchange from exchange where time within(timestamp-`second$window;timestamp),sym=symbol,exchange in exchanges;
+      ungroup columns#0!select by exchange from exchange where date=`date$timestamp,time within(timestamp-`second$window;timestamp),sym=symbol,exchange in exchanges]
+   }[d`sym;d`timestamp;d`exchanges;d`window;];
   bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`exchange`bid`bidSize];					// create bid book
   ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`exchange`ask`askSize];					// create ask book
   orderbook:bid,'ask;														// join bid and ask to create orderbook
@@ -59,8 +56,7 @@ validcheck:{[dict;dictkey;table;column]
 
 // function to assign default values to dictionary where null values occur
 assign:{[d;nulldict]														// pass in a dictionary with matching keys to d, with the preferred default values
-  // assign new values to d where null with the values of nulldict
-  if[any raze null d; d:@[d;where any each null d;:;nulldict[where any each null d]]];
+  if[any raze null d; d:@[d;where any each null d;:;nulldict[where any each null d]]];						// assign new values to d where null with the values of nulldict
   :d
  }
 
