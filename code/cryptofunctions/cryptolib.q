@@ -111,24 +111,32 @@ createarbtable:{[d]
   d:d2,d;
   if[not all keyresult:key[d] in dictkeys:`symbol`starttimestamp`endtimestamp`bucketsize`exchanges;				//checks the correct keys have been passed
     '"The following keys are incorrect ", ", " sv string key[d] where 0=keyresult,". Valid keys are symbol, starttimestamp, endtimestamp, bucketsize and exchanges"];
-  d:assign[d;(`starttimestamp`endtimestamp`bucketsize)!(`timestamp$.proc.cd[];.proc.cp[];`second$2*.crypto.deffreq)];		//gives default values if nulls inserted
+  if[processresult:.proc.proctype=`hdb; hdbdate:last execcol[exchange_top;`date]];
+  d:$[processresult;														//sets defaults if nulls are entered depending on what process
+    assign[d;(`starttimestamp`endtimestamp`bucketsize)!(`timestamp$hdbdate;-1+`timestamp$hdbdate+1;`second$2*.crypto.deffreq)];
+    assign[d;(`starttimestamp`endtimestamp`bucketsize)!(`timestamp$.proc.cd[];.proc.cp[];`second$2*.crypto.deffreq)]];
   d:@[d;`symbol`starttimestamp`endtimestamp`bucketsize;first];									//reassigns the dictionary keys to atoms
-  //gets the distinct list of exchanges in the time period
-  d:assign[d;enlist[`exchanges]!enlist exec exchange from select distinct exchange from exchange_top where time within (d`starttimestamp;d`endtimestamp)];
-  if[not -11h=type d`symbol; '"The symbol value has to be a symbol atom"];							//checks the correct type has been entered for symbol key
+  if[not -11h=type d`symbol; '"The symbol value has to be a symbol atom"];                                                      //checks the correct type has been entered for symbol key
   //checks the type for the timestamp enteries
   if[not 12h=type d[`starttimestamp],d`endtimestamp; '"The values for starttimestamp and endtimestamp need to be timestamp atoms"];
-  if[not -18h=type d`bucketsize; '"The value of bucketsize needs to be a second atom"];						//checks the bucketsize type
+  if[not -18h=type d`bucketsize; '"The value of bucketsize needs to be a second atom"];                                         //checks the bucketsize type
+  if[all .proc.cp[]<d[`starttimestamp],d`endtimestamp; '"Enter a valid timestamp, one less than ",string .proc.cp[]];           //checks the timestamps entered can be queried
+  if[not (`date$d`starttimestamp)=`date$d`endtimestamp; '"The date part startimestamp and endtimestamp must be the same"];      //ensures the query is over one day
+  if[d[`starttimestamp]>d`endtimestamp; '"starttimestamp must be less than endtimestamp"];                                      //ensures the startTimestamp is smaller than the endTimestamp
+  //gets the distinct list of exchanges in the time period
+  d:$[processresult;
+  //string then cast back to a symbol to unenumerate the exchanges
+    assign[d;enlist[`exchanges]!enlist `$string exec exchange from select distinct exchange from exchange_top where date=hdbdate, time within (d`starttimestamp;d`endtimestamp)];
+    assign[d;enlist[`exchanges]!enlist exec exchange from select distinct exchange from exchange_top where time within (d`starttimestamp;d`endtimestamp)]];
   if[not 11h=abs type d`exchanges; d[`exchanges]:first d`exchanges];
   if[not 11h=abs type d`exchanges; '"The value of exchanges needs to be a symbol"];
   d[`bucketsize]:`long$d`bucketsize;												//coverts the bucketSize to an integer
   existencecheck[`exchange_top;`sym;d`symbol];											//checks that the symbol passed exists in our table
   existencecheck[`exchange_top;`exchange;d`exchanges];										//checks that the exchanges passed exists in our table
-  if[all .proc.cp[]<d[`starttimestamp],d`endtimestamp; '"Enter a valid timestamp, one less than ",string .proc.cp[]];		//checks the timestamps entered can be queried
-  if[not (`date$d`starttimestamp)=`date$d`endtimestamp; '"The date part startimestamp and endtimestamp must be the same"];	//ensures the query is over one day
-  if[d[`starttimestamp]>d`endtimestamp; '"starttimestamp must be less than endtimestamp"];					//ensures the startTimestamp is smaller than the endTimestamp
   //select appriopiate cols
-  t:select time,exchange,bid,ask,bidSize,askSize from exchange_top where time within (d`starttimestamp;d`endtimestamp),sym in d`symbol, exchange in d`exchanges;
+  t:$[processresult;														//does the correct query depending on what process we are in
+    select time,exchange,bid,ask,bidSize,askSize from exchange_top where date=hdbdate, time within (d`starttimestamp;d`endtimestamp),sym in d`symbol, exchange in d`exchanges;
+    select time,exchange,bid,ask,bidSize,askSize from exchange_top where time within (d`starttimestamp;d`endtimestamp),sym in d`symbol, exchange in d`exchanges];
   if[not count t; '"There is no data available in the timestamp range"];
   exchanges:execcol[t;`exchange];												//gets names of exchanges
   tablenames:{`$string[x],"Table"} each exchanges;										//table names for each exchange
