@@ -38,9 +38,12 @@ execcol:{[table;column]
   ?[(?[table;();1b;(enlist column)!enlist column]);();();column]
  }
 
+
 // function for checking types of dictionary values
 typecheck:{[typedict;requiredkeylist;dict]
   if[not 99=type dict;'"error - arguement passed must be a dictionary"];							// check type of argument passed to original function
+  if[not all keyresult:key[dict] in key typedict;										//checks the keys entered have been spelt correctly
+    '"The following dictionary keys are incorrect: ",(", " sv string key[dict] where 0=keyresult),". The allowed keys are: ",", " sv string key typedict];
   requiredkeys:(key typedict) where requiredkeylist;										// create list of required keys, given in requiredkeylist
   //error if any required keys are missing
   if[not all requiredkeys in key dict;'"error - the following keys must be included: ",", " sv  string requiredkeys];
@@ -49,16 +52,19 @@ typecheck:{[typedict;requiredkeylist;dict]
   if[not all typematch;'"error - dictionary parameter ",(", "sv string where not typematch)," must be of type: ",", "sv string {key'[x$\:()]}typedict where not typematch];
  }
 
+
 // function to check if valid values are passed and output available options if not
 validcheck:{[dict;dictkey;table;column]
   if[not all dict[dictkey] in execcol[table;column];'"error - not a valid ",(string dictkey)," value. The following are available: ",", " sv string execcol[table;column]]
  }
+
 
 // function to assign default values to dictionary where null values occur
 assign:{[d;nulldict]														// pass in a dictionary with matching keys to d, with the preferred default values
   if[any raze null d; d:@[d;where any each null d;:;nulldict[where any each null d]]];						// assign new values to d where null with the values of nulldict
   :d
  }
+
 
 //function to check if something exists in a table
 
@@ -105,31 +111,22 @@ ohlc:{[d]
 //creates a table showing the top of the book for each excahnges at a given time
 
 createarbtable:{[d]
-  if[not 99h=type d; '"the arguement passed needs to be a dictionary"];								//checks a dictionary has been passed
-  if[not `symbol in key d; '"You need to have symbol as a key"];
+  typecheck[`symbol`starttimestamp`endtimestamp`bucketsize`exchanges!11 12 12 18 11h;10000b;d];
   d2:`symbol`starttimestamp`endtimestamp`bucketsize`exchanges!(`;0Np;0Np;0Nv;`);						//default dictionary
   d:d2,d;
-  if[not all keyresult:key[d] in dictkeys:`symbol`starttimestamp`endtimestamp`bucketsize`exchanges;				//checks the correct keys have been passed
-    '"The following keys are incorrect ", ", " sv string key[d] where 0=keyresult,". Valid keys are symbol, starttimestamp, endtimestamp, bucketsize and exchanges"];
   if[processresult:.proc.proctype=`hdb; hdbdate:last execcol[exchange_top;`date]];
   d:$[processresult;														//sets defaults if nulls are entered depending on what process
     assign[d;(`starttimestamp`endtimestamp`bucketsize)!(`timestamp$hdbdate;-1+`timestamp$hdbdate+1;`second$2*.crypto.deffreq)];
     assign[d;(`starttimestamp`endtimestamp`bucketsize)!(`timestamp$.proc.cd[];.proc.cp[];`second$2*.crypto.deffreq)]];
   d:@[d;`symbol`starttimestamp`endtimestamp`bucketsize;first];									//reassigns the dictionary keys to atoms
-  if[not -11h=type d`symbol; '"The symbol value has to be a symbol atom"];                                                      //checks the correct type has been entered for symbol key
-  //checks the type for the timestamp enteries
-  if[not 12h=type d[`starttimestamp],d`endtimestamp; '"The values for starttimestamp and endtimestamp need to be timestamp atoms"];
-  if[not -18h=type d`bucketsize; '"The value of bucketsize needs to be a second atom"];                                         //checks the bucketsize type
   if[all .proc.cp[]<d[`starttimestamp],d`endtimestamp; '"Enter a valid timestamp, one less than ",string .proc.cp[]];           //checks the timestamps entered can be queried
   if[not (`date$d`starttimestamp)=`date$d`endtimestamp; '"The date part startimestamp and endtimestamp must be the same"];      //ensures the query is over one day
   if[d[`starttimestamp]>d`endtimestamp; '"starttimestamp must be less than endtimestamp"];                                      //ensures the startTimestamp is smaller than the endTimestamp
   //gets the distinct list of exchanges in the time period
-  d:$[processresult;
+  d:$[processresult;														//sets the default values for exchanges
   //string then cast back to a symbol to unenumerate the exchanges
     assign[d;enlist[`exchanges]!enlist `$string exec exchange from select distinct exchange from exchange_top where date=hdbdate, time within (d`starttimestamp;d`endtimestamp)];
     assign[d;enlist[`exchanges]!enlist exec exchange from select distinct exchange from exchange_top where time within (d`starttimestamp;d`endtimestamp)]];
-  if[not 11h=abs type d`exchanges; d[`exchanges]:first d`exchanges];
-  if[not 11h=abs type d`exchanges; '"The value of exchanges needs to be a symbol"];
   d[`bucketsize]:`long$d`bucketsize;												//coverts the bucketSize to an integer
   existencecheck[`exchange_top;`sym;d`symbol];											//checks that the symbol passed exists in our table
   existencecheck[`exchange_top;`exchange;d`exchanges];										//checks that the exchanges passed exists in our table
