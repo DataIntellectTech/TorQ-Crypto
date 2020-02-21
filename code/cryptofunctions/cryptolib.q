@@ -125,14 +125,14 @@ createarbtable:{[d]
   //gets the distinct list of exchanges in the time period
   d:$[processresult;														//sets the default values for exchanges
   //string then cast back to a symbol to unenumerate the exchanges
-    assign[d;enlist[`exchanges]!enlist `$string exec exchange from select distinct exchange from exchange_top where date=hdbdate, time within (d`starttimestamp;d`endtimestamp)];
+    assign[d;enlist[`exchanges]!enlist `$string exec exchange from select distinct exchange from exchange_top where date=`date$d`endtimestamp, time within (d`starttimestamp;d`endtimestamp)];
     assign[d;enlist[`exchanges]!enlist exec exchange from select distinct exchange from exchange_top where time within (d`starttimestamp;d`endtimestamp)]];
   d[`bucketsize]:`long$d`bucketsize;												//coverts the bucketSize to an integer
   existencecheck[`exchange_top;`sym;d`symbol];											//checks that the symbol passed exists in our table
   existencecheck[`exchange_top;`exchange;d`exchanges];										//checks that the exchanges passed exists in our table
   //select appriopiate cols
   t:$[processresult;														//does the correct query depending on what process we are in
-    select time,exchange,bid,ask,bidSize,askSize from exchange_top where date=hdbdate, time within (d`starttimestamp;d`endtimestamp),sym in d`symbol, exchange in d`exchanges;
+    select time,exchange,bid,ask,bidSize,askSize from exchange_top where date=`date$d`endtimestamp, time within (d`starttimestamp;d`endtimestamp),sym in d`symbol, exchange in d`exchanges;
     select time,exchange,bid,ask,bidSize,askSize from exchange_top where time within (d`starttimestamp;d`endtimestamp),sym in d`symbol, exchange in d`exchanges];
   if[not count t; '"There is no data available in the timestamp range"];
   exchanges:execcol[t;`exchange];												//gets names of exchanges
