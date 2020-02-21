@@ -77,7 +77,7 @@ ohlc:{[d]
   if[not all .proc.cd[]>=d`date;'"Enter a valid date i.e on or before ",string .proc.cd[]];					//checks the date is valid
   //checks that the symbol passed exists in our table
   existencecheck[`exchange_top;`sym;d`sym];
-  if[not all d[`date] in exec time from select distinct `date$time from exchange_top;
+  if[not all d[`date] in $[`rdb~.proc.proctype;.proc.cd[];date];								//checks the dates entered are in the rdb and hdb
     '"This date does not exist in exchange_top, please check you have entered a valid date and you are using the correct process."];
   syms:enlist d`sym;
   biddict:`openBid`closeBid`bidHigh`bidLow!((first;`bid);(last;`bid);(max;`bid);(min;`bid));					//bid dict for functional select
