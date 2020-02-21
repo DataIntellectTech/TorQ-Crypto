@@ -7,7 +7,7 @@
 // examples through handle to gateway:
 // h(`.gw.syncexec;"orderbook[(enlist `sym)!enlist (`BTCUSDT)]";`rdb)
 // h(`.gw.syncexec;"orderbook[`sym`timestamp!(`BTCUSDT;2020.02.09D11:30:00)]";`hdb)
-// h(`.gw.syncexec;"orderbook[`sym`exchanges!(`BTCUSDT;`finex`huobi)]";`rdb)
+// h(`.gw.syncexec;"orderbook[`sym`exchanges!(`ETHUSDT;`finex`huobi)]";`rdb)
 // h(`.gw.syncexec;"orderbook[`sym`timestamp`exchanges`window!(`BTCUSDT;.z.p;`bhex;00:01:30)]";`rdb)
 
 orderbook:{[dict]
@@ -17,7 +17,7 @@ orderbook:{[dict]
   validcheck[d;`sym;`exchange;`sym];												// check a valid sym is passed
   $[`rdb in .proc.proctype;													// if current process is rdb
     defaulttime:exec last time from exchange;											// set default time to be last time from exchange
-    defaulttime:first exec time from select last time from exchange where date=.z.d-1];						// if in hdb, set default time to be last time from yesterday
+    defaulttime:first exec time from select last time from exchange where date=last date];					// if in hdb, set default time to be last time from yesterday
   // if any of timestamp, exchanges or window are not specified by user, update d to the default values. Pass preferred default values as dictionary to the assign function.
   d:assign[d;`timestamp`exchanges`window!(defaulttime;execcol[`exchange;`exchange];2*.crypto.deffreq)];
   validcheck[d;`exchanges;`exchange;`exchange];											// check valid exchanges have been passed
