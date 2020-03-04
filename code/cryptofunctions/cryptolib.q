@@ -80,7 +80,7 @@ ohlc:{[dict]
   // Set default null dict and default date input depending on whether HDB or RDB is target
   nulldef:`date`sym`exchange`quote!(0Nd;`;`;`);
   defaultdate:$[`rdb in .proc.proctype; .z.d; last exec date from select distinct date from exchange];
-  d:assign[nulldef,dict;`date`exchange`quote!(defaultdate;execcol[`exchange;`exchange];`bid)];
+  d:assign[nulldef,dict;`date`exchange`quote!(defaultdate;execcol[`exchange;`exchange];`ask`bid)];
 
   // Check sym, exchanges and date are valid (validcheck and existencecheck are same function?!, any need to check ex and top? surely from same dataset?)
   validcheck[d;`sym;`exchange;`sym];
@@ -91,20 +91,16 @@ ohlc:{[dict]
   if[not all .proc.cd[]>=d`date;'"Enter a valid date i.e on or before ",string .proc.cd[]];
   d[`date]:((),d[`date]) inter (),$[`rdb ~ .proc.proctype;.proc.cd[];date];
   
-  // Create sym list, bid and ask dicts for functional select
+  // Create sym and exchange lists, bid and ask dicts for functional select
   syms:enlist d`sym;
+  exchanges:$[all null d`exchange; enlist execcol[exchange_top;`exchange]; enlist d`exchange];
   biddict:`openBid`closeBid`bidHigh`bidLow!((first;`bid);(last;`bid);(max;`bid);(min;`bid));
   askdict:`openAsk`closeAsk`askHigh`askLow!((first;`ask);(last;`ask);(max;`ask);(min;`ask));
+  alldict:biddict,askdict;
 
-  // Conditional to form the dict
-  coldict:$[all `=d`quote; biddict,askdict;
-            all `bid=d`quote; biddict;
-            all `ask=d`quote; askdict;
-            all d[`quote] in `ask`bid ; biddict,askdict;
-            '"Error, please enter a valid arguement, either `ask, `bid or `."];
-
-  // Get the right exchanges to query
-  exchanges:$[all null d`exchange; enlist execcol[exchange_top;`exchange]; enlist d`exchange];
+  // Conditional to form the ohlc column dict
+  coldict:$[0h=type switcher:(``bid`ask!(alldict;biddict;askdict)) d[`quote];raze switcher;switcher];
+  if[(any ` in ' value coldict) or 2<count d[`quote];'"Error, please enter a valid arguement, either `ask, `bid or `."];
   
   // Perform query
   result:$[`rdb~.proc.proctype;
