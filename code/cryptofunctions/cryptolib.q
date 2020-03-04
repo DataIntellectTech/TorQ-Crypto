@@ -89,7 +89,7 @@ ohlc:{[dict]
   
   // Check dates are valid and filter based on proctype
   if[not all .proc.cd[]>=d`date;'"Enter a valid date i.e on or before ",string .proc.cd[]];
-  d[`date]:((),d[`date]) inter (),$[`rdb ~ .proc.proctype;.z.d;date];
+  d[`date]:((),d[`date]) inter (),$[`rdb ~ .proc.proctype;.proc.cd[];date];
   
   // Create sym list, bid and ask dicts for functional select
   syms:enlist d`sym;
