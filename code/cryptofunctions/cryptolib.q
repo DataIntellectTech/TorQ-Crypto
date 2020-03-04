@@ -73,42 +73,43 @@ existencecheck:{[tablename;columnname;dictvalue]
     '"The following ",sv[", ";string dictvalue where 0=result]," does not exist in ",string tablename];
  }; 
 
-//creates an open, high,low close table
+// creates an open, high,low close table
 ohlc:{[dict]
   typecheck[`date`sym`exchange`quote!(14h;11h;11h;11h);0100b;dict];
   
-  // Set default null dict and join on user-defined values
-  defaults:`date`sym`exchange`quote!(0Nd;`;`;`);
-  d:defaults,dict;
-
-  // If process is RDB set date to today, else set to last date from HDB, assign these values to dict (default stuff being done twice?)
+  // Set default null dict and default date input depending on whether HDB or RDB is target
+  nulldef:`date`sym`exchange`quote!(0Nd;`;`;`);
   defaultdate:$[`rdb in .proc.proctype; .z.d; last exec date from select distinct date from exchange];
-  d:assign[d;`date`exchange`quote!(defaultdate;execcol[`exchange;`exchange];`bid)];
+  d:assign[nulldef,dict;`date`exchange`quote!(defaultdate;execcol[`exchange;`exchange];`bid)];
 
-  // Check sym and exchanges are valid ()
+  // Check sym, exchanges and date are valid (validcheck and existencecheck are same function?!, any need to check ex and top? surely from same dataset?)
   validcheck[d;`sym;`exchange;`sym];
+  validcheck[d;`sym;`exchange_top;`sym];
   validcheck[d;`exchange;`exchange;`exchange];
-
-  if[not all .proc.cd[]>=d`date;'"Enter a valid date i.e on or before ",string .proc.cd[]];					        // checks the date is valid
-
-  //checks that the symbol passed exists in our table
-  existencecheck[`exchange_top;`sym;d`sym];
-  if[not all d[`date] in $[`rdb~.proc.proctype;.proc.cd[];date];								                             // checks the dates entered are in the rdb and hdb
-    '"This date does not exist in exchange_top, please check you have entered a valid date and you are using the correct process."];
+  
+  // Check dates are valid and filter based on proctype
+  if[not all .proc.cd[]>=d`date;'"Enter a valid date i.e on or before ",string .proc.cd[]];
+  d[`date]:((),d[`date]) inter (),$[`rdb ~ .proc.proctype;.z.d;date];
+  
+  // Create sym list, bid and ask dicts for functional select
   syms:enlist d`sym;
-  biddict:`openBid`closeBid`bidHigh`bidLow!((first;`bid);(last;`bid);(max;`bid);(min;`bid));					//bid dict for functional select
-  askdict:`openAsk`closeAsk`askHigh`askLow!((first;`ask);(last;`ask);(max;`ask);(min;`ask));					//ask dict for functional select
-  coldict:$[all `=d`quote; biddict,askdict;											                                      // makes the dict needed for the functional select
-    all `bid=d`quote; biddict;
-    all `ask=d`quote; askdict;
-    all d[`quote] in `ask`bid ; biddict,askdict;
-    '"Error, please enter a valid arguement, either `ask, `bid or `."];
-  exchanges:$[all null d`exchange;												                                            // get the correct exchanges to query
-    enlist execcol[exchange_top;`exchange];
-    enlist d`exchange];
-  result:$[any .proc.cd[]=d`date;
-    //select z by date,sym from table where sym in x, exchange in y
-    ?[exchange_top; ((in;`sym; syms);(in;`exchange; exchanges)); `date`sym!(($;enlist `date;`time);`sym); coldict];		
+  biddict:`openBid`closeBid`bidHigh`bidLow!((first;`bid);(last;`bid);(max;`bid);(min;`bid));
+  askdict:`openAsk`closeAsk`askHigh`askLow!((first;`ask);(last;`ask);(max;`ask);(min;`ask));
+
+  // Conditional to form the dict
+  coldict:$[all `=d`quote; biddict,askdict;
+            all `bid=d`quote; biddict;
+            all `ask=d`quote; askdict;
+            all d[`quote] in `ask`bid ; biddict,askdict;
+            '"Error, please enter a valid arguement, either `ask, `bid or `."];
+
+  // Get the right exchanges to query
+  exchanges:$[all null d`exchange; enlist execcol[exchange_top;`exchange]; enlist d`exchange];
+  
+  // Perform query
+  result:$[`rdb~.proc.proctype;
+    // select coldict by date:time.date from t where time.date in d`date, sym in syms, exchange in exchanges
+    ?[exchange_top; ((in;`time.date;enlist d`date);(in;`sym; syms);(in;`exchange; exchanges)); `date`sym!`time.date`sym; coldict];		
     //select colDict by date, sym from table where date in dates, sym in Syms, exchange in Exchanges
     ?[exchange_top; ((in;`date;enlist d`date);(in;`sym;syms);(in;`exchange;exchanges)); `date`sym!(($;enlist`date;`time);`sym); coldict]
     ];
