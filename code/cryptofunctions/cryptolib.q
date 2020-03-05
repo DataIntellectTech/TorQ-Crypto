@@ -82,8 +82,7 @@ ohlc:{[dict]
   defaultdate:$[`rdb in .proc.proctype; .proc.cd[]; last date];
   d:(`date`sym`exchange`quote!(defaultdate;`;`;`ask`bid)),(where not any each null dict)#dict;
   
-  // Check dates are valid and filter based on proctype
-  if[not all .proc.cd[]>=d`date;'"Enter a valid date i.e on or before ",string .proc.cd[]];
+  // Filter dates based on proctype
   d[`date]:((),d[`date]) inter (),$[`rdb ~ .proc.proctype;.proc.cd[];date];
   
   // Create sym and exchange lists, bid and ask dicts for functional select
