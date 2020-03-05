@@ -102,7 +102,6 @@ ohlc:{[dict]
 
   // Conditional to form the ohlc column dict
   coldict:$[all i:`bid`ask in d[`quote];biddict,askdict;(biddict;askdict) first where i];
-  if[(any ` in ' value coldict) or 2<count d[`quote];'"Error, please enter a valid arguement, either `ask, `bid or `."];
   
   // Perform query
   result:$[`rdb~.proc.proctype;
