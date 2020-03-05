@@ -86,7 +86,7 @@ ohlc:{[dict]
   
   // Set default null dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
   nulldef:`date`sym`exchange`quote!(0Nd;`;`;`);
-  defaultdate:$[`rdb in .proc.proctype; .proc.cd[]; last exec date from select distinct date from exchange];
+  defaultdate:$[`rdb in .proc.proctype; .proc.cd[]; last date];
   d:assign[nulldef,dict;`date`exchange`quote!(defaultdate;execcol[`exchange;`exchange];`ask`bid)];
 
   // Check sym, exchanges and date are valid
