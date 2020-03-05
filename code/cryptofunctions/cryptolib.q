@@ -38,15 +38,12 @@ orderbook:{[dict]
 
 // function to exec a column. Eg exec sym from select distinct sym from exchange
 execcol:{[table;column] 
-  if[`rdb~.proc.proctype;
-    ?[( ?[table;();1b;(enlist column)!enlist column] );();();column];
-    ?[ (?[table;enlist(=;`date;(*:;`date));1b;(enlist column)!enlist column]);();();column]
-  ]
+  ?[(?[table;();1b;(enlist column)!enlist column]);();();column]
  }
 
 // function for checking types of dictionary values
 typecheck:{[typedict;requiredkeylist;dict]
-  if[not 99=type dict;'"error - argument passed must be a dictionary"];							               // check type of argument passed to original function
+  if[not 99=type dict;'"error - arguement passed must be a dictionary"];							               // check type of argument passed to original function
   if[not all keyresult:key[dict] in key typedict;										                                 //checks the keys entered have been spelt correctly
     '"The following dictionary keys are incorrect: ",(", " sv string key[dict] where 0=keyresult),". The allowed keys are: ",", " sv string key typedict];
   requiredkeys:(key typedict) where requiredkeylist;										                             // create list of required keys, given in requiredkeylist
@@ -82,37 +79,26 @@ ohlc:{[dict]
   typecheck[`date`sym`exchange`quote!(14h;11h;11h;11h);0100b;dict];
   
   // Set default null dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
-  nulldef:`date`sym`exchange`quote!(0Nd;`;`;`);
   defaultdate:$[`rdb in .proc.proctype; .proc.cd[]; last date];
-  d:assign[nulldef,dict;`date`exchange`quote!(defaultdate;execcol[`exchange_top;`exchange];`ask`bid)];
-  if[any not d[`quote] in `ask`bid;'"Error, please enter a valid argument, either `ask, `bid or `"];
-
-  // Check sym, exchanges and date are valid
-  validcheck[d;`sym;`exchange_top;`sym];
-  validcheck[d;`exchange;`exchange_top;`exchange];
+  d:(`date`sym`exchange`quote!(defaultdate;`;`;`ask`bid)),(where not any each null dict)#dict;
   
   // Check dates are valid and filter based on proctype
   if[not all .proc.cd[]>=d`date;'"Enter a valid date i.e on or before ",string .proc.cd[]];
   d[`date]:((),d[`date]) inter (),$[`rdb ~ .proc.proctype;.proc.cd[];date];
   
   // Create sym and exchange lists, bid and ask dicts for functional select
-  syms:enlist d`sym;
-  exchanges:$[all null d`exchange; enlist execcol[exchange_top;`exchange]; enlist d`exchange];
   biddict:`openBid`closeBid`bidHigh`bidLow!((first;`bid);(last;`bid);(max;`bid);(min;`bid));
   askdict:`openAsk`closeAsk`askHigh`askLow!((first;`ask);(last;`ask);(max;`ask);(min;`ask));
-  alldict:biddict,askdict;
 
-  // Conditional to form the ohlc column dict
+  // Conditionals to form the ohlc column dict and where clause
   coldict:$[all i:`bid`ask in d[`quote];biddict,askdict;(biddict;askdict) first where i];
-  
-  // Perform query
-  result:$[`rdb~.proc.proctype;
-    // select coldict by date:time.date from t where time.date in d`date, sym in syms, exchange in exchanges
-    ?[exchange_top; ((in;`time.date;enlist d`date);(in;`sym; syms);(in;`exchange; exchanges)); `date`sym!`time.date`sym; coldict];		
-    //select colDict by date, sym from table where date in dates, sym in Syms, exchange in Exchanges
-    ?[exchange_top; ((in;`date;enlist d`date);(in;`sym;syms);(in;`exchange;exchanges)); `date`sym!(($;enlist`date;`time);`sym); coldict]
-    ];
-  result
+  wherecl:$[`rdb ~ .proc.proctype;
+    `date`sym`exchange!((in;`time.date;enlist d`date);(in;`sym; enlist d`sym);(in;`exchange; enlist d`exchange));
+    `date`sym`exchange!((in;`date;enlist d`date);(in;`sym;enlist d`sym);(in;`exchange;enlist d`exchange))
+    ] (where not any each null d) except `quote;
+
+  // Perform query - (select coldict by date:time.date,sym from t (where time.date in d`date, sym in syms, exchange in exchanges))
+  ?[exchange_top; wherecl; `date`sym!`time.date`sym; coldict]
  };
 
 //creates a table showing the top of the book for each excahnges at a given time
