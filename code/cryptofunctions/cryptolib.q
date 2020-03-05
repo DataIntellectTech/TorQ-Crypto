@@ -42,7 +42,7 @@ execcol:{[table;column]
 
 // function for checking types of dictionary values
 typecheck:{[typedict;requiredkeylist;dict]
-  if[not 99=type dict;'"error - arguement passed must be a dictionary"];							               // check type of argument passed to original function
+  if[not 99=type dict;'"error - argument passed must be a dictionary"];							               // check type of argument passed to original function
   if[not all keyresult:key[dict] in key typedict;										                                 //checks the keys entered have been spelt correctly
     '"The following dictionary keys are incorrect: ",(", " sv string key[dict] where 0=keyresult),". The allowed keys are: ",", " sv string key typedict];
   requiredkeys:(key typedict) where requiredkeylist;										                             // create list of required keys, given in requiredkeylist
@@ -100,7 +100,7 @@ ohlc:{[dict]
 
   // Conditional to form the ohlc column dict
   coldict:$[0h=type switcher:(``bid`ask!(alldict;biddict;askdict)) d[`quote];raze switcher;switcher];
-  if[(any ` in ' value coldict) or 2<count d[`quote];'"Error, please enter a valid arguement, either `ask, `bid or `."];
+  if[(any ` in ' value coldict) or 2<count d[`quote];'"Error, please enter a valid argument, either `ask, `bid or `."];
   
   // Perform query
   result:$[`rdb~.proc.proctype;
