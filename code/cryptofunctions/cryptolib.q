@@ -10,12 +10,6 @@
 // h(`.gw.syncexec;"orderbook[`sym`exchanges!(`ETHUSDT;`finex`huobi)]";`rdb)
 // h(`.gw.syncexec;"orderbook[`sym`timestamp`exchanges`window!(`BTCUSDT;.z.p;`bhex;00:01:30)]";`rdb)
 
-// TODO ohlc:
-// 1. need to check exchange and exchange_top?
-// 2. validcheck and existencecheck are same function (?)
-
-// TODO orderbook:
-// 1. Check only one sym is being input?
 orderbook:{[dict]
   typecheck[`sym`timestamp`exchanges`window!11 12 11 18h;1000b;dict];
 
@@ -49,7 +43,7 @@ execcol:{[table;column]
 
 // function for checking types of dictionary values
 typecheck:{[typedict;requiredkeylist;dict]
-  if[not 99=type dict;'"error - arguement passed must be a dictionary"];							               // check type of argument passed to original function
+  if[not 99=type dict;'"error - argument passed must be a dictionary"];							               // check type of argument passed to original function
   if[not all keyresult:key[dict] in key typedict;										                                 //checks the keys entered have been spelt correctly
     '"The following dictionary keys are incorrect: ",(", " sv string key[dict] where 0=keyresult),". The allowed keys are: ",", " sv string key typedict];
   requiredkeys:(key typedict) where requiredkeylist;										                             // create list of required keys, given in requiredkeylist
@@ -88,6 +82,7 @@ ohlc:{[dict]
   nulldef:`date`sym`exchange`quote!(0Nd;`;`;`);
   defaultdate:$[`rdb in .proc.proctype; .proc.cd[]; last date];
   d:assign[nulldef,dict;`date`exchange`quote!(defaultdate;execcol[`exchange;`exchange];`ask`bid)];
+  if[any not d[`quote] in `ask`bid;'"Error, please enter a valid argument, either `ask, `bid or `"];
 
   // Check sym, exchanges and date are valid
   validcheck[d;`sym;`exchange;`sym];
