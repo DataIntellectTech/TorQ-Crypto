@@ -106,7 +106,7 @@ ohlc:{[dict]
   alldict:biddict,askdict;
 
   // Conditional to form the ohlc column dict
-  coldict:$[0h=type switcher:(``bid`ask!(alldict;biddict;askdict)) d[`quote];raze switcher;switcher];
+  coldict:$[all i:`bid`ask in d[`quote];biddict,askdict;(biddict;askdict) first where i];
   if[(any ` in ' value coldict) or 2<count d[`quote];'"Error, please enter a valid arguement, either `ask, `bid or `."];
   
   // Perform query
