@@ -81,6 +81,7 @@ ohlc:{[dict]
   nulldef:`date`sym`exchange`quote!(0Nd;`;`;`);
   defaultdate:$[`rdb in .proc.proctype; .z.d; last exec date from select distinct date from exchange];
   d:assign[nulldef,dict;`date`exchange`quote!(defaultdate;execcol[`exchange;`exchange];`ask`bid)];
+  if[any not d[`quote] in `ask`bid;'"Error, please enter a valid argument, either `ask, `bid or `"];
 
   // Check sym, exchanges and date are valid (validcheck and existencecheck are same function?!, any need to check ex and top? surely from same dataset?)
   validcheck[d;`sym;`exchange;`sym];
@@ -100,7 +101,6 @@ ohlc:{[dict]
 
   // Conditional to form the ohlc column dict
   coldict:$[0h=type switcher:(``bid`ask!(alldict;biddict;askdict)) d[`quote];raze switcher;switcher];
-  if[(any ` in ' value coldict) or 2<count d[`quote];'"Error, please enter a valid argument, either `ask, `bid or `."];
   
   // Perform query
   result:$[`rdb~.proc.proctype;
