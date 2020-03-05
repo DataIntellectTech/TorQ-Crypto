@@ -10,28 +10,35 @@
 // h(`.gw.syncexec;"orderbook[`sym`exchanges!(`ETHUSDT;`finex`huobi)]";`rdb)
 // h(`.gw.syncexec;"orderbook[`sym`timestamp`exchanges`window!(`BTCUSDT;.z.p;`bhex;00:01:30)]";`rdb)
 
+// TODO ohlc:
+// 1. need to check exchange and exchange_top?
+// 2. validcheck and existencecheck are same function (?)
+
+// TODO orderbook:
+// 1. Check only one sym is being input?
 orderbook:{[dict]
-  typecheck[`sym`timestamp`exchanges`window!11 12 11 18h;1000b;dict];								                // check required keys are present and all keys are of correct type
-  d:`sym`timestamp`exchanges`window!(`;0Np;`;0Nv);										                              // default null dictionary. Allows user to omit keys
-  d:d,dict;															                                                            // join user-passed dictionary to default dictionary
-  validcheck[d;`sym;`exchange;`sym];												                                        // check a valid sym is passed
-  $[`rdb in .proc.proctype;													                                                // if current process is rdb
-    defaulttime:exec last time from exchange;											                                  // set default time to be last time from exchange
-    defaulttime:first exec time from select last time from exchange where date=last date];					// if in hdb, set default time to be last time from yesterday
+  typecheck[`sym`timestamp`exchanges`window!11 12 11 18h;1000b;dict];
 
-  // if any of timestamp, exchanges or window are not specified by user, update d to the default values. Pass preferred default values as dictionary to the assign function.
-  d:assign[d;`timestamp`exchanges`window!(defaulttime;execcol[`exchange;`exchange];2*.crypto.deffreq)];
-  validcheck[d;`exchanges;`exchange;`exchange];											                                // check valid exchanges have been passed
+  // Set default dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
+  nulldef:`sym`timestamp`exchanges`window!(`;0Np;`;0Nv);
+  defaulttime:$[`rdb in .proc.proctype;exec last time from exchange;first exec time from select last time from exchange where date=last date];
+  d:assign[nulldef,dict;`timestamp`exchanges`window!(defaulttime;execcol[`exchange;`exchange];2*.crypto.deffreq)];
 
-  // create book. If in the rdb process, exclude date clause from the select statement
+  // Check syms and exchanges are valid
+  validcheck[d;`sym;`exchange;`sym];
+  validcheck[d;`exchanges;`exchange;`exchange];
+
+  // Projected function to create book. If in the rdb process, exclude date clause from the select statement
   book:{[symbol;timestamp;exchanges;window;columns]
     $[`rdb in .proc.proctype;
       ungroup columns#0!select by exchange from exchange where time within(timestamp-`second$window;timestamp),sym=symbol,exchange in exchanges;
       ungroup columns#0!select by exchange from exchange where date=`date$timestamp,time within(timestamp-`second$window;timestamp),sym=symbol,exchange in exchanges]
    }[d`sym;d`timestamp;d`exchanges;d`window;];
-  bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`exchange`bid`bidSize];				// create bid book
-  ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`exchange`ask`askSize];					// create ask book
-  orderbook:bid,'ask;														                                                    // join bid and ask to create orderbook
+
+  // Create bid and ask books and join to create order book
+  bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`exchange`bid`bidSize];
+  ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`exchange`ask`askSize];	
+  orderbook:bid,'ask;
   $[(0=count orderbook) & .z.d>`date$d`timestamp;'":no data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only."; orderbook]
  }
 
@@ -77,12 +84,12 @@ existencecheck:{[tablename;columnname;dictvalue]
 ohlc:{[dict]
   typecheck[`date`sym`exchange`quote!(14h;11h;11h;11h);0100b;dict];
   
-  // Set default null dict and default date input depending on whether HDB or RDB is target
+  // Set default null dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
   nulldef:`date`sym`exchange`quote!(0Nd;`;`;`);
-  defaultdate:$[`rdb in .proc.proctype; .z.d; last exec date from select distinct date from exchange];
+  defaultdate:$[`rdb in .proc.proctype; .proc.cd[]; last exec date from select distinct date from exchange];
   d:assign[nulldef,dict;`date`exchange`quote!(defaultdate;execcol[`exchange;`exchange];`ask`bid)];
 
-  // Check sym, exchanges and date are valid (validcheck and existencecheck are same function?!, any need to check ex and top? surely from same dataset?)
+  // Check sym, exchanges and date are valid
   validcheck[d;`sym;`exchange;`sym];
   validcheck[d;`sym;`exchange_top;`sym];
   validcheck[d;`exchange;`exchange;`exchange];
