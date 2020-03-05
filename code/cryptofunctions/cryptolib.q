@@ -38,7 +38,10 @@ orderbook:{[dict]
 
 // function to exec a column. Eg exec sym from select distinct sym from exchange
 execcol:{[table;column] 
-  ?[(?[table;();1b;(enlist column)!enlist column]);();();column]
+  if[`rdb~.proc.proctype;
+    ?[( ?[table;();1b;(enlist column)!enlist column] );();();column];
+    ?[ (?[table;enlist(=;`date;(*:;`date));1b;(enlist column)!enlist column]);();();column]
+  ]
  }
 
 // function for checking types of dictionary values
@@ -81,13 +84,12 @@ ohlc:{[dict]
   // Set default null dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
   nulldef:`date`sym`exchange`quote!(0Nd;`;`;`);
   defaultdate:$[`rdb in .proc.proctype; .proc.cd[]; last date];
-  d:assign[nulldef,dict;`date`exchange`quote!(defaultdate;execcol[`exchange;`exchange];`ask`bid)];
+  d:assign[nulldef,dict;`date`exchange`quote!(defaultdate;execcol[`exchange_top;`exchange];`ask`bid)];
   if[any not d[`quote] in `ask`bid;'"Error, please enter a valid argument, either `ask, `bid or `"];
 
   // Check sym, exchanges and date are valid
-  validcheck[d;`sym;`exchange;`sym];
   validcheck[d;`sym;`exchange_top;`sym];
-  validcheck[d;`exchange;`exchange;`exchange];
+  validcheck[d;`exchange;`exchange_top;`exchange];
   
   // Check dates are valid and filter based on proctype
   if[not all .proc.cd[]>=d`date;'"Enter a valid date i.e on or before ",string .proc.cd[]];
