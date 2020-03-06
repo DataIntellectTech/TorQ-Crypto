@@ -11,11 +11,12 @@
 // h(`.gw.syncexec;"orderbook[`sym`timestamp`exchanges`window!(`BTCUSDT;.z.p;`bhex;00:01:30)]";`rdb)
 
 orderbook:{[dict]
-  typecheck[`sym`timestamp`exchanges`window!11 12 11 18h;1000b;dict];
+  allkeys:`sym`timestamp`exchanges`window;
+  typecheck[allkeys!11 12 11 18h;1000b;dict];
 
   // Set default dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
   defaulttime:$[`rdb in .proc.proctype;exec last time from exchange;first exec time from select last time from exchange where date=last date];
-  d:(`timestamp`exchanges`window!(defaulttime;`;"v"$2*.crypto.deffreq)),(where not any each null dict)#dict;
+  d:setdefaults[allkeys!(`;defaulttime;`;"v"$2*.crypto.deffreq);dict];
 
   // Create extra key if on HDB
   if[`hdb~.proc.proctype;d[`date]:d`timestamp];
@@ -74,13 +75,18 @@ existencecheck:{[tablename;columnname;dictvalue]
     '"The following ",sv[", ";string dictvalue where 0=result]," does not exist in ",string tablename];
  }; 
 
-// creates an open, high,low close table
+// Quick function for setting defualt dictionary values
+setdefaults:{[def;dict] def,(where not any each null dict)#dict };
+
+// Creates an open, high,low close table
 ohlc:{[dict]
-  typecheck[`date`sym`exchange`quote`byexchange!(14h;11h;11h;11h;1h);01000b;dict];
+  allkeys:`date`sym`exchange`quote`byexchange;
+  typecheck[allkeys!(14h;11h;11h;11h;1h);01000b;dict];
   
   // Set default null dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
   defaultdate:$[`rdb in .proc.proctype; .proc.cd[]; last date];
-  d:(`date`sym`exchange`quote`byexchange!(defaultdate;`;`;`ask`bid;0b)),(where not any each null dict)#dict;
+  d:setdefaults[allkeys!(defaultdate;`;`;`ask`bid;0b);dict];
+  // d:(`date`sym`exchange`quote`byexchange!(defaultdate;`;`;`ask`bid;0b)),(where not any each null dict)#dict;
   
   // Filter dates based on proctype
   d[`date]:((),d[`date]) inter (),$[`rdb ~ .proc.proctype;.proc.cd[];date];
@@ -102,15 +108,19 @@ ohlc:{[dict]
  };
 
 //creates a table showing the top of the book for each excahnges at a given time
-createarbtable:{[d]
-  typecheck[`symbol`starttimestamp`endtimestamp`bucketsize`exchanges!11 12 12 18 11h;10000b;d];
-  d2:`symbol`starttimestamp`endtimestamp`bucketsize`exchanges!(`;0Np;0Np;0Nv;`);						                                    // default dictionary
-  d:d2,d;
-  if[processresult:.proc.proctype=`hdb; hdbdate:last execcol[exchange_top;`date]];
+createarbtable:{[dict]
+  typecheck[`symbol`starttimestamp`endtimestamp`bucketsize`exchanges!11 12 12 18 11h;10000b;dict];
+
+  // Set defaults
+  defaulttimes:"p"$'$[`rdb~.proc.proctype;(.proc.cd[];.proc.cp[]);0 1 + last date];
+  d:(`symbol`starttimestamp`endtimestamp`bucketsize`exchanges!(`;defaulttimes[0];defaulttimes[1];`second$2*.crypto.deffreq;`)),(where not any each null dict)#dict;
+  
+  // if[processresult:.proc.proctype=`hdb; hdbdate:last execcol[exchange_top;`date]];
   d:$[processresult;														                                                                                // sets defaults if nulls are entered depending on what process
     assign[d;(`starttimestamp`endtimestamp`bucketsize)!(`timestamp$hdbdate;-1+`timestamp$hdbdate+1;`second$2*.crypto.deffreq)];
     assign[d;(`starttimestamp`endtimestamp`bucketsize)!(`timestamp$.proc.cd[];.proc.cp[];`second$2*.crypto.deffreq)]];
   d:@[d;`symbol`starttimestamp`endtimestamp`bucketsize;first];									                                                // reassigns the dictionary keys to atoms
+  
   if[all .proc.cp[]<d[`starttimestamp],d`endtimestamp; '"Enter a valid timestamp, one less than ",string .proc.cp[]];           // checks the timestamps entered can be queried
   if[not (`date$d`starttimestamp)=`date$d`endtimestamp; '"The date part startimestamp and endtimestamp must be the same"];      // ensures the query is over one day
   if[d[`starttimestamp]>d`endtimestamp; '"starttimestamp must be less than endtimestamp"];                                      // ensures the startTimestamp is smaller than the endTimestamp
