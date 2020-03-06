@@ -14,20 +14,22 @@ orderbook:{[dict]
   typecheck[`sym`timestamp`exchanges`window!11 12 11 18h;1000b;dict];
 
   // Set default dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
-  nulldef:`sym`timestamp`exchanges`window!(`;0Np;`;0Nv);
+  // nulldef:`sym`timestamp`exchanges`window!(`;0Np;`;0Nv);
   defaulttime:$[`rdb in .proc.proctype;exec last time from exchange;first exec time from select last time from exchange where date=last date];
-  d:assign[nulldef,dict;`timestamp`exchanges`window!(defaulttime;execcol[`exchange;`exchange];2*.crypto.deffreq)];
+  d:(`timestamp`exchanges`window!(defaulttime;`;"v"$2*.crypto.deffreq)),(where not any each null dict)#dict;
 
-  // Check syms and exchanges are valid
-  validcheck[d;`sym;`exchange;`sym];
-  validcheck[d;`exchanges;`exchange;`exchange];
+  if[`hdb~.proc.proctype;d[`date]:d`timestamp];
 
-  // Projected function to create book. If in the rdb process, exclude date clause from the select statement
-  book:{[symbol;timestamp;exchanges;window;columns]
-    $[`rdb in .proc.proctype;
-      ungroup columns#0!select by exchange from exchange where time within(timestamp-`second$window;timestamp),sym=symbol,exchange in exchanges;
-      ungroup columns#0!select by exchange from exchange where date=`date$timestamp,time within(timestamp-`second$window;timestamp),sym=symbol,exchange in exchanges]
-   }[d`sym;d`timestamp;d`exchanges;d`window;];
+  wherecl:
+    $[`rdb ~ .proc.proctype;
+    `timestamp`sym`exchanges!((within;`time;(enlist;(-;d`timestamp;d`window);d`timestamp));(=;`sym;enlist d`sym);(in;`exchange;enlist d`exchanges));
+    `date`timestamp`sym`exchanges!((=;`date;($;enlist`date;d`timestamp));(within;d`timestamp;(enlist;(-;d`timestamp;d`window);d`timestamp));(=;`sym;enlist d`sym);(in;`exchange;enlist d`exchanges))
+    ] (where not any each null d)except `window;
+
+
+   book:{[wherecl;columns]
+    ungroup columns#0!?[exchange;wherecl; (enlist`exchange)!enlist`exchange; ()]
+   }[wherecl;];
 
   // Create bid and ask books and join to create order book
   bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`exchange`bid`bidSize];
