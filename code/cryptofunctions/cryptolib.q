@@ -13,6 +13,7 @@
 orderbook:{[dict]
   allkeys:`sym`timestamp`exchanges`window;
   typecheck[allkeys!11 12 11 18h;1000b;dict];
+  if[not (1=count dict[`sym]) and not any null dict [`sym];'"Please enter one non-null sym."]
 
   // Set default dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
   defaulttime:$[`rdb in .proc.proctype;exec last time from exchange;first exec time from select last time from exchange where date=last date];
@@ -22,10 +23,9 @@ orderbook:{[dict]
   if[`hdb~.proc.proctype;d[`date]:d`timestamp];
 
   // Choose where clause based on proc
-  wherecl:$[`rdb ~ .proc.proctype;
-    `timestamp`sym`exchanges!((within;`time;(enlist;(-;d`timestamp;d`window);d`timestamp));(=;`sym;enlist d`sym);(in;`exchange;enlist d`exchanges));
-    `date`timestamp`sym`exchanges!((=;`date;($;enlist`date;d`timestamp));(within;d`timestamp;(enlist;(-;d`timestamp;d`window);d`timestamp));(=;`sym;enlist d`sym);(in;`exchange;enlist d`exchanges))
-    ] (where not any each null d)except `window;
+  wherecl:((`timestamp`sym`exchanges!
+    ((within;`time;(enlist;(-;d`timestamp;d`window);d`timestamp));(=;`sym;enlist d`sym);(in;`exchange;enlist d`exchanges))),
+    $[`hdb ~ .proc.proctype;(enlist `date)!enlist (=;`date;($;enlist`date;d`timestamp));()!()]) (where not any each null d)except `window;
 
   // Define book builder projected function
   book:{[wherecl;columns] ungroup columns#0!?[exchange;wherecl; (enlist`exchange)!enlist`exchange; ()]}[wherecl;];
