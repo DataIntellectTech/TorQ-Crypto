@@ -76,7 +76,7 @@ existencecheck:{[tablename;columnname;dictvalue]
  }; 
 
 // Quick function for setting defualt dictionary values
-setdefaults:{[def;dict] def,(where not any each null dict)#dict };
+setdefaults:{[def;dict] def,(where not all each null dict)#dict};
 
 // Creates an open, high,low close table
 ohlc:{[dict]
@@ -96,7 +96,7 @@ ohlc:{[dict]
   askdict:`openAsk`closeAsk`askHigh`askLow!((first;`ask);(last;`ask);(max;`ask);(min;`ask));
 
   // Conditionals to form the ohlc column dict, where clause and by clause
-  coldict:$[all i:`bid`ask in d[`quote];biddict,askdict;(biddict;askdict) first where i];
+  coldict:$[any i:`bid`ask in d[`quote];(,/)(biddict;askdict) where i;(enlist`)!(enlist()];
   wherecl:$[`rdb ~ .proc.proctype;
     `date`sym`exchange!((in;`time.date;enlist d`date);(in;`sym; enlist d`sym);(in;`exchange; enlist d`exchange));
     `date`sym`exchange!((in;`date;enlist d`date);(in;`sym;enlist d`sym);(in;`exchange;enlist d`exchange))
