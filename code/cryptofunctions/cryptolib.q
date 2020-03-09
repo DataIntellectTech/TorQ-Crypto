@@ -75,8 +75,8 @@ existencecheck:{[tablename;columnname;dictvalue]
     '"The following ",sv[", ";string dictvalue where 0=result]," does not exist in ",string tablename];
  }; 
 
-// Quick function for setting defualt dictionary values
-setdefaults:{[def;dict] def,(where not all each null dict)#dict};
+// Quick function for setting default dictionary values
+setdefaults:{[def;dict] def,(where not all each null dict)#dict };
 
 // Creates an open, high,low close table
 ohlc:{[dict]
@@ -86,7 +86,6 @@ ohlc:{[dict]
   // Set default null dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
   defaultdate:$[`rdb in .proc.proctype; .proc.cd[]; last date];
   d:setdefaults[allkeys!(defaultdate;`;`;`ask`bid;0b);dict];
-  // d:(`date`sym`exchange`quote`byexchange!(defaultdate;`;`;`ask`bid;0b)),(where not any each null dict)#dict;
   
   // Filter dates based on proctype
   d[`date]:((),d[`date]) inter (),$[`rdb ~ .proc.proctype;.proc.cd[];date];
@@ -96,12 +95,12 @@ ohlc:{[dict]
   askdict:`openAsk`closeAsk`askHigh`askLow!((first;`ask);(last;`ask);(max;`ask);(min;`ask));
 
   // Conditionals to form the ohlc column dict, where clause and by clause
-  coldict:$[any i:`bid`ask in d[`quote];(,/)(biddict;askdict) where i;(enlist`)!(enlist()];
+  coldict:$[any i:`bid`ask in d[`quote];(,/)(biddict;askdict) where i;(enlist`)!(enlist())];
   wherecl:$[`rdb ~ .proc.proctype;
     `date`sym`exchange!((in;`time.date;enlist d`date);(in;`sym; enlist d`sym);(in;`exchange; enlist d`exchange));
     `date`sym`exchange!((in;`date;enlist d`date);(in;`sym;enlist d`sym);(in;`exchange;enlist d`exchange))
     ] (where not any each null d) except `quote`byexchange;
-  bycl:(`date`sym!`time.date`sym), $[d[`byexchange];enlist[`exchange]!enlist `exchange;()!()];
+  bycl:$[`rdb ~ .proc.proctype;(`date`sym!`time.date`sym);(`date`sym!`date`sym)], $[d[`byexchange];ex!ex:enlist `exchange;()!()];
 
   // Perform query - (select coldict by date:time.date,sym from t (where time.date in d`date, sym in syms, exchange in exchanges))
   ?[exchange_top; wherecl; bycl; coldict]
@@ -109,27 +108,32 @@ ohlc:{[dict]
 
 //creates a table showing the top of the book for each excahnges at a given time
 createarbtable:{[dict]
-  typecheck[`symbol`starttimestamp`endtimestamp`bucketsize`exchanges!11 12 12 18 11h;10000b;dict];
+  allkeys:`symbol`starttimestamp`endtimestamp`bucketsize`exchanges;
+  typecheck[allkeys!11 12 12 18 11h;10000b;dict];
 
   // Set defaults
-  defaulttimes:"p"$'$[`rdb~.proc.proctype;(.proc.cd[];.proc.cp[]);0 1 + last date];
-  d:(`symbol`starttimestamp`endtimestamp`bucketsize`exchanges!(`;defaulttimes[0];defaulttimes[1];`second$2*.crypto.deffreq;`)),(where not any each null dict)#dict;
+  defaulttimes:$[`rdb~.proc.proctype;"p"$(.proc.cd[];.proc.cp[]);0 -1 + "p"$0 1 + last date];
+  d:setdefaults[allkeys!raze(`;defaulttimes;`second$2*.crypto.deffreq;`);dict];
+  // d:(`symbol`starttimestamp`endtimestamp`bucketsize`exchanges!raze(`;defaulttimes;`second$2*.crypto.deffreq;`)),(where not any each null dict)#dict;
   
   // if[processresult:.proc.proctype=`hdb; hdbdate:last execcol[exchange_top;`date]];
-  d:$[processresult;														                                                                                // sets defaults if nulls are entered depending on what process
-    assign[d;(`starttimestamp`endtimestamp`bucketsize)!(`timestamp$hdbdate;-1+`timestamp$hdbdate+1;`second$2*.crypto.deffreq)];
-    assign[d;(`starttimestamp`endtimestamp`bucketsize)!(`timestamp$.proc.cd[];.proc.cp[];`second$2*.crypto.deffreq)]];
+  // d:$[processresult;														                                                                                // sets defaults if nulls are entered depending on what process
+  //   assign[d;(`starttimestamp`endtimestamp`bucketsize)!(`timestamp$hdbdate;-1+`timestamp$hdbdate+1;`second$2*.crypto.deffreq)];
+  //   assign[d;(`starttimestamp`endtimestamp`bucketsize)!(`timestamp$.proc.cd[];.proc.cp[];`second$2*.crypto.deffreq)]];
   d:@[d;`symbol`starttimestamp`endtimestamp`bucketsize;first];									                                                // reassigns the dictionary keys to atoms
   
-  if[all .proc.cp[]<d[`starttimestamp],d`endtimestamp; '"Enter a valid timestamp, one less than ",string .proc.cp[]];           // checks the timestamps entered can be queried
-  if[not (`date$d`starttimestamp)=`date$d`endtimestamp; '"The date part startimestamp and endtimestamp must be the same"];      // ensures the query is over one day
-  if[d[`starttimestamp]>d`endtimestamp; '"starttimestamp must be less than endtimestamp"];                                      // ensures the startTimestamp is smaller than the endTimestamp
+  if[(all .proc.cp[] < stet) or (not ~/["d"$stet]) or (>/[stet:d[`starttimestamp`endtimestamp]]);'"Invalid start and end times"];
+
+  :"hello";
+  // if[all .proc.cp[]<d[`starttimestamp],d`endtimestamp; '"Enter a valid timestamp, one less than ",string .proc.cp[]];           // checks the timestamps entered can be queried
+  // if[not (`date$d`starttimestamp)=`date$d`endtimestamp; '"The date part startimestamp and endtimestamp must be the same"];      // ensures the query is over one day
+  // if[d[`starttimestamp]>d`endtimestamp; '"starttimestamp must be less than endtimestamp"];                                      // ensures the startTimestamp is smaller than the endTimestamp
 
   //gets the distinct list of exchanges in the time period
-  d:$[processresult;														                                                                                // sets the default values for exchanges
-  //string then cast back to a symbol to unenumerate the exchanges
-    assign[d;enlist[`exchanges]!enlist `$string exec exchange from select distinct exchange from exchange_top where date=`date$d`endtimestamp, time within (d`starttimestamp;d`endtimestamp)];
-    assign[d;enlist[`exchanges]!enlist exec exchange from select distinct exchange from exchange_top where time within (d`starttimestamp;d`endtimestamp)]];
+  // d:$[processresult;														                                                                                // sets the default values for exchanges
+  // //string then cast back to a symbol to unenumerate the exchanges
+  //   assign[d;enlist[`exchanges]!enlist `$string exec exchange from select distinct exchange from exchange_top where date=`date$d`endtimestamp, time within (d`starttimestamp;d`endtimestamp)];
+  //   assign[d;enlist[`exchanges]!enlist exec exchange from select distinct exchange from exchange_top where time within (d`starttimestamp;d`endtimestamp)]];
   d[`bucketsize]:`long$d`bucketsize;												                                                                    // coverts the bucketSize to an integer
   existencecheck[`exchange_top;`sym;d`symbol];											                                                            // checks that the symbol passed exists in our table
   existencecheck[`exchange_top;`exchange;d`exchanges];										                                                      // checks that the exchanges passed exists in our table
