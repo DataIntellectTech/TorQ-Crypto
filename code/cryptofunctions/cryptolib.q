@@ -43,11 +43,6 @@ orderbook:{[dict]
   $[(0=count orderbook) & .z.d>`date$d`timestamp;'":no data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only."; orderbook]
  }
 
-// function to exec a column. Eg exec sym from select distinct sym from exchange
-execcol:{[table;column] 
-  ?[(?[table;();1b;(enlist column)!enlist column]);();();column]
- }
-
 // function for checking types of dictionary values
 typecheck:{[typedict;requiredkeylist;dict]
   if[not 99=type dict;'"error - arguement passed must be a dictionary"];							               // check type of argument passed to original function
@@ -62,24 +57,6 @@ typecheck:{[typedict;requiredkeylist;dict]
   //error if any dict types do not match
   if[not all typematch;'"error - dictionary parameter ",(", "sv string where not typematch)," must be of type: ",", "sv string {key'[x$\:()]}typedict where not typematch];
  }
-
-// function to check if valid values are passed and output available options if not
-validcheck:{[dict;dictkey;table;column]
-  if[not all dict[dictkey] in execcol[table;column];'"error - not a valid ",(string dictkey)," value. The following are available: ",", " sv string execcol[table;column]]
- }
-
-// function to assign default values to dictionary where null values occur
-assign:{[d;nulldict]														                                                      // pass in a dictionary with matching keys to d, with the preferred default values
-  if[any raze null d; d:@[d;where any each null d;:;nulldict[where any each null d]]];						    // assign new values to d where null with the values of nulldict
-  :d
- }
-
-//function to check if something exists in a table
-existencecheck:{[tablename;columnname;dictvalue]
-  dictvalue:(),dictvalue;
-  if[not all result:dictvalue in execcol[tablename;columnname];										
-    '"The following ",sv[", ";string dictvalue where 0=result]," does not exist in ",string tablename];
- }; 
 
 // Quick function for setting default dictionary values
 setdefaults:{[def;dict] def,(where not all each null dict)#dict };
@@ -163,21 +140,25 @@ getcols:{[table;word]
   col where (col:cols table) like word
  };
 
-//adds a column saying if there is a chance of risk free profit
+// Adds a column saying if there is a chance of risk free profit
 arbitrage:{[d]
-  arbtable:createarbtable[d];													    // create arbitrage table
-  bidcols:getcols[arbtable;"*Bid"];												// create list of bid column names
-  askcols:getcols[arbtable;"*Ask"];												// create list of ask column names
-  bidtab:bidcols#arbtable;													      // create table of bid columns only
-  asktab:askcols#arbtable;													      // create table of ask columns only
+  // Generate arbitrage table, extract bid and ask columns and create two subtables
+  arbtable:createarbtable[d];
+  bidcols:getcols[arbtable;"*Bid"];
+  askcols:getcols[arbtable;"*Ask"];
+  bidtab:bidcols#arbtable;
+  asktab:askcols#arbtable;
 
-  //create matrix of arbitrage opportunities
-  arbitrageops:{[bidtable;asktable;length](value bidtable[length])>\:value (max value max bidtable)^asktable[length]}[bidtab;asktab]'[til count arbtable];
-  //create a new column which shows if arbitrage opportunity exists for each row
+  // Create matrix of arbitrage opportunities
+  arbitrageops:{[bidtable;asktable;length] 
+    (value bidtable[length])>\:value (max value max bidtable)^asktable[length]
+   }[bidtab;asktab]'[til count arbtable];
+
+  // Create a new column which shows if arbitrage opportunity exists for each row
   update arbitrage:1b from arbtable where any flip {[opstable;length] any each opstable[length]}[arbitrageops]'[til count arbitrageops]
  };
 
-//adds a column saying how much potenital profit you can make by only looking at the best bid and ask
+// Add a column saying how much potential profit you can make by only looking at the best bid and ask
 profit:{[d]
   table:arbitrage[d];
   arbitragerows:exec i from table where arbitrage=1b;
