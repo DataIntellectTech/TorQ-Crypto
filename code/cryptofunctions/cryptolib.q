@@ -13,7 +13,7 @@
 orderbook:{[dict]
   allkeys:`sym`timestamp`exchanges`window;
   typecheck[allkeys!11 12 11 18h;1000b;dict];
-  if[not (1=count dict[`sym]) and not any null dict [`sym];'"Please enter one non-null sym."]
+  if[not (1=count dict[`sym]) and not any null dict [`sym];'"Please enter one non-null sym."];
 
   // Set default dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
   defaulttime:$[`rdb in .proc.proctype;exec last time from exchange;first exec time from select last time from exchange where date=last date];
@@ -23,16 +23,22 @@ orderbook:{[dict]
   if[`hdb~.proc.proctype;d[`date]:d`timestamp];
 
   // Choose where clause based on proc
-  wherecl:((`timestamp`sym`exchanges!
-    ((within;`time;(enlist;(-;d`timestamp;d`window);d`timestamp));(=;`sym;enlist d`sym);(in;`exchange;enlist d`exchanges))),
-    $[`hdb ~ .proc.proctype;(enlist `date)!enlist (=;`date;($;enlist`date;d`timestamp));()!()]) (where not any each null d)except `window;
+  // If proc is HDB, add on extra where clause at the start, 
+  // then join on default clause then pass in dictionary elements which are not null
+  wherecl:($[`hdb ~ .proc.proctype;(enlist `date)!
+    enlist (within;`date;(enlist;($;enlist`date;(-;d`timestamp;d`window));($;enlist`date;d`timestamp)));()!()],
+    (`timestamp`sym`exchanges!(
+      (within;`time;(enlist;(-;d`timestamp;d`window);d`timestamp));
+      (=;`sym;enlist d`sym);
+      (in;`exchange;enlist d`exchanges))
+    )) (where not any each null d) except `window;
 
   // Define book builder projected function
   book:{[wherecl;columns] ungroup columns#0!?[exchange;wherecl; (enlist`exchange)!enlist`exchange; ()]}[wherecl;];
 
   // Create bid and ask books and join to create order book
   bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`exchange`bid`bidSize];
-  ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`exchange`ask`askSize];	
+  ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`exchange`ask`askSize];
   orderbook:bid,'ask;
   $[(0=count orderbook) & .z.d>`date$d`timestamp;'":no data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only."; orderbook]
  }
@@ -106,56 +112,50 @@ ohlc:{[dict]
   ?[exchange_top; wherecl; bycl; coldict]
  };
 
-//creates a table showing the top of the book for each excahnges at a given time
+// Creates a table showing the top of the book for each exchanges at a given time
 createarbtable:{[dict]
-  allkeys:`symbol`starttimestamp`endtimestamp`bucketsize`exchanges;
-  typecheck[allkeys!11 12 12 18 11h;10000b;dict];
+  allkeys:`starttimestamp`endtimestamp`sym`exchanges`bucketsize;
+  typecheck[allkeys!12 12 11 11 18h;00100b;dict];
 
-  // Set defaults
+  // Set defaults and sanitise input
   defaulttimes:$[`rdb~.proc.proctype;"p"$(.proc.cd[];.proc.cp[]);0 -1 + "p"$0 1 + last date];
-  d:setdefaults[allkeys!raze(`;defaulttimes;`second$2*.crypto.deffreq;`);dict];
-  // d:(`symbol`starttimestamp`endtimestamp`bucketsize`exchanges!raze(`;defaulttimes;`second$2*.crypto.deffreq;`)),(where not any each null dict)#dict;
+  d:setdefaults[allkeys!raze(defaulttimes;`;`;`second$2*.crypto.deffreq);dict];
+  d:@[d;`sym`starttimestamp`endtimestamp`bucketsize;first];
+  d[`bucketsize]:`long$d`bucketsize;
   
-  // if[processresult:.proc.proctype=`hdb; hdbdate:last execcol[exchange_top;`date]];
-  // d:$[processresult;														                                                                                // sets defaults if nulls are entered depending on what process
-  //   assign[d;(`starttimestamp`endtimestamp`bucketsize)!(`timestamp$hdbdate;-1+`timestamp$hdbdate+1;`second$2*.crypto.deffreq)];
-  //   assign[d;(`starttimestamp`endtimestamp`bucketsize)!(`timestamp$.proc.cd[];.proc.cp[];`second$2*.crypto.deffreq)]];
-  d:@[d;`symbol`starttimestamp`endtimestamp`bucketsize;first];									                                                // reassigns the dictionary keys to atoms
-  
+  // Check that dates passed in are valid
   if[(all .proc.cp[] < stet) or (not ~/["d"$stet]) or (>/[stet:d[`starttimestamp`endtimestamp]]);'"Invalid start and end times"];
 
-  :"hello";
-  // if[all .proc.cp[]<d[`starttimestamp],d`endtimestamp; '"Enter a valid timestamp, one less than ",string .proc.cp[]];           // checks the timestamps entered can be queried
-  // if[not (`date$d`starttimestamp)=`date$d`endtimestamp; '"The date part startimestamp and endtimestamp must be the same"];      // ensures the query is over one day
-  // if[d[`starttimestamp]>d`endtimestamp; '"starttimestamp must be less than endtimestamp"];                                      // ensures the startTimestamp is smaller than the endTimestamp
+  // Create extra key if on HDB
+  if[`hdb~.proc.proctype;d[`date]:`date$d[`endtimestamp];`date xcols d];
 
-  //gets the distinct list of exchanges in the time period
-  // d:$[processresult;														                                                                                // sets the default values for exchanges
-  // //string then cast back to a symbol to unenumerate the exchanges
-  //   assign[d;enlist[`exchanges]!enlist `$string exec exchange from select distinct exchange from exchange_top where date=`date$d`endtimestamp, time within (d`starttimestamp;d`endtimestamp)];
-  //   assign[d;enlist[`exchanges]!enlist exec exchange from select distinct exchange from exchange_top where time within (d`starttimestamp;d`endtimestamp)]];
-  d[`bucketsize]:`long$d`bucketsize;												                                                                    // coverts the bucketSize to an integer
-  existencecheck[`exchange_top;`sym;d`symbol];											                                                            // checks that the symbol passed exists in our table
-  existencecheck[`exchange_top;`exchange;d`exchanges];										                                                      // checks that the exchanges passed exists in our table
-  //select appriopiate cols
-  t:$[processresult;														                                                                                // does the correct query depending on what process we are in
-    select time,exchange,bid,ask,bidSize,askSize from exchange_top where date=`date$d`endtimestamp, time within (d`starttimestamp;d`endtimestamp),sym in d`symbol, exchange in d`exchanges;
-    select time,exchange,bid,ask,bidSize,askSize from exchange_top where time within (d`starttimestamp;d`endtimestamp),sym in d`symbol, exchange in d`exchanges];
-  if[not count t; '"There is no data available in the timestamp range"];
-  exchanges:execcol[t;`exchange];												                                                                        // gets names of exchanges
-  tablenames:{`$string[x],"Table"} each exchanges;										                                                          // table names for each exchange
+  // If on HDB generate new where clause and join the rest on
+  wherecl:($[`hdb ~ .proc.proctype;(enlist`date)!enlist (=;`date;d[`date]);()!()],
+    `starttimestamp`sym`exchanges!(
+      (within;`time;(enlist;(d[`starttimestamp]);(d[`endtimestamp])));
+      (in;`sym;enlist d[`sym]);
+      (in;`exchange;enlist d[`exchanges])
+    )) (where not any each null d) except `endtimestamp`bucketsize;
 
-  //creates a list of tables with the best bid and ask for each exchange
-  exchangebook:{[x;y;z] (`time;`$string[x],"Bid";`$string[x],"Ask";`$string[x],"BidSize";`$string[x],"AskSize") 
-                          xcol select bid:first bid,ask:first ask ,bidSize:first bidSize ,askSize:first askSize by time:z xbar time.second from y where exchange=x}[;t;d`bucketsize] each exchanges;
-  levelonedict:tablenames!exchangebook;												                                                                   //creates a dictionary with the values being a L1 order book for each exchange
-  arbtable:(,'/)value levelonedict;
-  if[1=count levelonedict; :arbtable];												                                                                   // if only one exchange used output arbTable
-  arbtable:0!`time xasc arbtable;												                                                                         // if more than one exchange used start to edit
-  colnames: cols arbtable;													                                                                             // get column names
-  arbtable:(`time,colnames where not null first each ss[;"Bid"] each string colnames) xcols arbtable;				                     // reorder the cols to have time, bids, asks
-  arbtable:{![x;();0b;y]}[arbtable;(1 _ colnames)!fills,' 1_ colnames];								                                           // fill in null values
-  arbtable															                                                                                         // output table
+  // Perform query, then get exchanges and use them to generate table names
+  t:?[exchange_top;wherecl;0b;cls!cls:`time`exchange`bid`ask`bidSize`askSize];  
+  exchanges:exec exchange from (select distinct exchange from t);
+  tablenames:{`$string[x],"Table"} each exchanges;
+
+  // Creates a list of tables with the best bid and ask for each exchange
+  exchangebook:{[x;y;z] (`time;`$string[x],"Bid";`$string[x],"Ask";`$string[x],"BidSize";`$string[x],"AskSize") xcol 
+    select bid:first bid,ask:first ask ,bidSize:first bidSize ,askSize:first askSize by time:z xbar time.second 
+      from y where exchange=x}[;t;d`bucketsize] each exchanges;
+
+  // If there is only one exchange, return the unedited arbtable
+  if[1=count l1dict:tablenames!exchangebook;:(,'/) value l1dict];
+
+  // If more than one exchange, join together all datasets, reorder the columns, fill in nulls and return
+  arbtable:0!`time xasc (,'/) value l1dict;
+  colnames: cols arbtable;
+  arbtable:(`time,colnames where not null first each ss[;"Bid"] each string colnames) xcols arbtable;
+  arbtable:{![x;();0b;y]}[arbtable;(1 _ colnames)!fills,' 1_ colnames];
+  arbtable
  };
 
 //Used for getting column names that match a given pattern eg. getcols[arbtable;"*Bid"] will get the names of the columns which have Bid in them from arbtable
