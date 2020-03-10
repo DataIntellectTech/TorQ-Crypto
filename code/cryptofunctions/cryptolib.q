@@ -1,26 +1,31 @@
-// function which returns level 2 orderbook. Takes a dictionary as parameter
-// for the latest data from all exchanges for a sym, run orderbook[(enlist `sym)!enlist (`SYMBOL)] on the rdb
-// timestamp,exchanges and look-back window can all be configured by the user. eg. orderbook[(`sym`timestamp`exchanges`window)!(`BTCUSDT;.proc.cp[];`finex`bhex;30)]
-// if these parameters are not specified, timestamp defaults to latest timestamp present in exchange table, exchanges defaults to all available, window defaults to twice the query frequency
-// if timestamp < today's date, run the function on the hdb only
-// window must be passed in as type -18h (second)
-// examples through handle to gateway:
-// h(`.gw.syncexec;"orderbook[(enlist `sym)!enlist (`BTCUSDT)]";`rdb)
-// h(`.gw.syncexec;"orderbook[`sym`timestamp!(`BTCUSDT;2020.02.09D11:30:00)]";`hdb)
-// h(`.gw.syncexec;"orderbook[`sym`exchanges!(`ETHUSDT;`finex`huobi)]";`rdb)
-// h(`.gw.syncexec;"orderbook[`sym`timestamp`exchanges`window!(`BTCUSDT;.z.p;`bhex;00:01:30)]";`rdb)
+// TorQ-Crypto functions
+// Collaborators: Cormac Ross, James Rutledge, Catherine Higgins, Nicole Watterson, Michael Potter
 
+// Have some global description, particularly talking about HDB/RDB dynamism and null parameters taking where clause away
+
+/ 
+                                **** ORDER BOOK FUNCTION ****
+  This function returns a level 2 orderbook and takes a parameter dictionary as an argument.
+  Sym is the only mandatory parameter that the user has to pass in, the others will revert to defaults.
+  If a null parameter value is passed in, this will remove the pertinent where clause from the query.
+  This function can be run on the RDB and/or HDB and will adjust queries accordingly.
+  Window must be passed in as a second type (-18h).
+
+  Example usage:
+  orderbook[(enlist `sym)!enlist (`SYMBOL)]                                          ->  get latest `SYMBOL data from table
+  orderbook[(`sym`timestamp`exchanges`window)!(`BTCUSDT;.proc.cp[];`finex`bhex;30)]  ->  more user input example
+\
 orderbook:{[dict]
-  allkeys:`sym`timestamp`exchanges`window;
-  typecheck[allkeys!11 12 11 18h;1000b;dict];
+  allkeys:`timestamp`sym`exchanges`window;
+  typecheck[allkeys!12 11 11 18h;0100b;dict];
   if[not (1=count dict[`sym]) and not any null dict [`sym];'"Please enter one non-null sym."];
 
   // Set default dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
   defaulttime:$[`rdb in .proc.proctype;exec last time from exchange;first exec time from select last time from exchange where date=last date];
   d:setdefaults[allkeys!(`;defaulttime;`;"v"$2*.crypto.deffreq);dict];
 
-  // Create extra key if on HDB
-  if[`hdb~.proc.proctype;d[`date]:d`timestamp];
+  // Create extra key if on HDB and order dictionary by date
+  if[`hdb~.proc.proctype;d[`date]:d[`timestamp];`date xcols d];
 
   // Choose where clause based on proc
   // If proc is HDB, add on extra where clause at the start, 
@@ -43,25 +48,15 @@ orderbook:{[dict]
   $[(0=count orderbook) & .z.d>`date$d`timestamp;'":no data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only."; orderbook]
  }
 
-// function for checking types of dictionary values
-typecheck:{[typedict;requiredkeylist;dict]
-  if[not 99=type dict;'"error - arguement passed must be a dictionary"];							               // check type of argument passed to original function
-  if[not all keyresult:key[dict] in key typedict;										                                 //checks the keys entered have been spelt correctly
-    '"The following dictionary keys are incorrect: ",(", " sv string key[dict] where 0=keyresult),". The allowed keys are: ",", " sv string key typedict];
-  requiredkeys:(key typedict) where requiredkeylist;										                             // create list of required keys, given in requiredkeylist
+/
+                          **** OPEN HIGH LOW CLOSE (OHLC) FUNCTION ****
+  This function returns OHLC data for bid and/or ask data and takes a paramter dictionary as an argument.
+  The only parameter that must be passed in is sym, the others will revert to defaults.
 
-  //error if any required keys are missing
-  if[not all requiredkeys in key dict;'"error - the following keys must be included: ",", " sv  string requiredkeys];
-  typematch:typedict[key dict]=abs type each dict;										                               // create dictionary showing where types match
-
-  //error if any dict types do not match
-  if[not all typematch;'"error - dictionary parameter ",(", "sv string where not typematch)," must be of type: ",", "sv string {key'[x$\:()]}typedict where not typematch];
- }
-
-// Quick function for setting default dictionary values
-setdefaults:{[def;dict] def,(where not all each null dict)#dict };
-
-// Creates an open, high,low close table
+  Example usage:
+  ohlc[enlist[`sym]!enlist `SYMBOL]                                             ->  get latest OHLC data for SYMBOL
+  ohlc[`date`sym`exchange`quote`byexchange!(.z.d;`SYMBOL;`finex`okex;`bid;1b)]  ->  get only bid data by exchange for SYMBOL
+\
 ohlc:{[dict]
   allkeys:`date`sym`exchange`quote`byexchange;
   typecheck[allkeys!(14h;11h;11h;11h;1h);01000b;dict];
@@ -89,6 +84,16 @@ ohlc:{[dict]
   ?[exchange_top; wherecl; bycl; coldict]
  };
 
+/
+                                  **** ARBITRATION FUNCTIONS ****
+  The following three functions, createarbtable, arbitrage and profit, are all to do with arbitration.
+  The profit function calls the arbitrage function which in turn calls the createarbtable function.
+
+  createarbtable[] generates a table showing the top of the book for each exchange
+  arbitrage[] then gets this table and adds a column that shows if there is a chance of profit
+  profit[] then adds a column showing how much potential profit can be made, just looking at the bid and ask
+\
+
 // Creates a table showing the top of the book for each exchanges at a given time
 createarbtable:{[dict]
   allkeys:`starttimestamp`endtimestamp`sym`exchanges`bucketsize;
@@ -103,7 +108,7 @@ createarbtable:{[dict]
   // Check that dates passed in are valid
   if[(all .proc.cp[] < stet) or (not ~/["d"$stet]) or (>/[stet:d[`starttimestamp`endtimestamp]]);'"Invalid start and end times"];
 
-  // Create extra key if on HDB
+  // Create extra key if on HDB and order dictionary by date
   if[`hdb~.proc.proctype;d[`date]:`date$d[`endtimestamp];`date xcols d];
 
   // If on HDB generate new where clause and join the rest on
@@ -133,11 +138,6 @@ createarbtable:{[dict]
   arbtable:(`time,colnames where not null first each ss[;"Bid"] each string colnames) xcols arbtable;
   arbtable:{![x;();0b;y]}[arbtable;(1 _ colnames)!fills,' 1_ colnames];
   arbtable
- };
-
-//Used for getting column names that match a given pattern eg. getcols[arbtable;"*Bid"] will get the names of the columns which have Bid in them from arbtable
-getcols:{[table;word]
-  col where (col:cols table) like word
  };
 
 // Adds a column saying if there is a chance of risk free profit
@@ -178,4 +178,31 @@ profit:{[d]
   (ljf/) `time xkey' updatetable[table;] each arbitragerows
  };
 
+/
+                                    **** UTILITY FUNCTIONS ****
+  The following three functions, getcols, typecheck and setdefaults, are utility functions used elsewhere in this script
 
+  getcols[] gets columns from a table which match a particular pattern, ie. "*Bid"
+  typecheck[] checks the types of dictionary values that are passed in by the user
+  setdefaults[] produces a dictionary where missing values are filled in with defaults
+\
+
+getcols:{[table;word]
+  col where (col:cols table) like word
+ };
+
+typecheck:{[typedict;requiredkeylist;dict]
+  if[not 99=type dict;'"error - arguement passed must be a dictionary"];							               // check type of argument passed to original function
+  if[not all keyresult:key[dict] in key typedict;										                                 //checks the keys entered have been spelt correctly
+    '"The following dictionary keys are incorrect: ",(", " sv string key[dict] where 0=keyresult),". The allowed keys are: ",", " sv string key typedict];
+  requiredkeys:(key typedict) where requiredkeylist;										                             // create list of required keys, given in requiredkeylist
+
+  //error if any required keys are missing
+  if[not all requiredkeys in key dict;'"error - the following keys must be included: ",", " sv  string requiredkeys];
+  typematch:typedict[key dict]=abs type each dict;										                               // create dictionary showing where types match
+
+  //error if any dict types do not match
+  if[not all typematch;'"error - dictionary parameter ",(", "sv string where not typematch)," must be of type: ",", "sv string {key'[x$\:()]}typedict where not typematch];
+ }
+
+setdefaults:{[def;dict] def,(where not all each null dict)#dict };
