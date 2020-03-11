@@ -21,10 +21,8 @@ orderbook:{[dict]
   if[not (1=count dict[`sym]) and not any null dict [`sym];'"Please enter one non-null sym."];
 
   // Set default dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
-  defaulttime:$[`rdb in .proc.proctype;
-    exec last time from exchange;
-    first exec time from select last time from exchange where date=last date];
-  d:setdefaults[allkeys!(`;defaulttime;`;`second$2*.crypto.deffreq);dict];
+  defaulttime:$[`rdb in .proc.proctype;exec last time from exchange;first exec time from select last time from exchange where date=last date];
+  d:setdefaults[allkeys!(defaulttime;`;`;"v"$2*.crypto.deffreq);dict];
 
   // Create extra key if on HDB and order dictionary by date
   if[`hdb~.proc.proctype;d[`date]:d[`timestamp];`date xcols d];
