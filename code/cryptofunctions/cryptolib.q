@@ -21,8 +21,10 @@ orderbook:{[dict]
   if[not (1=count dict[`sym]) and not any null dict [`sym];'"Please enter one non-null sym."];
 
   // Set default dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
-  defaulttime:$[`rdb in .proc.proctype;exec last time from exchange;first exec time from select last time from exchange where date=last date];
-  d:setdefaults[allkeys!(defaulttime;`;`;"v"$2*.crypto.deffreq);dict];
+  defaulttime:$[`rdb in .proc.proctype;
+    exec last time from exchange;
+    first exec time from select last time from exchange where date=last date];
+  d:setdefaults[allkeys!(`;defaulttime;`;`second$2*.crypto.deffreq);dict];
 
   // Create extra key if on HDB and order dictionary by date
   if[`hdb~.proc.proctype;d[`date]:d[`timestamp];`date xcols d];
@@ -148,18 +150,14 @@ createarbtable:{[dict]
 arbitrage:{[d]
   // Generate arbitrage table, extract bid and ask columns and create two subtables (if empty list return nothing)
   if[0h=type arbtable:createarbtable[d];:()];
-  bidcols:getcols[arbtable;"*Bid"];
-  askcols:getcols[arbtable;"*Ask"];
-  bidtab:bidcols#arbtable;
-  asktab:askcols#arbtable;
+  tabs:(getcols[arbtable;] each ("*Bid";"*Ask")) #\: arbtable;
 
-  // Create matrix of arbitrage opportunities
-  arbitrageops:{[bidtable;asktable;length] 
-    (value bidtable[length])>\:value (max value max bidtable)^asktable[length]
-   }[bidtab;asktab]'[til count arbtable];
+  // Define function to compare bids and asks across exchanges and apply to arbtable
+  makeops:{[bidtable;asktable;length] (value bidtable[length])>\:value (max value max bidtable)^asktable[length]};
+  arbitrageops:.[makeops;tabs] each til count arbtable;
 
   // Create a new column which shows if arbitrage opportunity exists for each row
-  update arbitrage:1b from arbtable where any flip {[opstable;length] any each opstable[length]}[arbitrageops]'[til count arbitrageops]
+  update arbitrage:1b from arbtable where any flip {[opstable;length] any each opstable[length]}[arbitrageops;] each til count arbitrageops
  };
 
 // Add a column saying how much potential profit you can make by only looking at the best bid and ask
