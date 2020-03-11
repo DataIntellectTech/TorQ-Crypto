@@ -21,8 +21,10 @@ orderbook:{[dict]
   if[not (1=count dict[`sym]) and not any null dict [`sym];'"Please enter one non-null sym."];
 
   // Set default dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
-  defaulttime:$[`rdb in .proc.proctype;exec last time from exchange;first exec time from select last time from exchange where date=last date];
-  d:setdefaults[allkeys!(`;defaulttime;`;"v"$2*.crypto.deffreq);dict];
+  defaulttime:$[`rdb in .proc.proctype;
+    exec last time from exchange;
+    first exec time from select last time from exchange where date=last date];
+  d:setdefaults[allkeys!(`;defaulttime;`;`second$2*.crypto.deffreq);dict];
 
   // Create extra key if on HDB and order dictionary by date
   if[`hdb~.proc.proctype;d[`date]:d[`timestamp];`date xcols d];
@@ -45,7 +47,9 @@ orderbook:{[dict]
   bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`exchange`bid`bidSize];
   ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`exchange`ask`askSize];
   orderbook:bid,'ask;
-  $[(0=count orderbook) & .z.d>`date$d`timestamp;'":no data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only."; orderbook]
+  $[(0=count orderbook) & .z.d>`date$d`timestamp;
+    '":no data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only."; 
+    orderbook]
  }
 
 /
@@ -119,8 +123,11 @@ createarbtable:{[dict]
       (in;`exchange;enlist d[`exchanges])
     )) (where not any each null d) except `endtimestamp`bucketsize;
 
-  // Perform query, then get exchanges and use them to generate table names
-  t:?[exchange_top;wherecl;0b;cls!cls:`time`exchange`bid`ask`bidSize`askSize];  
+  // Perform query, then if nothing is returned then return an empty list 
+  t:?[exchange_top;wherecl;0b;cls!cls:`time`exchange`bid`ask`bidSize`askSize];
+  if[0=count t;:()];
+
+  // Get exchanges and use them to generate table names
   exchanges:exec exchange from (select distinct exchange from t);
   tablenames:{`$string[x],"Table"} each exchanges;
 
@@ -130,20 +137,19 @@ createarbtable:{[dict]
       from y where exchange=x}[;t;d`bucketsize] each exchanges;
 
   // If there is only one exchange, return the unedited arbtable
-  if[1=count l1dict:tablenames!exchangebook;:(,'/) value l1dict];
+  if[1=count l1dict:tablenames!exchangebook;:0!(,'/) value l1dict];
 
   // If more than one exchange, join together all datasets, reorder the columns, fill in nulls and return
   arbtable:0!`time xasc (,'/) value l1dict;
   colnames: cols arbtable;
   arbtable:(`time,colnames where not null first each ss[;"Bid"] each string colnames) xcols arbtable;
-  arbtable:{![x;();0b;y]}[arbtable;(1 _ colnames)!fills,' 1_ colnames];
-  arbtable
+  arbtable:{![x;();0b;y]}[arbtable;(1 _ colnames)!fills,' 1_ colnames]
  };
 
 // Adds a column saying if there is a chance of risk free profit
 arbitrage:{[d]
-  // Generate arbitrage table, extract bid and ask columns and create two subtables
-  arbtable:createarbtable[d];
+  // Generate arbitrage table, extract bid and ask columns and create two subtables (if empty list return nothing)
+  if[0h=type arbtable:createarbtable[d];:()];
   bidcols:getcols[arbtable;"*Bid"];
   askcols:getcols[arbtable;"*Ask"];
   bidtab:bidcols#arbtable;
@@ -159,10 +165,21 @@ arbitrage:{[d]
  };
 
 // Add a column saying how much potential profit you can make by only looking at the best bid and ask
+// Haven't tested these new lines yet
 profit:{[d]
-  table:arbitrage[d];
+  // If empty list returned from arbitrage, nothing
+  if[0h=type table:arbitrage[d];:()];
   arbitragerows:exec i from table where arbitrage=1b;
   updatetable:{[table;row]
+    // Get dictionaries of exchanges and their bids and asks, then extract exchanges to buy and sell on and what amount
+    // dicts:(getcols[table;] each ("*Bid";"*Ask"))#table row;
+    // pricecols:{[f;d] d?f d}'[(max;min);dicts];
+    // sizecols:{`$(-3_ string x),y}'[pricecols;("BidSize";"AskSize")];
+
+    // // Get the size of sym to buy and sell and update the arbitrage table
+    // size:raze {value enlist[z]#x y}[table;row;] each sizecols;
+    // table:update profit:first (size*max first dicts)-size* min last dicts from table where i=row
+
     bidcols:getcols[table;"*Bid"];											 // gets the bid cols
     askcols:getcols[table;"*Ask"];											 // gets the ask cols
     biddict:bidcols#table row;													 // dict of exchanges and their bids
@@ -174,7 +191,8 @@ profit:{[d]
     sellsize:value enlist[bidsizecol]#table row;
     buysize:value enlist[asksizecol]#table row;
     size:min buysize,sellsize;													 // size of sym we will buy and sell
-    table:update profit:first (size*max biddict)-size* min askdict from table where i=row};
+    table:update profit:first (size*max biddict)-size* min askdict from table where i=row
+    };
   (ljf/) `time xkey' updatetable[table;] each arbitragerows
  };
 
@@ -183,26 +201,28 @@ profit:{[d]
   The following three functions, getcols, typecheck and setdefaults, are utility functions used elsewhere in this script
 
   getcols[] gets columns from a table which match a particular pattern, ie. "*Bid"
-  typecheck[] checks the types of dictionary values that are passed in by the user
   setdefaults[] produces a dictionary where missing values are filled in with defaults
+  typecheck[] checks the types of dictionary values that are passed in by the user
 \
 
-getcols:{[table;word]
-  col where (col:cols table) like word
- };
-
-typecheck:{[typedict;requiredkeylist;dict]
-  if[not 99=type dict;'"error - arguement passed must be a dictionary"];							               // check type of argument passed to original function
-  if[not all keyresult:key[dict] in key typedict;										                                 //checks the keys entered have been spelt correctly
-    '"The following dictionary keys are incorrect: ",(", " sv string key[dict] where 0=keyresult),". The allowed keys are: ",", " sv string key typedict];
-  requiredkeys:(key typedict) where requiredkeylist;										                             // create list of required keys, given in requiredkeylist
-
-  //error if any required keys are missing
-  if[not all requiredkeys in key dict;'"error - the following keys must be included: ",", " sv  string requiredkeys];
-  typematch:typedict[key dict]=abs type each dict;										                               // create dictionary showing where types match
-
-  //error if any dict types do not match
-  if[not all typematch;'"error - dictionary parameter ",(", "sv string where not typematch)," must be of type: ",", "sv string {key'[x$\:()]}typedict where not typematch];
- }
+getcols:{[table;word] col where (col:cols table) like word };
 
 setdefaults:{[def;dict] def,(where not all each null dict)#dict };
+
+typecheck:{[typedict;requiredkeylist;dict]
+  // Checks the arguments are given in the correct form and the right keys are given
+  if[not 99=type dict;'"error - arguement passed must be a dictionary"];
+  if[not all keyresult:key[dict] in key typedict;
+    '"The following dictionary keys are incorrect: ",(", " sv string key[dict] where 0=keyresult),
+     ". The allowed keys are: ",", " sv string key typedict];
+  
+  // Determine required keys and throw an error if any are missing
+  requiredkeys:(key typedict) where requiredkeylist;
+  if[not all requiredkeys in key dict;'"error - the following keys must be included: ",", " sv  string requiredkeys];
+  
+  // Determine if arguments passed in are of the correct types
+  typematch:typedict[key dict]=abs type each dict;
+  if[not all typematch;
+    '"error - dictionary parameter ",(", "sv string where not typematch)," must be of type: ",", "sv string {key'[x$\:()]}typedict where not typematch];
+ };
+
