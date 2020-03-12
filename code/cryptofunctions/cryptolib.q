@@ -24,7 +24,7 @@ orderbook:{[dict]
   defaulttime:$[`rdb in .proc.proctype;
     exec last time from exchange;
     first exec time from select last time from exchange where date=last date];
-  d:setdefaults[allkeys!(`;defaulttime;`;`second$2*.crypto.deffreq);dict];
+  d:setdefaults[allkeys!(defaulttime;`;`;`second$2*.crypto.deffreq);dict];
 
   // Create extra key if on HDB and order dictionary by date
   if[`hdb~.proc.proctype;d[`date]:d[`timestamp];`date xcols d];
@@ -38,7 +38,7 @@ orderbook:{[dict]
       (within;`time;(enlist;(-;d`timestamp;d`window);d`timestamp));
       (=;`sym;enlist d`sym);
       (in;`exchange;enlist d`exchanges))
-    )) (where not any each null d) except `window;
+    )) (where not all each null d) except `window;
 
   // Define book builder projected function
   book:{[wherecl;columns] ungroup columns#0!?[exchange;wherecl; (enlist`exchange)!enlist`exchange; ()]}[wherecl;];
@@ -81,7 +81,7 @@ ohlc:{[dict]
   wherecl:$[`rdb ~ .proc.proctype;
     `date`sym`exchange!((in;`time.date;enlist d`date);(in;`sym; enlist d`sym);(in;`exchange; enlist d`exchange));
     `date`sym`exchange!((in;`date;enlist d`date);(in;`sym;enlist d`sym);(in;`exchange;enlist d`exchange))
-    ] (where not any each null d) except `quote`byexchange;
+    ] (where not all each null d) except `quote`byexchange;
   bycl:$[`rdb ~ .proc.proctype;(`date`sym!`time.date`sym);(`date`sym!`date`sym)], $[d[`byexchange];ex!ex:enlist `exchange;()!()];
 
   // Perform query - (select coldict by date:time.date,sym from t (where time.date in d`date, sym in syms, exchange in exchanges))
@@ -121,7 +121,7 @@ createarbtable:{[dict]
       (within;`time;(enlist;(d[`starttimestamp]);(d[`endtimestamp])));
       (in;`sym;enlist d[`sym]);
       (in;`exchange;enlist d[`exchanges])
-    )) (where not any each null d) except `endtimestamp`bucketsize;
+    )) (where not all each null d) except `endtimestamp`bucketsize;
 
   // Perform query, then if nothing is returned then return an empty list 
   t:?[exchange_top;wherecl;0b;cls!cls:`time`exchange`bid`ask`bidSize`askSize];
@@ -175,7 +175,7 @@ profit:{[d]
     // Get the size of sym to buy and sell and update the arbitrage table
     size:min raze {value enlist[z]#x y}[table;row;] each sizecols;
     table:update profit:first (size*max first dicts)-size* min last dicts from table where i=row
-    };
+   };
   (ljf/) `time xkey' updatetable[table;] each arbitragerows
  };
 
