@@ -99,7 +99,7 @@ ohlc:{[dict]
 \
 
 // Creates a table showing the top of the book for each exchanges at a given time
-createarbtable:{[dict]
+topofbook:{[dict]
   allkeys:`starttimestamp`endtimestamp`sym`exchanges`bucketsize;
   typecheck[allkeys!12 12 11 11 18h;00100b;dict];
   if[not (1=count dict[`sym]) and not any null dict[`sym];'"Please enter one non-null sym."];
@@ -147,10 +147,10 @@ createarbtable:{[dict]
   arbtable:{![x;();0b;y]}[arbtable;(1 _ colnames)!fills,' 1_ colnames]
  };
 
-// Adds a column saying if there is a chance of risk free profit
+// Adds a column saying if there is a chance of risk free profit and what that profit is
 arbitrage:{[d]
   // Generate arbitrage table, extract bid and ask columns and create two subtables (if empty list return nothing)
-  if[0h=type arbtable:createarbtable[d];:()];
+  if[0h=type arbtable:topofbook[d];:()];
   tabs:(getcols[arbtable;] each ("*Bid";"*Ask")) #\: arbtable;
 
   // Define function to compare bids and asks across exchanges and apply to arbtable
@@ -158,14 +158,11 @@ arbitrage:{[d]
   arbitrageops:.[makeops;tabs] each til count arbtable;
 
   // Create a new column which shows if arbitrage opportunity exists for each row
-  update arbitrage:1b from arbtable where any flip {[opstable;length] any each opstable[length]}[arbitrageops;] each til count arbitrageops
- };
+  table:update arbitrage:1b from arbtable where any flip {[opstable;length] any each opstable[length]}[arbitrageops;] each til count arbitrageops;
+ 
+  // Add a column saying how much potential profit you can make by only looking at the best bid and ask
+  // Can we replace this iterative approach with a broader update approach?
 
-// Add a column saying how much potential profit you can make by only looking at the best bid and ask
-// Can we replace this iterative approach with a broader update approach?
-profit:{[d]
-  // If empty list returned from arbitrage, nothing
-  if[0h=type table:arbitrage[d];:()];
   arbitragerows:exec i from table where arbitrage=1b;
   updatetable:{[table;row]
     // Get dictionaries of exchanges and their bids and asks, then extract exchanges to buy and sell on and what amount
