@@ -111,13 +111,13 @@ topofbook:{[dict]
   d[`bucketsize]:`long$d`bucketsize;
   
   // Check that dates passed in are valid
-  if[(all .proc.cp[] < stet) or (not ~/["d"$stet]) or (>/[stet:d[`starttimestamp`endtimestamp]]);'"Invalid start and end times"];
+  if[(all .proc.cp[] < stet) or (>/[stet:d[`starttimestamp`endtimestamp]]);'"Invalid start and end times"];
 
   // Create extra key if on HDB and order dictionary by date
   if[`hdb~.proc.proctype;d[`date]:`date$d[`endtimestamp];`date xcols d];
 
   // If on HDB generate new where clause and join the rest on
-  wherecl:($[`hdb ~ .proc.proctype;(enlist`date)!enlist (=;`date;d[`date]);()!()],
+  wherecl:($[`hdb ~ .proc.proctype;(enlist `date)!enlist (within;`date;(enlist;("d"$d[`starttimestamp]);("d"$d[`endtimestamp])));()!()],
     `starttimestamp`sym`exchanges!(
       (within;`time;(enlist;(d[`starttimestamp]);(d[`endtimestamp])));
       (in;`sym;enlist d[`sym]);
@@ -134,7 +134,7 @@ topofbook:{[dict]
 
   // Creates a list of tables with the best bid and ask for each exchange
   exchangebook:{[x;y;z] (`time;`$string[x],"Bid";`$string[x],"Ask";`$string[x],"BidSize";`$string[x],"AskSize") xcol 
-    select bid:first bid,ask:first ask ,bidSize:first bidSize ,askSize:first askSize by time:z xbar time.second 
+    select bid:first bid,ask:first ask ,bidSize:first bidSize ,askSize:first askSize by time:(`date$time)+z xbar time.second 
       from y where exchange=x}[;t;d`bucketsize] each exchanges;
 
   // If there is only one exchange, return the unedited arbtable
