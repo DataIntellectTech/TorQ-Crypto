@@ -161,33 +161,20 @@ arbitrage:{[d]
  };
 
 // Add a column saying how much potential profit you can make by only looking at the best bid and ask
-// Haven't tested these new lines yet
+// Can we replace this iterative approach with a broader update approach?
 profit:{[d]
   // If empty list returned from arbitrage, nothing
   if[0h=type table:arbitrage[d];:()];
   arbitragerows:exec i from table where arbitrage=1b;
   updatetable:{[table;row]
     // Get dictionaries of exchanges and their bids and asks, then extract exchanges to buy and sell on and what amount
-    // dicts:(getcols[table;] each ("*Bid";"*Ask"))#table row;
-    // pricecols:{[f;d] d?f d}'[(max;min);dicts];
-    // sizecols:{`$(-3_ string x),y}'[pricecols;("BidSize";"AskSize")];
+    dicts:(getcols[table;] each ("*Bid";"*Ask")) #\: table row;
+    pricecols:{[f;d] d?f d}'[(max;min);dicts];
+    sizecols:{`$(-3_ string x),y}'[pricecols;("BidSize";"AskSize")];
 
-    // // Get the size of sym to buy and sell and update the arbitrage table
-    // size:raze {value enlist[z]#x y}[table;row;] each sizecols;
-    // table:update profit:first (size*max first dicts)-size* min last dicts from table where i=row
-
-    bidcols:getcols[table;"*Bid"];											 // gets the bid cols
-    askcols:getcols[table;"*Ask"];											 // gets the ask cols
-    biddict:bidcols#table row;													 // dict of exchanges and their bids
-    askdict:askcols#table row;													 // dict of exchanges and their asks
-    sellpricecol:biddict?max biddict;										 // exchange we will sell on
-    buypricecol:askdict?min askdict;										 // exchange we will buy on
-    bidsizecol:`$(-3_string sellpricecol),"BidSize";		 // bid size col
-    asksizecol:`$(-3_string buypricecol),"AskSize";			 // ask size col
-    sellsize:value enlist[bidsizecol]#table row;
-    buysize:value enlist[asksizecol]#table row;
-    size:min buysize,sellsize;													 // size of sym we will buy and sell
-    table:update profit:first (size*max biddict)-size* min askdict from table where i=row
+    // Get the size of sym to buy and sell and update the arbitrage table
+    size:min raze {value enlist[z]#x y}[table;row;] each sizecols;
+    table:update profit:first (size*max first dicts)-size* min last dicts from table where i=row
     };
   (ljf/) `time xkey' updatetable[table;] each arbitragerows
  };
