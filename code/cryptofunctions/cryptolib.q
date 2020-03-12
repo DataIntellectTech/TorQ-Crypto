@@ -102,6 +102,7 @@ ohlc:{[dict]
 createarbtable:{[dict]
   allkeys:`starttimestamp`endtimestamp`sym`exchanges`bucketsize;
   typecheck[allkeys!12 12 11 11 18h;00100b;dict];
+  if[not (1=count dict[`sym]) and not any null dict[`sym];'"Please enter one non-null sym."];
 
   // Set defaults and sanitise input
   defaulttimes:$[`rdb~.proc.proctype;"p"$(.proc.cd[];.proc.cp[]);0 -1 + "p"$0 1 + last date];
