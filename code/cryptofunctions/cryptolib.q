@@ -126,9 +126,32 @@ topofbook:{[dict]
 
   // Perform query, then if nothing is returned then return an empty list 
   t:?[exchange_top;wherecl;0b;cls!cls:`time`exchange`bid`ask`bidSize`askSize];
+
+
+// Get excahnges and use them to generate table names
+  exchanges:exec exchange from (select distinct exchange from t);
+  tablenames:{`$string[x],"Table"} each exchanges;
+
+  //Creates a list of tables with the best bid and ask for each exchange
+  exchangebook:{[x;y;z] (`time;`$string[x],"Bid";`$string[x],"Ask";`$string[x],"BidSize";`$string[x],"AskSize") xcol
+    select bid:first bid,ask:first ask ,bidSize:first bidSize ,askSize:first askSize by time:z xbar time.second
+      from y where exchange=x}[;t;d`bucketsize] each exchanges;
+
+  // If there is only one exchange, return the unedited arbtable
+  if[1=count l1dict:tablenames!exchangebook;:0!(,'/) value l1dict];
+
+  // If more than one exchange, join together all datasets, reorder the columns, fill in nulls and return
+  arbtable:0!`time xasc (,'/) value l1dict;
+  colnames: cols arbtable;
+  arbtable:(`time,colnames where not null first each ss[;"Bid"] each string colnames) xcols arbtable;
+  arbtable:{![x;();0b;y]}[arbtable;(1 _ colnames)!fills,' 1_ colnames];
+  tabs:(getcols[arbtable;] each ("*Bid";"*Ask")) #\: arbtable;
+
   //shows if arbitrage opportunity exists for each row
-  table:update arbitrage:1b from arbtable where any flip {[opstable;length] any each opstable[length]}[arbitrageops;] each til count arbitrageops;
- 
+ makeops:{[bidtable;asktable;length](value bidtable[length])>\:value (max value max bidtable)^asktable[length]};
+ arbitrageops:.[makeops;tabs] each til count arbtable;
+ table:update arbitrage:1b from arbtable where any flip {[opstable;length] any each opstable[length]}[arbitrageops;] each til count arbitrageops; 
+
   // Add a column saying how much potential profit you can make by only looking at the best bid and ask
   // Can we replace this iterative approach with a broader update approach?
 
