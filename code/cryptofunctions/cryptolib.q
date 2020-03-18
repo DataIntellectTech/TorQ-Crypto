@@ -126,15 +126,15 @@ topofbook:{[dict]
 
   // Perform query, then if nothing is returned then return an empty list 
   t:?[exchange_top;wherecl;0b;cls!cls:`time`exchange`bid`ask`bidSize`askSize];
+  if[0=count t;:()];
 
-
-// Get excahnges and use them to generate table names
+  // Get exchanges and use them to generate table names
   exchanges:exec exchange from (select distinct exchange from t);
   tablenames:{`$string[x],"Table"} each exchanges;
 
-  //Creates a list of tables with the best bid and ask for each exchange
-  exchangebook:{[x;y;z] (`time;`$string[x],"Bid";`$string[x],"Ask";`$string[x],"BidSize";`$string[x],"AskSize") xcol
-    select bid:first bid,ask:first ask ,bidSize:first bidSize ,askSize:first askSize by time:z xbar time.second
+  // Creates a list of tables with the best bid and ask for each exchange
+  exchangebook:{[x;y;z] (`time;`$string[x],"Bid";`$string[x],"Ask";`$string[x],"BidSize";`$string[x],"AskSize") xcol 
+    select bid:first bid,ask:first ask ,bidSize:first bidSize ,askSize:first askSize by time:z xbar time.second 
       from y where exchange=x}[;t;d`bucketsize] each exchanges;
 
   // If there is only one exchange, return the unedited arbtable
@@ -144,14 +144,23 @@ topofbook:{[dict]
   arbtable:0!`time xasc (,'/) value l1dict;
   colnames: cols arbtable;
   arbtable:(`time,colnames where not null first each ss[;"Bid"] each string colnames) xcols arbtable;
-  arbtable:{![x;();0b;y]}[arbtable;(1 _ colnames)!fills,' 1_ colnames];
+  arbtable:{![x;();0b;y]}[arbtable;(1 _ colnames)!fills,' 1_ colnames]
+
+ };
+
+  // Adds a column saying if there is a chance of risk free profit and what that profit is
+  arbitrage:{[d]
+  // Generate arbitrage table, extract bid and ask columns and create two subtables (if empty list return nothing)
+  if[0h=type arbtable:topofbook[d];:()];
   tabs:(getcols[arbtable;] each ("*Bid";"*Ask")) #\: arbtable;
 
-  //shows if arbitrage opportunity exists for each row
- makeops:{[bidtable;asktable;length](value bidtable[length])>\:value (max value max bidtable)^asktable[length]};
- arbitrageops:.[makeops;tabs] each til count arbtable;
- table:update arbitrage:1b from arbtable where any flip {[opstable;length] any each opstable[length]}[arbitrageops;] each til count arbitrageops; 
+  // Define function to compare bids and asks across exchanges and apply to arbtable
+  makeops:{[bidtable;asktable;length] (value bidtable[length])>\:value (max value max bidtable)^asktable[length]};
+  arbitrageops:.[makeops;tabs] each til count arbtable;
 
+  // Create a new column which shows if arbitrage opportunity exists for each row
+  table:update arbitrage:1b from arbtable where any flip {[opstable;length] any each opstable[length]}[arbitrageops;] each til count arbitrageops;
+ 
   // Add a column saying how much potential profit you can make by only looking at the best bid and ask
   // Can we replace this iterative approach with a broader update approach?
 
@@ -166,12 +175,8 @@ topofbook:{[dict]
     size:min raze {value enlist[z]#x y}[table;row;] each sizecols;
     table:update profit:first (size*max first dicts)-size* min last dicts from table where i=row
    };
-
-  //if no arbitrage opportunities are present in table, return the table showing 0 arbitrage opportunities (rather than empty table)
-  if[0=count arbitragerows;:table];
   (ljf/) `time xkey' updatetable[table;] each arbitragerows
  };
-
 /
                                     **** UTILITY FUNCTIONS ****
   The following three functions, getcols, typecheck and setdefaults, are utility functions used elsewhere in this script
