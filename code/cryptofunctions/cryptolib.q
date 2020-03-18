@@ -134,7 +134,7 @@ topofbook:{[dict]
 
   // Creates a list of tables with the best bid and ask for each exchange
   exchangebook:{[x;y;z] (`time;`$string[x],"Bid";`$string[x],"Ask";`$string[x],"BidSize";`$string[x],"AskSize") xcol 
-    select bid:first bid,ask:first ask ,bidSize:first bidSize ,askSize:first askSize by time:z xbar time.second 
+    select bid:first bid,ask:first ask ,bidSize:first bidSize ,askSize:first askSize by time:(`date$time)+z xbar time.second 
       from y where exchange=x}[;t;d`bucketsize] each exchanges;
 
   // If there is only one exchange, return the unedited arbtable
