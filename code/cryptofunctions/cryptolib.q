@@ -102,16 +102,16 @@ ohlc:{[dict]
 topofbook:{[dict]
   allkeys:`starttime`endtime`sym`exchanges`bucket;
   typecheck[allkeys!12 12 11 11 18h;00100b;dict];
-  if[not (1=count dict[`sym]) and not any null dict[`sym];'"Please enter one non-null sym."];
+  if[any 1 0<(count;sum)@\: null dict[`sym];'"Please enter one non-null sym."];
 
   // Set defaults and sanitise input
   defaulttimes:$[`rdb~.proc.proctype;"p"$(.proc.cd[];.proc.cp[]);0 -1 + "p"$0 1 + last date];
   d:setdefaults[allkeys!raze(defaulttimes;`;`;`second$2*.crypto.deffreq);dict];
-  d:@[d;`sym`starttime`endtime`bucket;first];
+  d:@[d;`starttime`endtime`bucket;first];
   d[`bucket]:`long$d`bucket;
   
   // Check that dates passed in are valid
-  if[(all .proc.cp[] < stet) or (>/[stet:d[`starttime`endtime]]);'"Invalid start and end times"];
+  if[any (all .proc.cp[]<;>/)@\:d[`starttime`endtime];'"Invalid start and end times"];
 
   // If on HDB generate new where clause and join the rest on
   wherecl:($[`hdb ~ .proc.proctype;(enlist `date)!enlist (within;`date;(enlist;("d"$d[`starttime]);("d"$d[`endtime])));()!()],
