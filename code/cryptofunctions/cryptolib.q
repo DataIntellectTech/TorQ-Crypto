@@ -100,29 +100,26 @@ ohlc:{[dict]
 
 // Creates a table showing the top of the book for each exchanges at a given time
 topofbook:{[dict]
-  allkeys:`starttimestamp`endtimestamp`sym`exchanges`bucketsize;
+  allkeys:`starttime`endtime`sym`exchanges`bucket;
   typecheck[allkeys!12 12 11 11 18h;00100b;dict];
   if[not (1=count dict[`sym]) and not any null dict[`sym];'"Please enter one non-null sym."];
 
   // Set defaults and sanitise input
   defaulttimes:$[`rdb~.proc.proctype;"p"$(.proc.cd[];.proc.cp[]);0 -1 + "p"$0 1 + last date];
   d:setdefaults[allkeys!raze(defaulttimes;`;`;`second$2*.crypto.deffreq);dict];
-  d:@[d;`sym`starttimestamp`endtimestamp`bucketsize;first];
-  d[`bucketsize]:`long$d`bucketsize;
+  d:@[d;`sym`starttime`endtime`bucket;first];
+  d[`bucket]:`long$d`bucket;
   
   // Check that dates passed in are valid
-  if[(all .proc.cp[] < stet) or (>/[stet:d[`starttimestamp`endtimestamp]]);'"Invalid start and end times"];
-
-  // Create extra key if on HDB and order dictionary by date
-  if[`hdb~.proc.proctype;d[`date]:`date$d[`endtimestamp];`date xcols d];
+  if[(all .proc.cp[] < stet) or (>/[stet:d[`starttime`endtime]]);'"Invalid start and end times"];
 
   // If on HDB generate new where clause and join the rest on
-  wherecl:($[`hdb ~ .proc.proctype;(enlist `date)!enlist (within;`date;(enlist;("d"$d[`starttimestamp]);("d"$d[`endtimestamp])));()!()],
-    `starttimestamp`sym`exchanges!(
-      (within;`time;(enlist;(d[`starttimestamp]);(d[`endtimestamp])));
+  wherecl:($[`hdb ~ .proc.proctype;(enlist `date)!enlist (within;`date;(enlist;("d"$d[`starttime]);("d"$d[`endtime])));()!()],
+    `starttime`sym`exchanges!(
+      (within;`time;(enlist;(d[`starttime]);(d[`endtime])));
       (in;`sym;enlist d[`sym]);
       (in;`exchange;enlist d[`exchanges])
-    )) (where not all each null d) except `endtimestamp`bucketsize;
+    )) (where not all each null d) except `endtime`bucket;
 
   // Perform query, then if nothing is returned then return an empty list 
   t:?[exchange_top;wherecl;0b;cls!cls:`time`exchange`bid`ask`bidSize`askSize];
@@ -135,7 +132,7 @@ topofbook:{[dict]
   // Creates a list of tables with the best bid and ask for each exchange
   exchangebook:{[x;y;z] (`time;`$string[x],"Bid";`$string[x],"Ask";`$string[x],"BidSize";`$string[x],"AskSize") xcol 
     select bid:first bid,ask:first ask ,bidSize:first bidSize ,askSize:first askSize by time:(`date$time)+z xbar time.second 
-      from y where exchange=x}[;t;d`bucketsize] each exchanges;
+      from y where exchange=x}[;t;d`bucket] each exchanges;
 
   // If there is only one exchange, return the unedited arbtable
   if[1=count l1dict:tablenames!exchangebook;:0!(,'/) value l1dict];
