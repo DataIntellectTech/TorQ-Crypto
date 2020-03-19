@@ -114,19 +114,18 @@ topofbook:{[dict]
   if[any (all .proc.cp[]<;>/)@\:d[`starttime`endtime];'"Invalid start and end times"];
 
   // If on HDB generate new where clause and join the rest on
-  wherecl:($[`hdb ~ .proc.proctype;(enlist `date)!enlist (within;`date;(enlist;("d"$d[`starttime]);("d"$d[`endtime])));()!()],
-    `starttime`sym`exchanges!(
-      (within;`time;(enlist;(d[`starttime]);(d[`endtime])));
+   wherecl:($[`hdb ~ .proc.proctype;(enlist `date)!enlist (within;`date;enlist,"d"$d[`starttime`endtime]);()!()], `starttime`sym`exchanges!(
+      (within;`time;enlist,d[`starttime`endtime]);
       (in;`sym;enlist d[`sym]);
       (in;`exchange;enlist d[`exchanges])
-    )) (where not all each null d) except `endtime`bucket;
+    ))where not all each null `endtime`bucket _d;
 
   // Perform query, then if nothing is returned then return an empty list 
   t:?[exchange_top;wherecl;0b;cls!cls:`time`exchange`bid`ask`bidSize`askSize];
   if[0=count t;:()];
 
   // Get exchanges and use them to generate table names
-  exchanges:exec exchange from (select distinct exchange from t);
+  exchanges:exec distinct exchange from t;
   tablenames:{`$string[x],"Table"} each exchanges;
 
   // Creates a list of tables with the best bid and ask for each exchange
