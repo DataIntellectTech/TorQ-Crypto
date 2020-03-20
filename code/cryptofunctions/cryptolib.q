@@ -138,9 +138,7 @@ topofbook:{[dict]
 
   // If more than one exchange, join together all datasets, reorder the columns, fill in nulls and return
   arbtable:0!`time xasc (,'/) value l1dict;
-  colnames: cols arbtable;
-  arbtable:(`time,colnames where not null first each ss[;"Bid"] each string colnames) xcols arbtable;
-  arbtable:{![x;();0b;y]}[arbtable;(1 _ colnames)!fills,' 1_ colnames]
+  arbtable:{![x;();0b;y]}[arbtable;ca!fills,' ca:asc 1 _cols arbtable]
 
  };
 
