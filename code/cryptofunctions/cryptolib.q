@@ -134,10 +134,10 @@ topofbook:{[dict]
       from y where exchange=x}[;t;d`bucket] each exchanges;
 
   // If there is only one exchange, return the unedited arbtable
-  if[1=count l1dict:tablenames!exchangebook;:0!(,'/) value l1dict];
+  if[99h~type exchangebook;:(,'/) value l1dict:tablenames!exchangebook];
 
   // If more than one exchange, join together all datasets, reorder the columns, fill in nulls and return
-  arbtable:0!`time xasc (,'/) value l1dict;
+  arbtable:`time xasc (,'/) value l1dict;
   arbtable:{![x;();0b;y]}[arbtable;ca!fills,' ca:asc 1 _cols arbtable]
 
  };
