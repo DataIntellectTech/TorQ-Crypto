@@ -15,6 +15,7 @@
   orderbook[(enlist `sym)!enlist (`SYMBOL)]                                          ->  get latest `SYMBOL data from table
   orderbook[(`sym`timestamp`exchanges`window)!(`BTCUSDT;.proc.cp[];`finex`bhex;30)]  ->  more user input example
 \
+
 orderbook:{[dict]
   allkeys:`timestamp`sym`exchanges`window;
   typecheck[allkeys!12 11 11 18h;0100b;dict];
@@ -50,7 +51,7 @@ orderbook:{[dict]
   $[(0=count orderbook) & .z.d>`date$d`timestamp;
     '":no data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only."; 
     orderbook]
- }
+ };
 
 /
                           **** OPEN HIGH LOW CLOSE (OHLC) FUNCTION ****
@@ -61,6 +62,7 @@ orderbook:{[dict]
   ohlc[enlist[`sym]!enlist `SYMBOL]                                             ->  get latest OHLC data for SYMBOL
   ohlc[`date`sym`exchange`quote`byexchange!(.z.d;`SYMBOL;`finex`okex;`bid;1b)]  ->  get only bid data by exchange for SYMBOL
 \
+
 ohlc:{[dict]
   allkeys:`date`sym`exchange`quote`byexchange;
   typecheck[allkeys!(14h;11h;11h;11h;1h);01000b;dict];
@@ -90,13 +92,17 @@ ohlc:{[dict]
 
 /
                                   **** ARBITRATION FUNCTIONS ****
-  The following three functions, createarbtable, arbitrage and profit, are all to do with arbitration.
-  The profit function calls the arbitrage function which in turn calls the createarbtable function.
+  The following two functions, topofbook and arbitrage, are all to do with arbitration.
+  The arbitrage function will call the topofbook function.
+  Sym is the only mandatory parameter that the user has to pass in, the others will revert to defaults.
+  If a null parameter value is passed in, this will remove the pertinent where clause from the query.
+  This function can be run on the RDB and/or HDB and will adjust queries accordingly.
 
-  createarbtable[] generates a table showing the top of the book for each exchange
-  arbitrage[] then gets this table and adds a column that shows if there is a chance of profit
-  profit[] then adds a column showing how much potential profit can be made, just looking at the bid and ask
+  topofbook[dict arg] generates a table showing the top of the book for each exchange
+  arbitrage[dict arg] then gets this table and adds a column that shows if there is an opportunity to make profit and then adds a column showing how much potential profit can be made, just looking at the bid and ask
 \
+
+//TOPOFBOOK FUNCTION
 
 // Creates a table showing the top of the book for each exchanges at a given time
 topofbook:{[dict]
@@ -129,18 +135,24 @@ topofbook:{[dict]
   tablenames:{`$string[x],"Table"} each exchanges;
 
   // Creates a list of tables with the best bid and ask for each exchange
-  exchangebook:{[x;y;z] (raze(`time;`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))) xcol 
-    select bid:first bid,ask:first ask ,bidSize:first bidSize ,askSize:first askSize by time:(`date$time)+z xbar time.second 
-      from y where exchange=x}[;t;d`bucket] each exchanges;
+  exchangebook:{[x;y;z] 
+    (raze(`time;`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))) xcol 
+    select bid:last bid,ask:last ask ,bidSize:last bidSize ,askSize:last askSize 
+      by time:(`date$time)+z+z xbar time.second 
+      from y where exchange=x
+   }[;t;d`bucket] each exchanges;
 
   // If there is only one exchange, return the unedited arbtable
   if[99h~type exchangebook;:(,'/) value l1dict:tablenames!exchangebook];
 
   // If more than one exchange, join together all datasets, reorder the columns, fill in nulls and return
-  arbtable:`time xasc (,'/) value l1dict;
+  arbtable:`time xasc (,'/) value l1dict:tablenames!exchangebook;
   arbtable:{![x;();0b;y]}[arbtable;ca!fills,' ca:asc 1 _cols arbtable]
 
  };
+
+
+//ARBITRAGE FUNCTION
 
   // Adds a column saying if there is a chance of risk free profit and what that profit is
   arbitrage:{[d]
