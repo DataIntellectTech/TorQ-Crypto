@@ -126,13 +126,15 @@ topofbook:{[dict]
       (in;`exchange;enlist d[`exchanges])
     ))where not all each null `endtime`bucket _d;
 
-  // Perform query, then if nothing is returned then return an empty list 
+  // Perform query 
   t:?[exchange_top;wherecl;0b;cls!cls:`time`exchange`bid`ask`bidSize`askSize];
-  if[0=count t;:()];
 
   // Get exchanges and use them to generate table names
   exchanges:exec distinct exchange from t;
   tablenames:{`$string[x],"Table"} each exchanges;
+
+  // If no data is available, return an empty table 
+  if[0=count t;:t:`time xkey (,'/){(raze(`time;`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))) xcol y}[;t] each d`exchanges];
 
   // Creates a list of tables with the best bid and ask for each exchange
   exchangebook:{[x;y;z] 
