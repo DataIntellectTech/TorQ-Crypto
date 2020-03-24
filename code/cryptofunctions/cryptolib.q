@@ -134,7 +134,7 @@ topofbook:{[dict]
   tablenames:{`$string[x],"Table"} each exchanges;
 
   // If no data is available, return an empty table 
-  if[0=count t;:t:`time xkey (,'/){(raze(`time;`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))) xcol y}[;t] each d`exchanges];
+  if[0=count t;:t:0!`time xkey (,'/){(raze(`time;`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))) xcol y}[;t] each d`exchanges];
 
   // Creates a list of tables with the best bid and ask for each exchange
   exchangebook:{[x;y;z] 
@@ -159,7 +159,7 @@ topofbook:{[dict]
   // Adds a column saying if there is a chance of risk free profit and what that profit is
   arbitrage:{[d]
   // Generate arbitrage table, extract bid and ask columns and create two subtables (if empty list return nothing)
-  if[0h=type arbtable:topofbook[d];:()];
+  if[0=count arbtable:topofbook[d];:update arbitrage:0, profit:0 from arbtable];
   tabs:(getcols[arbtable;] each ("*Bid";"*Ask")) #\: arbtable;
 
   // Define function to compare bids and asks across exchanges and apply to arbtable
