@@ -148,7 +148,7 @@ topofbook:{[dict]
   if[99h~type exchangebook;:(,'/) value l1dict:tablenames!exchangebook];
 
   // If more than one exchange, join together all datasets, reorder the columns, fill in nulls and return
-  arbtable:`time xasc (,'/) value l1dict:tablenames!exchangebook;
+  arbtable:0!`time xasc (,'/) value l1dict:tablenames!exchangebook;
   arbtable:{![x;();0b;y]}[arbtable;ca!fills,' ca:asc 1 _cols arbtable]
 
  };
@@ -173,6 +173,10 @@ topofbook:{[dict]
   // Can we replace this iterative approach with a broader update approach?
 
   arbitragerows:exec i from table where arbitrage=1b;
+  
+  // If no arbitrage opportunities are available, return table anyway
+  if[0=count arbitragerows; :update profit:0 from table];
+
   updatetable:{[table;row]
     // Get dictionaries of exchanges and their bids and asks, then extract exchanges to buy and sell on and what amount
     dicts:(getcols[table;] each ("*Bid";"*Ask")) #\: table row;
@@ -183,7 +187,7 @@ topofbook:{[dict]
     size:min raze {value enlist[z]#x y}[table;row;] each sizecols;
     table:update profit:first (size*max first dicts)-size* min last dicts from table where i=row
    };
-  (ljf/) `time xkey' updatetable[table;] each arbitragerows
+  show raze updatetable[table;] each arbitragerows
  };
 /
                                     **** UTILITY FUNCTIONS ****
