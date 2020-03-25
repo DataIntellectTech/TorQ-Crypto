@@ -187,7 +187,7 @@ topofbook:{[dict]
     size:min raze {value enlist[z]#x y}[table;row;] each sizecols;
     table:update profit:first (size*max first dicts)-size* min last dicts from table where i=row
    };
-  show raze updatetable[table;] each arbitragerows
+  :raze updatetable[table;] each arbitragerows
  };
 /
                                     **** UTILITY FUNCTIONS ****
