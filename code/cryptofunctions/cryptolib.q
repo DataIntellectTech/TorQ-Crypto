@@ -160,34 +160,15 @@ topofbook:{[dict]
   arbitrage:{[d]
   // Generate arbitrage table, extract bid and ask columns and create two subtables (if empty list return nothing)
   if[0=count arbtable:topofbook[d];:update arbitrage:0, profit:0 from arbtable];
-  tabs:(getcols[arbtable;] each ("*Bid";"*Ask")) #\: arbtable;
-
-  // Define function to compare bids and asks across exchanges and apply to arbtable
-  makeops:{[bidtable;asktable;length] (value bidtable[length])>\:value (max value max bidtable)^asktable[length]};
-  arbitrageops:.[makeops;tabs] each til count arbtable;
-
-  // Create a new column which shows if arbitrage opportunity exists for each row
-  table:update arbitrage:1b from arbtable where any flip {[opstable;length] any each opstable[length]}[arbitrageops;] each til count arbitrageops;
- 
-  // Add a column saying how much potential profit you can make by only looking at the best bid and ask
-  // Can we replace this iterative approach with a broader update approach?
-
-  arbitragerows:exec i from table where arbitrage=1b;
   
-  // If no arbitrage opportunities are available, return table anyway
-  if[0=count arbitragerows; :update profit:0 from table];
+  // Aggregate profit-column funciton - calculates profit to be made
+  f:{[b;bs;a;as]enlist({[b;bs;a;as]b:max@'l:(,'/)b;w:where'[b=l];bs:@'[flip bs;w];a:min@'l:(,'/)a;w:where'[a=l];as:@'[flip as;w];p:min'[(bs,'as)]*b-a;?[0>p;0;p]};enlist,b;enlist,bs;enlist,a;enlist,as)}; 
+ 
+  // Input columns for aggregate profit-col function
+  cc:f . getcols[arbtable;] each ("*Bid";"*BidSize";"*Ask";"*AskSize");
 
-  updatetable:{[table;row]
-    // Get dictionaries of exchanges and their bids and asks, then extract exchanges to buy and sell on and what amount
-    dicts:(getcols[table;] each ("*Bid";"*Ask")) #\: table row;
-    pricecols:{[f;d] d?f d}'[(max;min);dicts];
-    sizecols:{`$(-3_ string x),y}'[pricecols;("BidSize";"AskSize")];
-
-    // Get the size of sym to buy and sell and update the arbitrage table
-    size:min raze {value enlist[z]#x y}[table;row;] each sizecols;
-    table:update profit:first (size*max first dicts)-size* min last dicts from table where i=row
-   };
-  :raze updatetable[table;] each arbitragerows
+  // Perform query
+  :update arbitrage:profit>0 from ![arbtable;();0b;enlist[`profit]!cc]
  };
 /
                                     **** UTILITY FUNCTIONS ****
