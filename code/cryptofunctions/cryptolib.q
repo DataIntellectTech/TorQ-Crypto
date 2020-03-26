@@ -120,11 +120,11 @@ topofbook:{[dict]
   if[any (all .proc.cp[]<;>/)@\:d[`starttime`endtime];'"Invalid start and end times"];
 
   // If on HDB generate new where clause and join the rest on
-   wherecl:($[`hdb ~ .proc.proctype;(enlist `date)!enlist (within;`date;enlist,"d"$d[`starttime`endtime]);()!()], `starttime`sym`exchanges!(
-      (within;`time;enlist,d[`starttime`endtime]);
-      (in;`sym;enlist d[`sym]);
-      (in;`exchange;enlist d[`exchanges])
-    ))where not all each null `endtime`bucket _d;
+  wherecl:$[`hdb~.proc.proctype;(enlist `date)!enlist(within;`date;enlist,"d"$d`starttime`endtime);()!()];
+  wherecl[`starttime]:(within;`time;enlist,d`starttime`endtime);
+  wherecl[`sym]:(in;`sym;enlist d`sym);
+  wherecl[`exchanges]:(in;`exchange;enlist d`exchanges);
+  wherecl@:where not all each null `endtime`bucket _d;
 
   // Perform query 
   t:?[exchange_top;wherecl;0b;cls!cls:`time`exchange`bid`ask`bidSize`askSize];
@@ -137,14 +137,11 @@ topofbook:{[dict]
 
   // Creates a list of tables with the best bid and ask for each exchange
   exchangebook:{[x;y;z] 
-    (raze(`time;`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))) xcol 
+    (`time,`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))xcol 
     select bid:last bid,ask:last ask ,bidSize:last bidSize ,askSize:last askSize 
       by time:(`date$time)+z+z xbar time.second 
       from y where exchange=x
    }[;t;d`bucket] each exchanges;
-
-  // If there is only one exchange, return the unedited arbtable
-  if[99h~type exchangebook;:(,'/) exchangebook];
 
   // If more than one exchange, join together all datasets, reorder the columns, fill in nulls and return
   arbtable:0!`time xasc (,'/) exchangebook;
@@ -156,15 +153,30 @@ topofbook:{[dict]
 //ARBITRAGE FUNCTION
 
   // Adds a column saying if there is a chance of risk free profit and what that profit is
-  arbitrage:{[d]
+arbitrage:{[d]
   // Generate arbitrage table, extract bid and ask columns and create two subtables (if empty list return nothing)
   if[0=count arbtable:topofbook[d];:update arbitrage:0, profit:0 from arbtable];
 
   // If only one exchange is provided, default profit and arbitrage to 0
-  if[count d[`exchanges];:update profit:0, arbitrage:0 from arbtable];
+  if[count d`exchanges;:update profit:0, arbitrage:0 from arbtable];
 
   // Aggregate profit-column funciton - calculates profit to be made
-  f:{[b;bs;a;as]enlist({[b;bs;a;as]b:max@'l:(,'/)b;w:where'[b=l];bs:@'[flip bs;w];a:min@'l:(,'/)a;w:where'[a=l];as:@'[flip as;w];p:min'[(bs,'as)]*b-a;?[0>p;0;p]};enlist,b;enlist,bs;enlist,a;enlist,as)}; 
+  func:{[b;bs;a;as]
+    f:{[b;bs;a;as]
+      // Find best bid
+      b:max@'l:(,'/)b;
+      // Find best BidSize
+      bs:@'[flip bs;where'[b=l]];
+      // Find best ask
+      a:min@'l:(,'/)a;
+      // Find best AskSize
+      as:@'[flip as;where'[a=l]];
+      // Calculates profit 
+      0|min'[(bs,'as)]*b-a
+    };
+    // Enlists args to aggregate clause
+    enlist(func;enlist,b;enlist,bs;enlist,a;enlist,as)
+  }; 
  
   // Input columns for aggregate profit-col function
   cc:f . getcols[arbtable;] each ("*Bid";"*BidSize";"*Ask";"*AskSize");
