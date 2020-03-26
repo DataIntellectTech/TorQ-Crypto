@@ -131,10 +131,9 @@ topofbook:{[dict]
 
   // Get exchanges and use them to generate table names
   exchanges:exec distinct exchange from t;
-  tablenames:{`$string[x],"Table"} each exchanges;
 
   // If no data is available, return an empty table 
-  if[0=count t;:t:0!`time xkey (,'/){(raze(`time;`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))) xcol y}[;t] each d`exchanges];
+  if[0=count t;r:{(raze(`time;`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))) xcol y}[;t] each d`exchanges;:$[98h~type r;r;(,'/)r]];
 
   // Creates a list of tables with the best bid and ask for each exchange
   exchangebook:{[x;y;z] 
@@ -160,7 +159,10 @@ topofbook:{[dict]
   arbitrage:{[d]
   // Generate arbitrage table, extract bid and ask columns and create two subtables (if empty list return nothing)
   if[0=count arbtable:topofbook[d];:update arbitrage:0, profit:0 from arbtable];
-  
+
+  // If only one exchange is provided, default profit and arbitrage to 0
+  if[count d[`exchanges];:update profit:0, arbitrage:0 from arbtable];
+
   // Aggregate profit-column funciton - calculates profit to be made
   f:{[b;bs;a;as]enlist({[b;bs;a;as]b:max@'l:(,'/)b;w:where'[b=l];bs:@'[flip bs;w];a:min@'l:(,'/)a;w:where'[a=l];as:@'[flip as;w];p:min'[(bs,'as)]*b-a;?[0>p;0;p]};enlist,b;enlist,bs;enlist,a;enlist,as)}; 
  
