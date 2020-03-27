@@ -4,7 +4,7 @@
 // Have some global description, particularly talking about HDB/RDB dynamism and null parameters taking where clause away
 
 // Function for logging and signalling errors
-f:{.lg.e[x;z];'y};
+f:{.lg.e[x;"Crypto User Error:",y];'y};
 
 / 
                                 **** ORDER BOOK FUNCTION ****
@@ -22,7 +22,7 @@ f:{.lg.e[x;z];'y};
 orderbook:{[dict]
   allkeys:`timestamp`sym`exchanges`window;
   typecheck[allkeys!12 11 11 18h;0100b;dict];
-  if[not(1=count dict`sym)and not any null dict`sym;f[`orderbook;"Please enter one non-null sym.";"Single non-null sym was not entered"]];
+  if[not(1=count dict`sym)and not any null dict`sym;f[`orderbook;"Please enter one non-null sym."]];
 
   // Set default dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
   defaulttime:$[`rdb in .proc.proctype;
@@ -52,7 +52,7 @@ orderbook:{[dict]
   ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`exchange`ask`askSize];
   orderbook:bid,'ask;
   $[(0=count orderbook) & .z.d>`date$d`timestamp;
-    f[`orderbook;"No data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only.";"No data for specified timestamp."];
+    f[`orderbook;"No data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only."];
     orderbook]
  };
 
@@ -114,7 +114,7 @@ ohlc:{[dict]
 topofbook:{[dict]
   allkeys:`starttime`endtime`sym`exchanges`bucket;
   typecheck[allkeys!12 12 11 11 18h;00100b;dict];
-  if[any 1 0<(count;sum)@\: null dict[`sym];f[`topofbook;"Please enter one non-null sym.";"Single non-null sym was not entered."]];
+  if[any 1 0<(count;sum)@\: null dict[`sym];f[`topofbook;"Please enter one non-null sym."]];
 
   // Set defaults and sanitise input
   defaulttimes:$[`rdb~.proc.proctype;"p"$(.proc.cd[];.proc.cp[]);0 -1 + "p"$0 1 + last date];
@@ -123,7 +123,7 @@ topofbook:{[dict]
   d[`bucket]:`long$d`bucket;
 
   // Check that dates passed in are valid
-  if[any (all .proc.cp[]<;>/)@\:d`starttime`endtime;f[`topofbook;"Invalid start and end times";"Invalid start and end times."]];
+  if[any (all .proc.cp[]<;>/)@\:d`starttime`endtime;f[`topofbook;"Invalid start and end times."]];
 
   // If on HDB generate new where clause and join the rest on
   wherecl:$[`hdb~.proc.proctype;(enlist `date)!enlist(within;`date;enlist,"d"$d`starttime`endtime);()!()];
@@ -204,20 +204,18 @@ setdefaults:{[def;dict]def,(where not all each null dict)#dict};
 
 typecheck:{[typedict;requiredkeylist;dict]
   // Checks the arguments are given in the correct form and the right keys are given
-  if[not 99=type dict;f[`typecheck;"error - argument passed must be a dictionary";"Argument passed was not a dictionary."]];
+  if[not 99=type dict;f[`typecheck;"The argument passed must be a dictionary."]];
   if[not all keyresult:key[dict] in key typedict;
     f[`typecheck;"The following dictionary keys are incorrect: ",(", " sv string key[dict] where 0=keyresult),
-     ". The allowed keys are: ",", " sv string key typedict;
-    "Invalid dictionary key(s) entered: ",(", " sv string key[dict] where 0=keyresult),"."]];
+     ". The allowed keys are: ",", " sv string key typedict,"."]];
 
   // Determine required keys and throw an error if any are missing
   requiredkeys:(key typedict) where requiredkeylist;
-  if[not all requiredkeys in key dict;f[`requiredkeys;"error - the following keys must be included: ",", " sv  string requiredkeys;"Required keys: ",", " sv  string requiredkeys," must be entered."]];
+  if[not all requiredkeys in key dict;f[`requiredkeys;"The following key(s) must be included: ",", " sv  string requiredkeys]];
  
   // Determine if arguments passed in are of the correct types
   typematch:typedict[key dict]=abs type each dict;
   if[not all typematch;
-    f[`typematch;"error - dictionary parameter ",(", "sv string where not typematch)," must be of type: ",", "sv string {key'[x$\:()]}typedict where not typematch;
-    "Dictionary parameter ",(", "sv string where not typematch)," must be of type: ",", "sv string {key'[x$\:()]}typedict where not typematch]];
+    f[`typematch;"The dictionary parameter(s) ",(", "sv string where not typematch)," must be of type(s): ",", "sv string {key'[x$\:()]}typedict where not typematch]]
  };
 
