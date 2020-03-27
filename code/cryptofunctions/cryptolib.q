@@ -33,16 +33,14 @@ orderbook:{[dict]
   // Choose where clause based on proc
   // If proc is HDB, add on extra where clause at the start, 
   // then join on default clause then pass in dictionary elements which are not null
-
-  // TO BE SIMPLIFIED /////////////////////////////////////////////////////////////////////////////////////////
-  wherecl:($[`hdb ~ .proc.proctype;(enlist `date)!
-    enlist (within;`date;(enlist;($;enlist`date;(-;d`timestamp;d`window));($;enlist`date;d`timestamp)));()!()],
-    (`timestamp`sym`exchanges!(
-      (within;`time;(enlist;(-;d`timestamp;d`window);d`timestamp));
-      (=;`sym;enlist d`sym);
-      (in;`exchange;enlist d`exchanges))
-    )) (where not all each null d) except `window;
-
+  wherecl:()!();
+  window:enlist d[`timestamp] -d[`window],0;
+  if[`hdb~.proc.proctype;wherecl[`date]:enlist(within;`date;`date$window)];
+  wherecl,:`timestamp`sym`exchanges!(
+    (within;`time;window);
+    (=;`sym;enlist d`sym);
+    (in;`exchange;enlist d`exchanges));
+  wherecl@:(where not all each null d) except `window;
   // Define book builder projected function
   book:{[wherecl;columns]ungroup columns#0!?[exchange;wherecl;{x!x}enlist`exchange;()]}wherecl;
 
