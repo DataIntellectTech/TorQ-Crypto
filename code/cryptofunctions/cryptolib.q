@@ -66,7 +66,7 @@ orderbook:{[dict]
 \
 
 ohlc:{[dict]
-  allkeys:`date`sym`exchange`quote`byexchange;
+  allkeys:`date`sym`exchanges`quote`byexchange;
   typecheck[allkeys!14 11 11 11 1h;01000b;dict];
   
   // Set default null dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
@@ -80,13 +80,16 @@ ohlc:{[dict]
   biddict:`openBid`closeBid`bidHigh`bidLow!((first;`bid);(last;`bid);(max;`bid);(min;`bid));
   askdict:`openAsk`closeAsk`askHigh`askLow!((first;`ask);(last;`ask);(max;`ask);(min;`ask));
 
+  // Save time.date/date colname as variable based on proctype 
+  c:$[`rdb~.proc.proctype;`time.date;`date];
+
   // Conditionals to form the ohlc column dict, where clause and by clause
   coldict:$[any i:`bid`ask in d[`quote];(,/)(biddict;askdict) where i;(enlist`)!(enlist())];
-  wherecl:$[`rdb ~ .proc.proctype;
-    `date`sym`exchange!((in;`time.date;enlist d`date);(in;`sym; enlist d`sym);(in;`exchange; enlist d`exchange));
-    `date`sym`exchange!((in;`date;enlist d`date);(in;`sym;enlist d`sym);(in;`exchange;enlist d`exchange))
-    ] (where not all each null d) except `quote`byexchange;
-  bycl:$[`rdb ~ .proc.proctype;(`date`sym!`time.date`sym);(`date`sym!`date`sym)], $[d[`byexchange];{x!x}enlist`exchange;()!()];
+  wherecl:`date`sym`exchanges!
+    ((in;c;enlist d`date);(in;`sym;enlist d`sym);(in;`exchange;enlist d`exchanges));
+  wherecl@:where[not all each null d]except `quote`byexchange;
+
+  bycl:(`date`sym!c,`sym),$[d`byexchange;{x!x}enlist`exchange;()!()];
 
   // Perform query - (select coldict by date:time.date,sym from t (where time.date in d`date, sym in syms, exchange in exchanges))
   ?[exchange_top; wherecl; bycl; coldict]
