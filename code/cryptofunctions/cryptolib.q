@@ -19,7 +19,7 @@
 orderbook:{[dict]
   allkeys:`timestamp`sym`exchanges`window;
   typecheck[allkeys!12 11 11 18h;0100b;dict];
-  if[not (1=count dict[`sym]) and not any null dict [`sym];'"Please enter one non-null sym."];
+  if[not(1=count dict`sym)and not any null dict`sym;'"Please enter one non-null sym."];
 
   // Set default dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
   defaulttime:$[`rdb in .proc.proctype;
@@ -28,11 +28,13 @@ orderbook:{[dict]
   d:setdefaults[allkeys!(defaulttime;`;`;`second$2*.crypto.deffreq);dict];
 
   // Create extra key if on HDB and order dictionary by date
-  if[`hdb~.proc.proctype;d[`date]:d[`timestamp];`date xcols d];
+  if[`hdb~.proc.proctype;d:`date xcols update date:timestamp from d];
 
   // Choose where clause based on proc
   // If proc is HDB, add on extra where clause at the start, 
   // then join on default clause then pass in dictionary elements which are not null
+
+  // TO BE SIMPLIFIED /////////////////////////////////////////////////////////////////////////////////////////
   wherecl:($[`hdb ~ .proc.proctype;(enlist `date)!
     enlist (within;`date;(enlist;($;enlist`date;(-;d`timestamp;d`window));($;enlist`date;d`timestamp)));()!()],
     (`timestamp`sym`exchanges!(
@@ -42,7 +44,7 @@ orderbook:{[dict]
     )) (where not all each null d) except `window;
 
   // Define book builder projected function
-  book:{[wherecl;columns] ungroup columns#0!?[exchange;wherecl; (enlist`exchange)!enlist`exchange; ()]}[wherecl;];
+  book:{[wherecl;columns]ungroup columns#0!?[exchange;wherecl;{x!x}enlist`exchange;()]}wherecl;
 
   // Create bid and ask books and join to create order book
   bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`exchange`bid`bidSize];
@@ -65,7 +67,7 @@ orderbook:{[dict]
 
 ohlc:{[dict]
   allkeys:`date`sym`exchange`quote`byexchange;
-  typecheck[allkeys!(14h;11h;11h;11h;1h);01000b;dict];
+  typecheck[allkeys!14 11 11 11 1h;01000b;dict];
   
   // Set default null dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
   defaultdate:$[`rdb in .proc.proctype; .proc.cd[]; last date];
@@ -84,7 +86,7 @@ ohlc:{[dict]
     `date`sym`exchange!((in;`time.date;enlist d`date);(in;`sym; enlist d`sym);(in;`exchange; enlist d`exchange));
     `date`sym`exchange!((in;`date;enlist d`date);(in;`sym;enlist d`sym);(in;`exchange;enlist d`exchange))
     ] (where not all each null d) except `quote`byexchange;
-  bycl:$[`rdb ~ .proc.proctype;(`date`sym!`time.date`sym);(`date`sym!`date`sym)], $[d[`byexchange];ex!ex:enlist `exchange;()!()];
+  bycl:$[`rdb ~ .proc.proctype;(`date`sym!`time.date`sym);(`date`sym!`date`sym)], $[d[`byexchange];{x!x}enlist`exchange;()!()];
 
   // Perform query - (select coldict by date:time.date,sym from t (where time.date in d`date, sym in syms, exchange in exchanges))
   ?[exchange_top; wherecl; bycl; coldict]
