@@ -31,7 +31,7 @@ orderbook:{[dict]
   if[`hdb~.proc.proctype;d:`date xcols update date:timestamp from d];
 
   // Choose where clause based on proc
-  // If proc is HDB, add on extra where clause at the start, 
+  // If proc is HDB, add on extra where clause at the start,
   // then join on default clause then pass in dictionary elements which are not null
   wherecl:()!();
   window:enlist d[`timestamp] -d[`window],0;
@@ -49,7 +49,7 @@ orderbook:{[dict]
   ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`exchange`ask`askSize];
   orderbook:bid,'ask;
   $[(0=count orderbook) & .z.d>`date$d`timestamp;
-    '":no data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only."; 
+    '":no data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only.";
     orderbook]
  };
 
@@ -72,17 +72,17 @@ ohlc:{[dict]
   d:setdefaults[allkeys!(defaultdate;`;`;`ask`bid;0b);dict];
   
   // Filter dates based on proctype
-  d[`date]:((),d[`date]) inter (),$[`rdb ~ .proc.proctype;.proc.cd[];date];
+  d[`date]:((),d`date) inter (),$[`rdb ~ .proc.proctype;.proc.cd[];date];
   
   // Create sym and exchange lists, bid and ask dicts for functional select
   biddict:`openBid`closeBid`bidHigh`bidLow!((first;`bid);(last;`bid);(max;`bid);(min;`bid));
   askdict:`openAsk`closeAsk`askHigh`askLow!((first;`ask);(last;`ask);(max;`ask);(min;`ask));
 
-  // Save time.date/date colname as variable based on proctype 
+  // Save time.date/date colname as variable based on proctype
   c:$[`rdb~.proc.proctype;`time.date;`date];
 
   // Conditionals to form the ohlc column dict, where clause and by clause
-  coldict:$[any i:`bid`ask in d[`quote];(,/)(biddict;askdict) where i;(enlist`)!(enlist())];
+  coldict:$[any i:`bid`ask in d`quote;(,/)(biddict;askdict) where i;(enlist`)!(enlist())];
   wherecl:`date`sym`exchanges!
     ((in;c;enlist d`date);(in;`sym;enlist d`sym);(in;`exchange;enlist d`exchanges));
   wherecl@:where[not all each null d]except `quote`byexchange;
@@ -118,9 +118,9 @@ topofbook:{[dict]
   d:setdefaults[allkeys!raze(defaulttimes;`;`;`second$2*.crypto.deffreq);dict];
   d:@[d;`starttime`endtime`bucket;first];
   d[`bucket]:`long$d`bucket;
-  
+
   // Check that dates passed in are valid
-  if[any (all .proc.cp[]<;>/)@\:d[`starttime`endtime];'"Invalid start and end times"];
+  if[any (all .proc.cp[]<;>/)@\:d`starttime`endtime;'"Invalid start and end times"];
 
   // If on HDB generate new where clause and join the rest on
   wherecl:$[`hdb~.proc.proctype;(enlist `date)!enlist(within;`date;enlist,"d"$d`starttime`endtime);()!()];
@@ -152,7 +152,6 @@ topofbook:{[dict]
 
  };
 
-
 //ARBITRAGE FUNCTION
 
   // Adds a column saying if there is a chance of risk free profit and what that profit is
@@ -174,12 +173,12 @@ arbitrage:{[d]
       a:min@'l:(,'/)a;
       // Find best AskSize
       as:@'[flip as;where'[a=l]];
-      // Calculates profit 
+      // Calculates profit
       0|min'[(bs,'as)]*b-a
     };
     // Enlists args to aggregate clause
     enlist(func;enlist,b;enlist,bs;enlist,a;enlist,as)
-  }; 
+  };
  
   // Input columns for aggregate profit-col function
   cc:f . getcols[arbtable;] each ("*Bid";"*BidSize";"*Ask";"*AskSize");
@@ -196,9 +195,9 @@ arbitrage:{[d]
   typecheck[] checks the types of dictionary values that are passed in by the user
 \
 
-getcols:{[table;word] col where (col:cols table) like word };
+getcols:{[table;word]col where(col:cols table)like word};
 
-setdefaults:{[def;dict] def,(where not all each null dict)#dict };
+setdefaults:{[def;dict]def,(where not all each null dict)#dict};
 
 typecheck:{[typedict;requiredkeylist;dict]
   // Checks the arguments are given in the correct form and the right keys are given
@@ -206,11 +205,11 @@ typecheck:{[typedict;requiredkeylist;dict]
   if[not all keyresult:key[dict] in key typedict;
     '"The following dictionary keys are incorrect: ",(", " sv string key[dict] where 0=keyresult),
      ". The allowed keys are: ",", " sv string key typedict];
-  
+
   // Determine required keys and throw an error if any are missing
   requiredkeys:(key typedict) where requiredkeylist;
   if[not all requiredkeys in key dict;'"error - the following keys must be included: ",", " sv  string requiredkeys];
-  
+ 
   // Determine if arguments passed in are of the correct types
   typematch:typedict[key dict]=abs type each dict;
   if[not all typematch;
