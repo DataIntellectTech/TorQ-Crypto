@@ -4,7 +4,7 @@ Getting Started
 Requirements
 ------------
 
-The TorQ Finance Starter Pack will run on Windows, Linux or OSX. It
+The TorQ-Crypto Pack will run on Windows, Linux or OSX. It
 contains a small initial database of 130MB. As the system runs, data is
 fed in and written out to disk. We recommend that it is installed with
 at least 2GB of free disk space, on a system with at least 4GB of RAM.
@@ -24,8 +24,8 @@ Installation and Configuration
 2.  Download the main TorQ codebase from
     [here](https://github.com/AquaQAnalytics/TorQ/archive/master.zip)
 
-3.  Download the TorQ Finance Starter Pack from
-    [here](https://github.com/AquaQAnalytics/TorQ-Finance-Starter-Pack/archive/master.zip)[
+3.  Download the TorQ-Crypto Pack from
+    [here](https://github.com/AquaQAnalytics/EDIT)[
 
 4.  Unzip the TorQ package
 
@@ -192,7 +192,7 @@ If the process hits an error on startup it will exit. To avoid this, use
 either -stop or -trap command line flag. -stop will cause the process to
 stop at the error, -trap will cause it to trap it and continue loading.
 An example is below. This query should be run from within the directory
-you have extracted TorQ and the TorQ Finance Starter Pack to.
+you have extracted TorQ and the TorQ-Crypto Pack to.
 
     q torq.q -load code/processes/rdb.q -stackid 6000 -proctype rdb -procname rdb1 -U config/passwords/accesslist.txt -localtime -g 1 -T 180 -debug -stop
 
@@ -201,67 +201,63 @@ File Structure
 
 The file structure can be seen below.
 
-    |-- AquaQTorQFinanceStarterPack.pdf
     |-- LICENSE
     |-- README.md
     |-- appconfig
-    |   `-- settings        <- modified settings for each process
-    |       |-- compression.q
-    |       |-- feed.q
-    |       |-- gateway.q
-    |       |-- killtick.q
-    |       |-- monitor.q
-    |       |-- rdb.q
-    |       |-- sort.q
-    |       |-- tickerplant.q
-    |       `-- wdb.q
-    |-- code
-    |   |-- common
-    |   |   `-- u.q         <- kdb+ tick pubsub script
-    |   |-- hdb         <- extra functions loaded by hdb procs
-    |   |   `-- examplequeries.q
-    |   |-- processes
-    |   |   `-- tickerplant.q
-    |   |-- rdb         <- extra functions loaded by rdb procs
-    |   |   `-- examplequeries.q
-    |   `-- tick            <- kdb+ tick
-    |       |-- feed.q      <- dummy feed from code.kx
-    |       |-- tick        
-    |       |   |-- database.q  <- schema definition file
-    |       |   |-- r.q
-    |       |   `-- u.q
-    |       `-- tick.q      <- kdb+ tick
-    |-- config
-    |   |-- application.txt     <- TorQ demo pack banner
-    |   |-- compressionconfig.csv   <- modified compression config
-    |   |-- housekeeping.csv    
     |   |-- passwords
-    |   |   |-- accesslist.txt  <- list of user:pass who can connect to proccesses
-    |   |   `-- feed.txt        <- password file used by feed for connections
-    |   |-- process.csv     <- definition of type/name of each process
-    |   `-- reporter.csv        <- modified config for reporter
-    |-- hdb             <- example hdb data
-    |   |-- 2015.01.07
-    |   |-- 2015.01.08
+    |   |   |-- accesslist.txt
+    |   |   |-- bhexfeed.txt
+    |   |   |-- finexfeed.txt
+    |   |   |-- huobifeed.txt
+    |   |   |-- okexfeed.txt
+    |   |   `-- zbfeed.txt
+    |   |-- settings
+    |   |   |-- bhexfeed.q
+    |   |   |-- chainedtp.q
+    |   |   |-- compression.q
+    |   |   |-- default.q
+    |   |   |-- finexfeed.q
+    |   |   |-- gateway.q
+    |   |   |-- huobifeed.q
+    |   |   |-- killtick.q
+    |   |   |-- monitor.q
+    |   |   |-- okexfeed.q
+    |   |   |-- rdb.q
+    |   |   |-- sort.q
+    |   |   |-- tickerplant.q
+    |   |   |-- wdb.q
+    |   |   `-- zbfeed.q
+    |   |-- application.txt
+    |   |-- compressionconfig.csv
+    |   |-- dependency.csv
+    |   |-- housekeeping.csv
+    |   |-- process.csv
+    |   |-- reporter.csv
+    |   |-- symconfig.csv
+    |   `-- symmap.csv
+    |-- code
+    |   |-- cryptofeed
+    |   |   `-- cryptofeed.q
+    |   `-- processes
+    |       |-- bhexfeed.q
+    |       |-- finexfeed.q
+    |       |-- huobifeed.q
+    |       |-- okexfeed.q
+    |       `-- zbfeed.q
+    |-- hdb/database             <- example hdb data
+    |   |--2019.12.19
     |   `-- sym
-    |-- setenv.sh           <- set environment variables
-    |-- start_torq_demo.bat     <- start and stop scripts
-    |-- start_torq_demo.sh
-    |-- start_torq_demo_osx.sh
-    |-- stop_torq_demo.bat
-    `-- stop_torq_demo.sh
+    |-- database.q
+    `-- setenv.sh           <- set environment variables
 
-The Demo Pack consists of:
+The TorQ-Crypto Pack consists of:
 
 -   a slightly modified version of kdb+tick from Kx Systems
-
--   an example set of historic data
 
 -   configuration changes for base TorQ
 
 -   additional queries to run on the RDB and HDB
 
--   start and stop scripts
 
 Make It Your Own
 ----------------
