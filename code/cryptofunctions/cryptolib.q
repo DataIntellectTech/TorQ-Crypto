@@ -122,6 +122,9 @@ topofbook:{[dict]
   d:@[d;`starttime`endtime`bucket;first];
   d[`bucket]:`long$d`bucket;
 
+  // Create extra key if on HDB and order dictionary by date
+  if[`hdb~.proc.proctype;d:`date xcols update date:distinct "d"$d`starttime`endtime from d];
+
   // Check that dates passed in are valid
   if[any (all .proc.cp[]<;>/)@\:d`starttime`endtime;errfunc[`topofbook;"Invalid start and end times."]];
 
