@@ -153,9 +153,7 @@ topofbook:{[dict]
    }[;t;d`bucket] each exchanges;
 
   // If more than one exchange, join together all datasets, reorder the columns, fill in nulls and return
-  arbtable:0!`time xasc (,'/) exchangebook;
-  arbtable:{![x;();0b;y]}[arbtable;ca!fills,' ca:asc 1 _cols arbtable]
-
+  :0!`time xasc (,'/) exchangebook;
  };
 
 //ARBITRAGE FUNCTION
