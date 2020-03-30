@@ -163,11 +163,11 @@ arbitrage:{[d]
   if[0=count arbtable:topofbook[d];:update arbitrage:0, profit:0 from arbtable];
 
   // If only one exchange is provided, default profit and arbitrage to 0
-  if[count d`exchanges;:update profit:0, arbitrage:0 from arbtable];
+  if[1=count d`exchanges;:update profit:0, arbitrage:0 from arbtable];
 
-  // Aggregate profit-column funciton - calculates profit to be made
-  func:{[b;bs;a;as]
-    f:{[b;bs;a;as]
+  // Aggregate profit-column function - calculates profit to be made
+  calprofit:{[b;bs;a;as]
+    enlist({[b;bs;a;as]
       // Find best bid
       b:max@'l:(,'/)b;
       // Find best BidSize
@@ -177,14 +177,15 @@ arbitrage:{[d]
       // Find best AskSize
       as:@'[flip as;where'[a=l]];
       // Calculates profit
-      0|min'[(bs,'as)]*b-a
-    };
+      p:min'[(bs,'as)]*b-a;
+      ?[0>p;0;p]
+     };
     // Enlists args to aggregate clause
-    enlist(func;enlist,b;enlist,bs;enlist,a;enlist,as)
-  };
+    enlist,b;enlist,bs;enlist,a;enlist,as)
+   };
  
   // Input columns for aggregate profit-col function
-  cc:f . getcols[arbtable;] each ("*Bid";"*BidSize";"*Ask";"*AskSize");
+  cc:calprofit . getcols[arbtable;] each ("*Bid";"*BidSize";"*Ask";"*AskSize");
 
   // Perform query
   :update arbitrage:profit>0 from ![arbtable;();0b;enlist[`profit]!cc]
