@@ -52,7 +52,7 @@ orderbook:{[dict]
   ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`exchange`ask`askSize];
   orderbook:bid,'ask;
   $[(0=count orderbook) & .z.d>`date$d`timestamp;
-    errf[unc`orderbook;"No data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only."];
+    errfunc[`orderbook;"No data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only."];
     orderbook]
  };
 
