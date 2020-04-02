@@ -6,8 +6,8 @@
 | :--------------------------------------: | :--------------------------------------: |
 |    **orderbook**[\`sym\`exchanges\`timestamp\`window!(symbol;symbol;timestamp;second)]    | Returns level 2 orderbook. |
 |    **ohlc**[\`date\`sym\`exchanges\`quote\`byexchange!(date;symbol;symbol;symbol;boolean)] | Returns open, high, low and close data for bid and/or ask data. |
-|    **topofbook**[\`sym\`exchanges\`starttime\`endtime\`bucket!(symbol;symbol;timestamp;timestamp;time)] | Returns the level 1 orderbook. |
-|    **arbitrage**[\`sym\`exchanges\`starttime\`endtime\`bucket!(symbol;symbol;timestamp;timestamp;time)] | Returns topofbook table with how much profit can be made with arbitrage opportunities. |
+|    **topofbook**[\`sym\`exchanges\`starttime\`endtime\`bucket!(symbol;symbol;timestamp;timestamp;second)] | Returns the level 1 orderbook. |
+|    **arbitrage**[\`sym\`exchanges\`starttime\`endtime\`bucket!(symbol;symbol;timestamp;timestamp;second)] | Returns topofbook table with how much profit can be made with arbitrage opportunities. |
 
 Here we discuss the use and give examples of pre-made functions available with the TorQ-Crypto package.
 
