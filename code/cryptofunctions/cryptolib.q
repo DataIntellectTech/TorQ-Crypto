@@ -160,11 +160,11 @@ topofbook:{[dict]
 
   // Adds a column saying if there is a chance of risk free profit and what that profit is
 arbitrage:{[d]
-  // Generate arbitrage table, extract bid and ask columns and create two subtables (if empty list return nothing)
-  if[0=count arbtable:topofbook[d];:update arbitrage:0, profit:0 from arbtable];
+  // Generate arbitrage table
+  arbtable:topofbook[d];
 
-  // If only one exchange is provided, default profit and arbitrage to 0
-  if[1=count d`exchanges;:update profit:0, arbitrage:0 from arbtable];
+  // If no data is available or only one non-null exchange is passed, update arbtable with profit and arbitrage as 0
+  if[(0=count arbtable) or (5=count cols arbtable);:update profit:0,arbitrage:0 from arbtable];
 
   // Aggregate profit-column function - calculates profit to be made
   calprofit:{[b;bs;a;as]
