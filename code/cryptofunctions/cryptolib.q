@@ -24,8 +24,8 @@ orderbook:{[dict]
 
   // Set default dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
   defaulttime:$[`rdb in .proc.proctype;
-    exec last time from exchange;
-    first exec time from select last time from exchange where date=last date];
+    exec last exchangeTime from exchange;
+    first exec exchangeTime from select last exchangeTime from exchange where date=last date];
   d:setdefaults[allkeys!(defaulttime;`;`;`second$2*.crypto.deffreq);dict];
 
   // Create extra key if on HDB and order dictionary by date
@@ -38,7 +38,7 @@ orderbook:{[dict]
   window:enlist d[`timestamp] -d[`window],0;
   if[`hdb~.proc.proctype;wherecl[`date]:(within;`date;`date$window)];
   wherecl,:`timestamp`sym`exchanges!(
-    (within;`time;window);
+    (within;`exchangeTime;window);
     (=;`sym;enlist d`sym);
     (in;`exchange;enlist d`exchanges));
   wherecl@:(where not all each null d) except `window;
@@ -79,8 +79,8 @@ ohlc:{[dict]
   biddict:`openBid`closeBid`bidHigh`bidLow!((first;`bid);(last;`bid);(max;`bid);(min;`bid));
   askdict:`openAsk`closeAsk`askHigh`askLow!((first;`ask);(last;`ask);(max;`ask);(min;`ask));
 
-  // Save time.date/date colname as variable based on proctype
-  c:$[`rdb~.proc.proctype;`time.date;`date];
+  // Save exchangeTime.date/date colname as variable based on proctype
+  c:$[`rdb~.proc.proctype;`exchangeTime.date;`date];
 
   // Conditionals to form the ohlc column dict, where clause and by clause
   coldict:$[any i:`bid`ask in d`quote;(,/)(biddict;askdict) where i;(enlist`)!(enlist())];
@@ -90,7 +90,7 @@ ohlc:{[dict]
 
   bycl:(`date`sym!c,`sym),$[d`byexchange;{x!x}enlist`exchange;()!()];
 
-  // Perform query - (select coldict by date:time.date,sym from t (where time.date in d`date, sym in syms, exchange in exchanges))
+  // Perform query - (select coldict by date:exchangeTime.date,sym from t (where exchangeTime.date in d`date, sym in syms, exchange in exchanges))
   ?[exchange_top; wherecl; bycl; coldict]
  };
 
@@ -128,30 +128,30 @@ topofbook:{[dict]
 
   // If proctype=HDB, add date to beginning of where clause and join remaining dict args to where clause
   wherecl:$[`hdb~.proc.proctype;(enlist `date)!enlist(within;`date;enlist,"d"$d`starttime`endtime);()!()];
-  wherecl[`starttime]:(within;`time;enlist,d`starttime`endtime);
+  wherecl[`starttime]:(within;`exchangeTime;enlist,d`starttime`endtime);
   wherecl[`sym]:(in;`sym;enlist d`sym);
   wherecl[`exchanges]:(in;`exchange;enlist d`exchanges);
   wherecl@:where not all each null `endtime`bucket _d;
 
-  // Perform query - (select time, exchange, bid, ask, bisSize, askSize from exchange_top where (wherecl))
-  t:?[exchange_top;wherecl;0b;cls!cls:`time`exchange`bid`ask`bidSize`askSize];
+  // Perform query - (select exchangeTime, exchange, bid, ask, bisSize, askSize from exchange_top where (wherecl))
+  t:?[exchange_top;wherecl;0b;cls!cls:`exchangeTime`exchange`bid`ask`bidSize`askSize];
 
   // Get exchanges and use them to generate table names
   exchanges:exec distinct exchange from t;
 
   // If no data is available, return an empty table 
-  if[0=count t;r:{(raze(`time;`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))) xcol y}[;t] each d`exchanges;:$[98h~type r;r;(,'/)r]];
+  if[0=count t;r:{(raze(`exchangeTime;`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))) xcol y}[;t] each d`exchanges;:$[98h~type r;r;(,'/)r]];
 
   // Creates a list of tables with the best bid and ask for each exchange
   exchangebook:{[x;y;z] 
-    (`time,`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))xcol 
+    (`exchangeTime,`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))xcol 
     select bid:last bid,ask:last ask ,bidSize:last bidSize ,askSize:last askSize 
-      by time:(`date$time)+z+z xbar time.second 
+      by exchangeTime:(`date$exchangeTime)+z+z xbar exchangeTime.second 
       from y where exchange=x
    }[;t;d`bucket] each exchanges;
 
   // If more than one exchange, join together all datasets, reorder the columns and return result
-  :0!`time xasc (,'/) exchangebook;
+  :0!`exchangeTime xasc (,'/) exchangebook;
  };
 
 //ARBITRAGE FUNCTION
