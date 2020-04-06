@@ -36,7 +36,7 @@ orderbook:{[dict]
   // then join on default clause, then pass in dictionary elements which are not null
   wherecl:()!();
   window:enlist d[`timestamp] -d[`window],0;
-  if[`hdb~.proc.proctype;wherecl[`date]:enlist(within;`date;`date$window)];
+  if[`hdb~.proc.proctype;wherecl[`date]:(within;`date;`date$window)];
   wherecl,:`timestamp`sym`exchanges!(
     (within;`time;window);
     (=;`sym;enlist d`sym);
