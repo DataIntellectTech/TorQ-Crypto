@@ -1,8 +1,6 @@
 // TorQ-Crypto functions
 // Collaborators: Cormac Ross, James Rutledge, Catherine Higgins, Nicole Watterson, Michael Potter
 
-// Have some global description, particularly talking about HDB/RDB dynamism and null parameters taking where clause away
-
 // Function for logging and signalling errors
 errfunc:{.lg.e[x;"Crypto User Error:",y];'y};
 
@@ -15,8 +13,8 @@ errfunc:{.lg.e[x;"Crypto User Error:",y];'y};
   Window must be passed in as a second type (-18h).
 
   Example usage:
-  orderbook[(enlist `sym)!enlist (`SYMBOL)]                                          ->  get latest `SYMBOL data from table
-  orderbook[(`sym`timestamp`exchanges`window)!(`BTCUSDT;.proc.cp[];`finex`bhex;30)]  ->  more user input example
+  orderbook[(enlist `sym)!enlist (`SYMBOL)]                                                ->  get latest SYMBOL data from table
+  orderbook[(`sym`timestamp`exchanges`window)!(`BTCUSDT;.proc.cp[];`finex`bhex;00:00:30)]  ->  get `BTCUSDT data from finex and bhex exchnages for last 30 seconds 
 \
 
 orderbook:{[dict]
@@ -33,9 +31,9 @@ orderbook:{[dict]
   // Create extra key if on HDB and order dictionary by date
   if[`hdb~.proc.proctype;d:`date xcols update date:timestamp from d];
 
-  // Choose where clause based on proc
-  // If proc is HDB, add on extra where clause at the start,
-  // then join on default clause then pass in dictionary elements which are not null
+  // Edit where clause based on proctype
+  // If proctype is HDB, add on date to where clause at the start,
+  // then join on default clause, then pass in dictionary elements which are not null
   wherecl:()!();
   window:enlist d[`timestamp] -d[`window],0;
   if[`hdb~.proc.proctype;wherecl[`date]:enlist(within;`date;`date$window)];
@@ -98,7 +96,7 @@ ohlc:{[dict]
 
 /
                                   **** ARBITRATION FUNCTIONS ****
-  The following two functions, topofbook and arbitrage, are all to do with arbitration.
+  The following two functions, topofbook and arbitrage, are to do with arbitration.
   The arbitrage function will call the topofbook function.
   Sym is the only mandatory parameter that the user has to pass in, the others will revert to defaults.
   If a null parameter value is passed in, this will remove the pertinent where clause from the query.
@@ -122,20 +120,20 @@ topofbook:{[dict]
   d:@[d;`starttime`endtime`bucket;first];
   d[`bucket]:`long$d`bucket;
 
-  // Create extra key if on HDB and order dictionary by date
+  // Create extra date key if proctype=HDB and order dictionary by date
   if[`hdb~.proc.proctype;d:`date xcols update date:distinct "d"$d`starttime`endtime from d];
 
   // Check that dates passed in are valid
   if[any (all .proc.cp[]<;>/)@\:d`starttime`endtime;errfunc[`topofbook;"Invalid start and end times."]];
 
-  // If on HDB generate new where clause and join the rest on
+  // If proctype=HDB, add date to beginning of where clause and join remaining dict args to where clause
   wherecl:$[`hdb~.proc.proctype;(enlist `date)!enlist(within;`date;enlist,"d"$d`starttime`endtime);()!()];
   wherecl[`starttime]:(within;`time;enlist,d`starttime`endtime);
   wherecl[`sym]:(in;`sym;enlist d`sym);
   wherecl[`exchanges]:(in;`exchange;enlist d`exchanges);
   wherecl@:where not all each null `endtime`bucket _d;
 
-  // Perform query 
+  // Perform query - (select time, exchange, bid, ask, bisSize, askSize from exchange_top where (wherecl))
   t:?[exchange_top;wherecl;0b;cls!cls:`time`exchange`bid`ask`bidSize`askSize];
 
   // Get exchanges and use them to generate table names
@@ -152,7 +150,7 @@ topofbook:{[dict]
       from y where exchange=x
    }[;t;d`bucket] each exchanges;
 
-  // If more than one exchange, join together all datasets, reorder the columns, fill in nulls and return
+  // If more than one exchange, join together all datasets, reorder the columns and return result
   :0!`time xasc (,'/) exchangebook;
  };
 
@@ -188,7 +186,7 @@ arbitrage:{[d]
   // Input columns for aggregate profit-col function
   cc:calprofit . getcols[arbtable;] each ("*Bid";"*BidSize";"*Ask";"*AskSize");
 
-  // Perform query
+  // Perform query - (update arbitrage:profit>0 from (update profit:cc from arbtable))
   :update arbitrage:profit>0 from ![arbtable;();0b;enlist[`profit]!cc]
  };
 /
