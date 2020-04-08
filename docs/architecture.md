@@ -16,7 +16,8 @@ The architecture of the demo system is as below.
 ![Demo Data Capture](graphics/fullarchitecture.png)
 
 ### Feed
-The feed is obtained by querying cryptocurrency APIs (RESTful APIs) with a web resquest.
+The feed is obtained by querying cryptocurrency APIs (RESTful APIs) with a web resquest,
+and converted to a JSON format which is sent to the feed handler.
 APIs are queried at a default frequency of every 30 seconds, capturing data to a limit of 
 10 records and sending this data to the tickerplant.  
 
