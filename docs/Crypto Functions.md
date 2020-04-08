@@ -146,11 +146,10 @@ q)arbitrage[`sym`exchanges`starttime`endtime`bucket!(`SYMBOL;`;.proc.cp[]-01:00:
 
 To use these functions for synchronous querying of the RDB/HDB:  
 - open a handle to the gateway with
-``
-q)h:hopen `:localhost:xxxx:admin:admin
 
-*where xxxx is the port number for the gateway
-``  
+    ``q)h:hopen `:localhost:xxxx:admin:admin``  
+    ``// Where xxxx is the port number of the gateway`` 
+
 - use the following template  
 ``
 h(`.gw.syncexec;"function[dictionary arguments]";`serverstoquery)
@@ -166,4 +165,13 @@ Retreive yesterday's level 1 data for a single non-null sym from the huobi and f
 ``
 h(`.gw.syncexec;"topofbook[`sym`exchanges`starttime`endtime!(`SYMBOL;`huobi`finex;.proc.cp[]-48:00:00;.proc.cp[]-24:00:00)]";`hdb)
 ``  
+### Custom queries 
+The above function are for users ease-of-use. Users may build their own queries for their requirements.
 
+    q)h(`.gw.syncexec;"select min ask, max bid by (`date$exchangeTime)+60+60 xbar exchangeTime.second, exchange from exchange_top where exchange in `finex`zb";`rdb)
+    exchangeTime                  exchange| ask                bid
+    --------------------------------------| -------------------------------------
+    2020.04.08D12:24:00.000000000 finex   | 168.00999999999999 7272.1400000000003
+    2020.04.08D12:24:00.000000000 zb      | 168.08000000000001 7268.4700000000003
+    2020.04.08D12:25:00.000000000 finex   | 167.91             7260.5
+    2020.04.08D12:25:00.000000000 zb      | 168.08000000000001 7262.4700000000003
