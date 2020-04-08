@@ -1,6 +1,6 @@
-# TorQ-Crypto Functions
+# TorQ-Crypto Gateway Functions
 
-## Summary table of TorQ-Crypto Functions
+## Summary table of Functions
 
 |                 Function                 |               Description                |
 | :--------------------------------------: | :--------------------------------------: |
@@ -35,13 +35,24 @@ q)orderbook[(enlist `sym)!enlist (`SYMBOL)]
 | okex       | 0.3        | 6950.5  | 6950.49 | 0.2        | bhex |
 ..  
 
-Get \`SYMBOL data from finex and bhex for last 30 secs:   // Need to double check window
+Get \`SYMBOL data from finex and bhex for last 2 hours:  
 ``
-orderbook[`sym`timestamp`exchanges`window!(`SYMBOL;.proc.cp[];`finex`bhex;30:00:00)]   
-``  
+orderbook[`sym`timestamp`exchanges`window!(`SYMBOL;.proc.cp[];`finex`bhex;02:00:00)]   
+``   
+
+// Example output
+| exchange_b | bidSize | bid  | ask | askSize | exchange_a |
+| :--------: | :-----: | :--: | :-: | :-----: | :--------: |
+| bhex       | 0.064843999999999999   | 7295.9899999999998 | 7296.7799999999997 | 0.18113599999999999   | bhex |
+| bhex       | 0.1767                 | 7295.8999999999996 | 7296.79            | 0.110959              | bhex |
+| bhex       | 0.10000000000000001    | 7295.8800000000001 | 7297.04            | 0.96191800000000005   | bhex |
+| bhex       | 0.037999999999999999   | 7295.8699999999999 | 7297.2200000000003 | 0.251                 | bhex |
+| ..|
+
 
 #### OHLC Function
 Returns the OHLC data for bid and/or ask data and tales a dictionary parameter as an argument.  
+Available keys include: date, sym, quote, byexchange.
 The only parameter that must be passed in is sym, the others will revert to defaults.  
 
 ###### Example usage:
@@ -67,30 +78,27 @@ q)ohlc[`date`sym`exchanges`quote`byexchange!(.z.d;`SYMBOL;`finex`okex;`bid;1b)]
 
 #### Topofbook Function  
 Creates a table showing top of the book for each exchange (Level 1) at a given time.  
+Available keys include: sym, exchanges, starttime, endtime, bucket.
 Sym is the only mandatory parameter that the use must pass in, the other will revert to defaults.  
 If a null parameter value is passed in, this will remove the pertinent where clause from the query.  
 This function can be run on the RDB and/or HDB and will adjust queries accordingly.  
 
 ###### Example usage:
-Get level 1 data for \`SYMBOL from exchanges: \`finex and \`okex:  
+Get level 1 data for \`SYMBOL from all exchanges  
 ``
-q)topofbook[`sym`exchanges!(`SYMBOL;`finex`okex)]
+q)topofbook[(enlist `sym)!enlist `BTCUSDT]
 ``  
 // Example output
-| time | finexBid | finexAsk | finexBidSize | finexAskSize | okexBid | okexAsk | okexBidSize | okexAskSize |
-| :--: | :------: | :------: | :----------: | :----------: | :-----: | :-----: | :---------: | :---------: |
-| 2020.04.03D00:01:00.000000000 | 6773.6099999999997 | 6779.1000000000004 | 0.0027000000000000001 | 0.080600000000000005   | 6783               | 6783.1000000000004 | .29999999999999999   | 0.010788310000000001 |
-| 2020.04.03D00:02:00.000000000 | 6791.0799999999999 | 6797.6700000000001 | 0.0085000000000000006 | 0.0011999999999999999  | 6790.3000000000002 | 6790.3999999999996 | 2.6549399199999999    | 0.001 |
-| 2020.04.03D00:03:00.000000000 | 6791.5699999999997 | 6793.1300000000001 | 0.2044                | 0.0011999999999999999  | 6788.8000000000002 | 6788.8999999999996 | 0.18596201000000001   | 0.001 |
-| 2020.04.03D00:04:00.000000000 | 6787.3599999999997 | 6791.9700000000003 | 0.030499999999999999  | 0.5575                 | 6786               | 6786.1000000000004 | 2.5011336399999999    | 0.001 |
-..  
+| exchangeTime | okexBid | okexAsk | okexBidSize | okexAskSize | huobiBid | huobiAsk | huobiBidSize | huobiAskSize | zbBid | .. |
+| :----------: | :-----: | :-----: | :---------: | :---------: | :------: | :------: | :----------: | :----------: | :---: | :-: |
+| 2020.04.03D12:24:00.000000000 | 7262 | 7262.1000000000004 | 0.032327000000000002 | 0.001 | 7258 | 7259.8000000000002 | 0.022180999999999999 | 0.45000000000000001   | 7260.479.. | .. |
 
 Get level 1 data in the last 2 hours in buckets of 5 mins for \`SYMBOL:  
 ``
 q)topofbook[`sym`exchanges`starttime`endtime`bucket!(`SYMBOL;`;.proc.cp[]-02:00:00;.proc.cp[];00:05:00)]
 ``  
 // Example output
-| time | okexBid | okexAsk | okexBidSize | okexAskSize | zbBid | zbAsk | zbBidSize | .. |
+| exchangeTime | okexBid | okexAsk | okexBidSize | okexAskSize | zbBid | zbAsk | zbBidSize | .. |
 | :--: | :-----: | :-----: | :---------: | :---------: | :---: | :---: | :-------: | :-: |
 | 2020.04.03D12:20:00.000000000 | 6994 | 6994.1000000000004 | 0.090746789999999994 | 0.001 | 6991.9899999999998 | 6995.4700000000003 | 0.027.. | .. |
 | 2020.04.03D12:25:00.000000000 | 7002.6000000000004 | 7002.6999999999998 | 0.51531985000000002 | 0.002 | 7000.6800000000003 | 7004.4799999999996 | 0.375.. | .. |
@@ -99,20 +107,26 @@ q)topofbook[`sym`exchanges`starttime`endtime`bucket!(`SYMBOL;`;.proc.cp[]-02:00:
 ..  
 
 #### Arbitrage Function  
-Arbitrage calls the topofbook function and adds columns saying if there is a chance of risk free profit and what that profit is.  
+Arbitrage is the simultaneous buying and selling of a financial insturment in different markets to 
+take advantage of the difference in price. This function will look for opportunities of arbitrage 
+and caluclate to potential profit to be made.  
+
+The Arbitrage functtion calls the topofbook function and adds columns saying if there is a chance 
+of risk free profit and what that profit is. Available keys include: sym, exchanges, starttime, 
+endtime, bucket. Sym is the only required key, all other keys will revert to defaults. 
 
 ###### Example usage:  
 Get arbitrage data for \`SYMBOL from exchanges: \`zb and \`okex:  
 ``
-q)arbitrage[`sym`exchanges!(`SYMBOL;`zb`okex)]
+q)arbitrage[(enlist `sym)!enlist `BTCUSDT]         
 ``  
 // Example output
-| time | zbBid | zbAsk | zbBidSize | zbAskSize | okexBid | okexAsk | okexB | .. |
-| :--: | :---: | :---: | :-------: | :-------: | :-----: | :-----: | :---: | :-: |
-| 2020.04.03D00:01:00.000000000 | 6780.3699999999999 | 6782.4300000000003 | 0.375 | 0.00069999999999999999 | 6783 | 6783.1000000000004 | 0.299.. | ..| 
-| 2020.04.03D00:02:00.000000000 | 6781.9099999999999 | 6783.8500000000004 | 0.032000000000000001 | 0.00050000000000000001 | 6790.3000000000002 | 6790.3999999999996 | 2.654.. | ..|
-| 2020.04.03D00:03:00.000000000 | 6791.7399999999998 | 6794.46 | 0.375 | 0.00089999999999999998 | 6788.8000000000002 | 6788.8999999999996 | 0.185.. | .. |
-| 2020.04.03D00:04:00.000000000 | 6788.9399999999996 | 6791.4899999999998 | 0.025000000000000001 | 0.00050000000000000001 | 6786 | 6786.1000000000004 | 2.501.. | .. |
+| exchangeTime | okexBid | okexAsk | okexBidSize | okexAskSize | huobiBid | huobiAsk | huobiBidSize | .. |
+| :----------: | :-----: | :-----: | :---------: | :---------: | :------: | :------: | :----------: | :-: |
+| 2020.04.03D12:24:00.000000000 | 7262 | 7262.1000000000004 | 0.001 | 7258 | 7259.8000000000002 | 6783.1000000000004 | 0.02218099999999.. | ..| 
+| 2020.04.03D12:25:00.000000000 | 7259.5 | 7259.6000000000004 | 0.01470905 | 0.001 | 7259.3000000000002 | 7259.8000000000002 | 0.03500000000000.. | ..|
+| 2020.04.03D12:26:00.000000000 | 7243.8999999999996 | 7244 | 1.45955678 | 0.0044795099999999999 | 7237.1000000000004 | 7237.1999999999998 | 0.00220000000000.. | .. |
+| 2020.04.03D12:27:00.000000000 | 7251.6999999999998 | 7251.8000000000002 | 0.044238479999999997 | 0.002 | 7250.3000000000002 | 7251.3999999999996 | 0.06075400000000.. | .. |
 ..
 
 Get arbitrage data for the last 2 hours in buckets of 5 mins for \`SYMBOL:  
@@ -120,7 +134,7 @@ Get arbitrage data for the last 2 hours in buckets of 5 mins for \`SYMBOL:
 q)arbitrage[`sym`exchanges`starttime`endtime`bucket!(`SYMBOL;`;.proc.cp[]-01:00:00;.proc.cp[];00:05:00)]
 ``  
 // Example output
-| time | zbBid | zbAsk | zbBidSize | zbAskSize | okexBid | okexAsk | okexB |.. |
+| exchangeTime | zbBid | zbAsk | zbBidSize | zbAskSize | okexBid | okexAsk | okexB |.. |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 |2020.04.03D12:10:00.000000000 | 6974.7600000000002 | 6977.2700000000004 | 1 | 0.00059999999999999995 | 6976.3999999999996 | 6976.5 | 0.761.. | .. |
 | 2020.04.03D12:15:00.000000000 | 6988.6400000000003 | 6992.0699999999997 | 0.039 | 0.00020000000000000001 | 6994.6999999999998 | 6994.8000000000002 | 0.299.. | .. |
