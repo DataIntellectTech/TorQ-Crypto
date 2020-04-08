@@ -11,8 +11,13 @@ Available feeds with this pack include the following:
     THINGS TO POSSIBLY ADD: How to add a new feed?
 
 ### Sym Configuration  
-The default available syms are Bitcoin/Tether (BTCUSDT) and Ethereum/Tether (ETHUSDT), but other syms may be switched on.
-Navigate to `appconfig/symconfig.csv` and edit the table to turn on specific syms for specific exchanges.
+Each exchange may have a different way of identifiying a sym, therefore syms must be mapped
+to one common identifier. If a new exchange is to be added or an existing sym needs to be
+changed, this can be configured in `appconfig/symmap.csv`.   
+
+The default available syms are Bitcoin/Tether (BTCUSDT) and Ethereum/Tether (ETHUSDT).Syms may
+be switched on, or new syms added by navigating to `appconfig/symconfig.csv` and editing the 
+table to turn on specific syms for specific exchanges.
 
     // Edit appconfig/symconfig.csv
     sym,finexsym,huobisym,okexsym,zbsym,bhexsym
