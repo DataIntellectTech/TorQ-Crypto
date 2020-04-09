@@ -1,22 +1,16 @@
-site_name: TorQ
+site_name: TorQ-Crypto
 site_favicon: graphics/favicon.ico
 pages:
     - Home: index.md
-    - About: Overview.md
     - Getting Started: gettingstarted.md
-    - Utilities: utilities.md
-    - Handlers: handlers.md
-    - Connection Management: conn.md
-    - Processes: Processes.md
-    - Analytics Library: analyticslib.md 
-    - Monitoring: monit.md 
-    - Visualisation: visualisation.md
-    - TorQ Blog Posts: blog.md
+    - Architecture: architecture.md
+    - Configuration: Crypto Configuration.md
+    - Functions: Crypto Functions.md
 copyright: 'Copyright &copy 2018 AquaQ Analytics Limited.  Kx &reg and kdb+ are registered trademarks of Kx Systems Inc.'
 
 theme: 'material'
 repo_name: 'GitHub'
-repo_url: 'https://github.com/AquaQAnalytics/TorQ'
+repo_url: 'https://github.com/AquaQAnalytics/TorQ-Crypto'
 extra:
    logo: 'graphics/TorQ-logo.png' 
    palette:
