@@ -178,7 +178,9 @@ Retreive level 1 data for a single non-null sym from the huobi and finex exchang
 h(`.gw.syncexec;"topofbook[`sym`exchanges`starttime`endtime!(`BTCUSDT;`huobi`finex;2020.03.29D00:00:00.0000000;2020.03.29D23:59:59.0000000)]";`hdb)
 ``  
 ### Custom queries 
-The above function are for users ease-of-use. Users may build their own queries for their requirements.
+The above function are for users ease-of-use. Users may build their own queries for their requirements.  
+
+For example, to retrieve the best ask and best bid per hour from finex and zb exchanges on 29.03.2020:  
 
     q)h(`.gw.syncexec;"select min ask, max bid by (`date$exchangeTime)+60+60 xbar exchangeTime.second, exchange from exchange_top where date=2020.03.29,  exchange in `finex`zb";`hdb)
     exchangeTime                  exchange| ask    bid
