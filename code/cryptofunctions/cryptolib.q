@@ -48,7 +48,8 @@ orderbook:{[dict]
   // Create bid and ask books and join to create order book
   bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`exchange`bid`bidSize];
   ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`exchange`ask`askSize];
-  :bid,'ask
+  dt:abs(-/)c:count each tl:(bid;ask);
+  :uj[(,'/)min[c]#/:tl;neg[dt]#tl first where max[c]=c]
  };
 
 /
