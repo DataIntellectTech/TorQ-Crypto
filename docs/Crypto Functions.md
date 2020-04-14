@@ -22,8 +22,6 @@ This function may be run on the RDB and/or HDB and will adjust defaults for quer
 ###### Example usage:  
 Get latest BTCUSDT data from exchange table:      
 
-    q)// Example output
-    
     q)orderbook[(enlist `sym)!enlist (`BTCUSDT)]
     exchange_b  bidSize    bid     ask      askSize    exchange_a 
     -------------------------------------------------------------
@@ -35,8 +33,6 @@ Get latest BTCUSDT data from exchange table:
 
 Get BTCUSDT data from finex and bhex for last 2 hours:     
 
-    q)// Example output
-    
     q)orderbook[`sym`timestamp`exchanges`window!(`BTCUSDT;.proc.cp[];`finex`bhex;02:00:00)]
     exchange_b  bidSize                 bid                 ask                 askSize               exchange_a 
     ------------------------------------------------------------------------------------------------------------
@@ -55,8 +51,6 @@ The only parameter that must be passed in is sym, the others will revert to defa
 ###### Example usage:
 Get latest OHLC data for BTCUSDT:  
 
-    q)// Example output
-    
     q)ohlc[enlist[`sym]!enlist `BTCUSDT]
     date       sym    | openBid closeBid bidHigh bidLow  openAsk closeAsk askHigh askLow
     ------------------| -----------------------------------------------------------------
@@ -65,8 +59,6 @@ Get latest OHLC data for BTCUSDT:
 
 Get only bid data by exchange for BTCUSDT:  
 
-    q)// Example output
-    
     q)ohlc[`date`sym`exchanges`quote`byexchange!(.z.d;`BTCUSDT;`finex`okex;`bid;1b)]
     date       sym     exchange| openBid closeBid bidHigh bidLow
     ---------------------------| --------------------------------
@@ -84,8 +76,6 @@ This function can be run on the RDB and/or HDB and will adjust queries according
 ###### Example usage:
 Get level 1 data for BTCUSDT from all exchanges:  
 
-    q)// Example output
-    
     q)topofbook[(enlist `sym)!enlist `BTCUSDT]
     exchangeTime                  huobiBid huobiAsk huobiBidSize huobiAskSize bhexBid bhexAsk bhexBid..
     -------------------------------------------------------------------------------------------------..
@@ -96,8 +86,6 @@ Get level 1 data for BTCUSDT from all exchanges:
 
 Get level 1 data in the last 2 hours in buckets of 5 mins for BTCUSDT:  
 
-    q)// Example output
-    
     q)topofbook[`sym`exchanges`starttime`endtime`bucket!(`BTCUSDT;`;.proc.cp[]-02:00:00;.proc.cp[];00:05:00)]
     exchangeTime                  okexBid okexAsk okexBidSize okexAskSize zbBid   zbAsk   zbBidSize z..
     -------------------------------------------------------------------------------------------------..
@@ -119,8 +107,6 @@ endtime, bucket. Sym is the only required key, all other keys will revert to def
 ###### Example usage:  
 Get arbitrage data for BTCUSDT from all exchanges:  
 
-    q)// Example output
-    
     q)arbitrage[(enlist `sym)!enlist `BTCUSDT]
     exchangeTime                  huobiBid huobiAsk huobiBidSize huobiAskSize bhexBid bhexAsk bhexBid..
     -------------------------------------------------------------------------------------------------..
@@ -132,8 +118,6 @@ Get arbitrage data for BTCUSDT from all exchanges:
 
 Get arbitrage data for the last 2 hours in buckets of 5 mins for BTCUSDT on finex and zb exchanges:  
  
-    // Example output
-    
     q)arbitrage[`sym`exchanges`starttime`endtime`bucket!(`BTCUSDT;`finex`zb;.proc.cp[]-02:00:00;.proc.cp[];00:05:00)]
     exchangeTime                  finexBid finexAsk finexBidSize finexAskSize zbBid   zbAsk   zbBidSi..
     -------------------------------------------------------------------------------------------------..
