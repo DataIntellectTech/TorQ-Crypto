@@ -48,10 +48,7 @@ orderbook:{[dict]
   // Create bid and ask books and join to create order book
   bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`exchange`bid`bidSize];
   ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`exchange`ask`askSize];
-  orderbook:bid,'ask;
-  $[(0=count orderbook) & .z.d>`date$d`timestamp;
-    errfunc[`orderbook;"No data for the specified timestamp. Please try an alternative. For historical data run the function on the hdb only."];
-    orderbook]
+  :bid,'ask
  };
 
 /
