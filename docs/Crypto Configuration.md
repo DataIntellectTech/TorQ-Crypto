@@ -15,7 +15,6 @@ The default available syms are Bitcoin/Tether (BTCUSDT) and Ethereum/Tether (ETH
 be switched on, or new syms added by navigating to `appconfig/symconfig.csv` and editing the 
 table to turn on specific syms for specific exchanges.
 
-    // Edit appconfig/symconfig.csv
     sym,finexsym,huobisym,okexsym,zbsym,bhexsym
     BTCUSDT,1,1,1,1,1
     ETHUSDT,1,1,1,1,1
@@ -29,7 +28,6 @@ must be mapped to one common identifier. If a new exchange is to be added or
 an existing sym needs to be changed, this can be configured in `appconfig/symmap.csv`
 and `appconfig/symconfig.csv`.
 
-    // Edit appconfig/symmap.csv
     sym,finexsym,huobisym,okexsym,zbsym,bhexsym
     Bitcoin-USDT,BTC_USDT,btcusdt,BTC-USDT,btcusdt,BTCUSDT    // <---- edit the sym column to change the common identifier
     ETHUSDT,ETH_USDT,ethusdt,ETH-USDT,ethusdt,ETHUSDT
@@ -40,8 +38,6 @@ and `appconfig/symconfig.csv`.
 To add a new sym, edit `appconfig/symmap.csv` by adding the new sym and the identifires for each excahnge.
 If an exchange does not have the specific sym, leave it blank. Then edit `appconfig/symconfig.csv`, add 
 the new sym and enable the sym on only the excahnges where it is available.
-
-    // Adding the ZEC-USDT sym for all exchanges but zb
     
     // Add line to appconfig/symmap.csv
     ZECUSDT,ZEC_USDT,zecusdt,ZEC-USDT,,ZECUSDT
