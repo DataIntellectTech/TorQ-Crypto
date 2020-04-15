@@ -25,7 +25,7 @@ Installation and Configuration
     [here](https://github.com/AquaQAnalytics/TorQ/archive/master.zip)
 
 3.  Download the TorQ-Crypto Pack from
-    [here](https://github.com/AquaQAnalytics/EDIT)[
+    [here](https://github.com/AquaQAnalytics/EDIT)
 
 4.  Unzip the TorQ package
 
@@ -238,6 +238,8 @@ The file structure can be seen below.
     |-- code
     |   |-- cryptofeed
     |   |   `-- cryptofeed.q
+    |   |-- cryptofunctions
+    |   |   `-- cryptolib.q
     |   `-- processes
     |       |-- bhexfeed.q
     |       |-- finexfeed.q
@@ -245,7 +247,8 @@ The file structure can be seen below.
     |       |-- okexfeed.q
     |       `-- zbfeed.q
     |-- hdb/database             <- example hdb data
-    |   |--2019.12.19
+    |   |--2020.03.29
+    |   |--2020.03.30
     |   `-- sym
     |-- database.q
     `-- setenv.sh           <- set environment variables
@@ -254,7 +257,9 @@ The TorQ-Crypto Pack consists of:
 
 -   a slightly modified version of kdb+tick from Kx Systems
 
--   configuration changes for base TorQ
+-   addition of cryptocurrency feeds
+
+-   configuration changes for subscribed syms and frequency and depth of retrieving data
 
 -   additional queries to run on the RDB and HDB
 
@@ -262,7 +267,6 @@ The TorQ-Crypto Pack consists of:
 Make It Your Own
 ----------------
 
-The system is production ready. To customize it for a specific data set,
-modify the schema file and replace the feed process with a feed of data
-from a live system.
+The system is production ready. Users may customise what syms to subscribe to, as well as add new feeds.
+The freqency of data retrieval from API's and the depth of market data may also be cusotmised. 
 
