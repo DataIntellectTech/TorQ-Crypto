@@ -2,19 +2,15 @@
 
 ### Feeds  
 Available feeds with this pack include the following:    
- - OKEX (okex) API: [https://www.okex.com/docs/en/ ]
- - DigiFinex (finex) API: [https://docs.digifinex.vip/en-ww/v3/ ]
- - Huobi (huobi) API: [https://huobiapi.github.io/docs/spot/v1/en/#introduction ]
- - ZB (zb) API: [https://www.zb.com/api]
- - Blue Helix (bhex) API: [https://github.com/bhexopen/BHEX-OpenApi ]  
+ - OKEX (okex) API: https://www.okex.com/docs/en/ 
+ - DigiFinex (finex) API: https://docs.digifinex.vip/en-ww/v3/ 
+ - Huobi (huobi) API: https://huobiapi.github.io/docs/spot/v1/en/#introduction 
+ - ZB (zb) API: https://www.zb.com/api
+ - Blue Helix (bhex) API: https://github.com/bhexopen/BHEX-OpenApi
 
     THINGS TO POSSIBLY ADD: How to add a new feed?
 
 ### Sym Configuration  
-Each exchange may have a different way of identifiying a sym, therefore syms must be mapped
-to one common identifier. If a new exchange is to be added or an existing sym needs to be
-changed, this can be configured in `appconfig/symmap.csv`.   
-
 The default available syms are Bitcoin/Tether (BTCUSDT) and Ethereum/Tether (ETHUSDT).Syms may
 be switched on, or new syms added by navigating to `appconfig/symconfig.csv` and editing the 
 table to turn on specific syms for specific exchanges.
@@ -27,12 +23,30 @@ table to turn on specific syms for specific exchanges.
     XRPUSDT,1,1,1,1,1    // <--- Change from 0 to 1 to switch on sym in individual exchanges or all
     EOSUSDT,0,0,0,0,0
     ..
-Note: You must restart processes after making this change for it to take effect.
-                       // can user just restart RDB with this change?
+    
+Each exchange may have a different way of identifiying a sym, therefore syms 
+must be mapped to one common identifier. If a new exchange is to be added or 
+an existing sym needs to be changed, this can be configured in `appconfig/symmap.csv`
+and `appconfig/symconfig.csv`.
 
-    // In the RDB process
-    q)exec distinct sym from exchange_top
-    `u#`BTCUSDT`ETHUSDT`XRPUSDT
+    // Edit appconfig/symmap.csv
+    sym,finexsym,huobisym,okexsym,zbsym,bhexsym
+    Bitcoin-USDT,BTC_USDT,btcusdt,BTC-USDT,btcusdt,BTCUSDT    // <---- edit the sym column to change the common identifier
+    ETHUSDT,ETH_USDT,ethusdt,ETH-USDT,ethusdt,ETHUSDT
+    LTCUSDT,LTC_USDT,ltcusdt,LTC-USDT,ltcusdt,LTCUSDT
+    XRPUSDT,XRP_USDT,xrpusdt,XRP-USDT,xrpusdt,XRPUSDT
+    ..
+
+To add a new sym, edit `appconfig/symmap.csv` by adding the new sym and the identifires for each excahnge.
+If an exchange does not have the specific sym, leave it blank. Then edit `appconfig/symconfig.csv`, add 
+the new sym and enable the sym on only the excahnges where it is available.
+
+    // Adding the ZEC-USDT sym for all exchanges but zb
+    
+    // Add line to appconfig/symmap.csv
+    ZECUSDT,ZEC_USDT,zecusdt,ZEC-USDT,,ZECUSDT
+    // Add line to appconfig/symconfig.csv
+    ZECUSDT,1,1,1,0,1
 
 ### Frequency of querying feed APIs and limit of depth of market  
 When querying for data from the cryptocurrencies APIs, the default for limit of depth of market returned is 10 records.
