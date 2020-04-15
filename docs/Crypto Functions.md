@@ -4,10 +4,10 @@
 
 |                 Function                 |               Description                |
 | :--------------------------------------: | :--------------------------------------: |
-|    **orderbook**[\`sym\`exchanges\`timestamp\`window!(symbol;symbol;timestamp;second)]    | Returns level 2 orderbook. |
+|    **orderbook**[\`sym\`exchanges\`timestamp\`window!(symbol;symbol;timestamp;second)]    | Returns level 2 orderbook data at a specific point in time. |
 |    **ohlc**[\`date\`sym\`exchanges\`quote\`byexchange!(date;symbol;symbol;symbol;boolean)] | Returns open, high, low and close data for bid and/or ask data. |
-|    **topofbook**[\`sym\`exchanges\`starttime\`endtime\`bucket!(symbol;symbol;timestamp;timestamp;second)] | Returns the level 1 orderbook. |
-|    **arbitrage**[\`sym\`exchanges\`starttime\`endtime\`bucket!(symbol;symbol;timestamp;timestamp;second)] | Returns topofbook table with how much profit can be made with arbitrage opportunities. |
+|    **topofbook**[\`sym\`exchanges\`starttime\`endtime\`bucket!(symbol;symbol;timestamp;timestamp;second)] | Returns level top of book data across exchanges. |
+|    **arbitrage**[\`sym\`exchanges\`starttime\`endtime\`bucket!(symbol;symbol;timestamp;timestamp;second)] | Returns topofbook with an arbitrage indicator. |
 
 Here we discuss the use and give examples of pre-made functions available with the TorQ-Crypto package.
 All the examples within this section are executed from within the RDB/HDB process.
@@ -31,7 +31,7 @@ Get latest BTCUSDT data from exchange table:
     okex        0.3        6950.5  6950.49  0.2        bhex 
     ..  
 
-Get BTCUSDT data from finex and bhex for last 2 hours:     
+Get BTCUSDT data from finex and bhex within a window of 2 hours from the timestamp provided:     
 
     q)orderbook[`sym`timestamp`exchanges`window!(`BTCUSDT;.proc.cp[];`finex`bhex;02:00:00)]
     exchange_b  bidSize                 bid                 ask                 askSize               exchange_a 
@@ -67,7 +67,7 @@ Get only bid data by exchange for BTCUSDT:
 
 
 #### Topofbook Function  
-Creates a table showing top of the book for each exchange (Level 1) at a given time.  
+Creates a table showing top of the book for each exchange (Level 1) at specified intervals between two timestamps.  
 Available keys include: sym, exchanges, starttime, endtime, bucket.
 Sym is the only mandatory parameter that the use must pass in, the other will revert to defaults.  
 If a null parameter value is passed in, this will remove the pertinent where clause from the query.  
@@ -96,12 +96,12 @@ Get level 1 data in the last 2 hours in buckets of 5 mins for BTCUSDT:
     ..  
 
 #### Arbitrage Function  
-Arbitrage is the simultaneous buying and selling of a financial insturment in different markets to 
-take advantage of the difference in price. This function will look for opportunities of arbitrage 
-and caluclate to potential profit to be made.  
+This function will look for opportunities of arbitrage by considering the best bid/ask across exchanges 
+(therefore only looks at top of book data) and indicates the profitability of any arbitrage opportunities.
+Exchange fees are not accounted for, so the actual profit will be lower than shown.  
 
-The Arbitrage functtion calls the topofbook function and adds columns saying if there is a chance 
-of risk free profit and what that profit is. Available keys include: sym, exchanges, starttime, 
+The Arbitrage function calls the topofbook function and adds columns saying if there is a chance 
+of risk free profit and what that potential profit is. Available keys include: sym, exchanges, starttime, 
 endtime, bucket. Sym is the only required key, all other keys will revert to defaults. 
 
 ###### Example usage:  
@@ -129,38 +129,25 @@ Get arbitrage data for the last 2 hours in buckets of 5 mins for BTCUSDT on fine
 
 
 ### Using Functions via Gateway  
-
-To use these functions for synchronous querying of the RDB/HDB:  
+We recommend using these functions for synchronous querying of the RDB/HDB via the gateway.  
 - open a handle to the gateway with
 
-    ``q)h:hopen `:localhost:xxxx:admin:admin``  
-    ``// Where xxxx is the port number of the gateway`` 
+    ``q)h:hopen `:localhost:port:user:pass `` 
 
 - use the following template  
 ``
-h(`.gw.syncexec;"function[dictionary arguments]";`serverstoquery)
+    h(`.gw.syncexec;"function[dictionary]";`serverstoquery) 
 ``  
+
 The following are some example queries to the RDB and/or the HDB via the gateway.  
 
-Retrieve today's level 2 data for \`SYMBOL from the zb exchange:  
+    ``h(`.gw.syncexec;"orderbook[`sym`exchanges!(`SYMBOL;`zb)]";`rdb)`` 
 
-    h(`.gw.syncexec;"orderbook[`sym`exchanges!(`SYMBOL;`zb)]";`rdb) 
-
-Retrieve level 2 data for BTCUSDT from okex and zb excahnges for 30.03.2020:  
-
-    h(`.gw.syncexec;"orderbook[`timestamp`sym`exchanges`window!(2020.03.30D09:00:00.000000;`BTCUSDT;`okex`zb;02:00:00)]";`hdb)
-    exchange_b bidSize   bid     ask     askSize    exchange_a
-    ----------------------------------------------------------
-    okex       0.2903761 6269.7  6269.12 0.0008     zb
-    okex       0.001     6269.5  6269.8  0.00225353 okex
-    okex       0.001     6269.2  6270.2  0.026      zb
-    okex       0.016661  6269.1  6270.26 0.043      zb
+    ``h(`.gw.syncexec;"orderbook[`timestamp`sym`exchanges`window!(2020.03.30D09:00:00.000000;`BTCUSDT;`okex`zb;02:00:00)]";`hdb)``
 
 
-Retreive level 1 data for a single non-null sym from the huobi and finex exchanges on 29.03.2020:
-``
-h(`.gw.syncexec;"topofbook[`sym`exchanges`starttime`endtime!(`BTCUSDT;`huobi`finex;2020.03.29D00:00:00.0000000;2020.03.29D23:59:59.0000000)]";`hdb)
-``  
+    ``h(`.gw.syncexec;"topofbook[`sym`exchanges`starttime`endtime!(`BTCUSDT;`huobi`finex;2020.03.29D00:00:00.0000000;2020.03.29D23:59:59.0000000)]";`hdb)``  
+
 ### Custom queries 
 The above function are for users ease-of-use. Users may build their own queries for their requirements.  
 
