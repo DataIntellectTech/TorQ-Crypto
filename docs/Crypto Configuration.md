@@ -45,15 +45,34 @@ the new sym and enable the sym on only the excahnges where it is available.
     ZECUSDT,1,1,1,0,1
 
 ### Frequency of querying feed APIs and limit of depth of market  
-When querying for data from the cryptocurrencies APIs, the default for limit of depth of market returned is 10 records.
-This means we're limited to 10 bid records and 10 ask records.  
-The frequency of querying is defaulted to every 30 seconds. Both these defaults may be adjusted for all excahnges in `appconfig/settings/default.q`.
+The frequency is the time at which a query is sent to the cryptocurrencies API's
+for the data to be retreived. Frequency of querying is defaulted to every 30 seconds.  
+
+The limit of depth is the number of records to be retreived from the API. When 
+querying for data from the cryptocurrencies APIs, the default for limit of depth
+of market returned is 10 records. This means we're limited to 10 bid records and 
+10 ask records per query.  
+
+Both these defaults may be adjusted for all or specific exchanges in `appconfig/settings/default.q`.
+
+For example, frequency of querying can be changed to every 2 minutes and the limit
+of depth can be changed to 20 records:
+
+    \d .crypto
+
+    //Defaults for frequency of querying API
+    deffreq : 0D00:02:00.000
+
+    //Defaults for limit of depth of market returned
+    deflimit: "20"
+
 
 If exchange-specific limit of depth and frequency is required, the user may edit the individual feed scripts.
 For example, for the exchange HUOBI, we require a bigger capture of data but can query less frequently.
 In the file `appconfig/settings/huobifeed.q`, navigate to where .huobi.limit and .huobi.freq is set (line 15 and 16)
 and set these to the required values.  
-
+    
+    \d .huobi
+    
     limit: "20"          // Query for 20 records, type must be string
     freq:0D00:00:45.000  // Query every 45 seconds, type must be timespan
-Note: Remember to restart processes (can use `. torq.sh restart all`)
