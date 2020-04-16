@@ -16,16 +16,17 @@ The architecture of the demo system is as below.
 ![Demo Data Capture](graphics/fullarchitecture.png)
 
 ### Feed
-The feed is obtained by querying cryptocurrency APIs (RESTful APIs) with a web resquest,
-and converted to a JSON format which is sent to the feed handler.
-APIs are queried at a default frequency of every 30 seconds, capturing data to a limit of 
-10 records and sending this data to the tickerplant.  
+There are several feeds obtained by querying cryptocurrency RESTful API's via .Q.hg,
+once the JSON is received from our web requests, they are then converted to KDB tables.
+APIs are queried at a default frequency, capturing data to a pre-determined
+limit and sending this data to the tickerplant. The frequency and market depth may be 
+customised.
 
 Once data is captured, the feed process will standardise the data. This includes
 converting the exchangeTime to a kdb+ timestamp and ordering bid and ask in a consitent
 manner. To avoid duplication of data and wasting resources, incoming data is compared to 
-the last published batch. If data is the same, the last published data reflects the incoming
-data and therfore new incoming data is not sent to the tickerplant.
+the last published batch. If incoming data is identical to the last published data, it 
+will not be sent to the tickerplant.
 
 The feed comprises of tables for each exchange, exchange and exchange_top. The exchange table
 consists of data from all exchanges, whereas exchange_top is a record of the best asks and bids.
@@ -37,7 +38,7 @@ file /database.q which will be located under the directory you
 extract the TorQ and Starter Pack files to.
 
     finex:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())  
-    //same schema as for all exchanges  
+    
     bhex:huobi:okex:zb:finex  
     
     exchange:([]time:`timestamp$(); sym:`g#`symbol$(); exchangeTime:`timestamp$(); exchange:`symbol$();bid:(); bidSize:(); ask:();askSize:()) 
