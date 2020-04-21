@@ -15,12 +15,12 @@ All the examples within this section are executed from within the RDB/HDB proces
 #### Orderbook Function
 Returns level 2 orderbook and takes a dictionary parameter as an argument.
 
-| Dictionary Keys |       Description      |    Types     |     Defaults      |     Example      |
-| :-------------: | :--------------------: | :----------: | :---------------: | :--------------: |
-| **Mandatory:sym** | The symbol of interest | -11h        | If an empty symbol is passed, all syms are chosen | \`BTCUSDT |
-| exchanges       | The exchanges to be queried |-11h, 11h        | If an empty symbol is passed, all exchanges are chosen | \`finex |
-| timestamp       | The time to subtract the window from | -12h     | If proctype is rdb, default time is the last time data is received. If proctype is hdb, default time is the last time data was received for the previous day | 2020.04.16D09:40:00.0000000 |
-| window          | The amount of time from the timestamp to look at | -18h        | Twice as long as the frequency of querying data (.crypto.deffreq) | 00:00:30 |
+| Dictionary Keys |  Mandatory  |    Types     |     Defaults      |     Example      |  Description    |
+| :-------------: | :---------: | :----------: | :---------------: | :--------------: |:--------------: |
+| sym             | &#x2611;    | -11h         | All syms          | \`BTCUSDT        | The symbol of interest |
+| exchanges       | &#x2612;    |-11h, 11h     | All exchanges     | \`finex          | The exchanges to be queried |
+| timestamp       | &#x2612;    | -12h         | If proctype is rdb, default time is the last time data is received. If proctype is hdb, default time is the last time data was received for the previous day| 2020.04.16D09:40:00.0000000 | The time to subtract the window from |
+| window          | &#x2612;    | -18h         | 2*.crypto.deffreq | 00:00:30         | The amount of time from the timestamp to look at |
     
 If a null parameter is passed in the dictionary argument, this will remove the relevant key from the where clause of the query.
 This function may be run on the RDB and/or HDB and will adjust defaults for queries accordingly.   
@@ -52,12 +52,12 @@ Get BTCUSDT data from finex and bhex within a window of 2 hours from the timesta
 #### OHLC Function
 Returns the OHLC data for bid and/or ask data and takes a dictionary parameter as an argument.  
 
-| Dictionary Keys |       Description      |    Types     |     Defaults      |     Example      |
-| :-------------: | :--------------------: | :----------: | :---------------: | :--------------: |
-| **Mandatory:sym** | The symbol of interest |-12h        | If an empty symbol is passed, all syms are chosen | \`BTCUSDT |
-| date            | The date to retreive data for |-14h        | If an empty symbol is passed, all exchanges are chosen | \`finex |
-| quote           | The bid and/or ask columns required by the user | -12h, 12h     | If an empty symbol is passed, all bid and ask columns are chosen | \`bid |
-| byexchange      | Allows user to filter ohlc data at individual exchange level | -1h | 0b | 1b |
+| Dictionary Keys |  Mandatory  |    Types     |     Defaults      |     Example      |    Description    |
+| :-------------: | :---------: | :----------: | :---------------: | :--------------: |  :--------------: |
+| sym             | &#x2611;    |-12h          | All syms          | \`BTCUSDT        | The symbol of interest |
+| date            | &#x2612;    |-14h          | All exchanges     | \`finex          | The date to retreive data for |
+| quote           | &#x2612;    | -12h, 12h    | All bid and ask columns | \`bid      | The bid and/or ask columns required by the user |
+| byexchange      | &#x2612;    | -1h          | 0b                | 1b               |Allows user to filter ohlc data at individual exchange level |
 
 ###### Example usage:
 Get latest OHLC data for BTCUSDT:  
@@ -80,13 +80,13 @@ Get only bid data by exchange for BTCUSDT:
 #### Topofbook Function  
 Creates a table showing top of the book for each exchange (Level 1) at specified intervals between two timestamps.
 
-| Dictionary Keys |       Description      |    Types     |     Defaults      |     Example      |
-| :-------------: | :--------------------: | :----------: | :---------------: | :--------------: |
-| **Mandatory:sym** | The symbol of interest |-11h        | If an empty symbol is passed, all syms are chosen | \`BTCUSDT |
-| exchanges       | The date to retreive data for chosen exchanges|-11h, 11h        | If an empty symbol is passed, all exchanges are chosen | \`finex |
-| starttime       | The time at which to begin looking at data | -12h     | If proctype is rdb, the start of day is used. If proctype is hdb, start of previous day is used | 2020.04.16D09:40:00.000000 |
-| endtime         | the time at which to stop looking at data | -12h | If proctype is rdb, the query time is used. If proctype is hdb, the end of previos day is used.  | 2020.04.16D12:00:00.000000 |
-| bucket          | What bucket of time to group data by | -18h | 00:01:00 | 00:02:00 |
+| Dictionary Keys | Mandatory  |    Types     |     Defaults      |     Example      |  Description      |
+| :-------------: | :--------: | :----------: | :---------------: | :--------------: | :---------------: |
+| sym             | &#x2611;   | -11h         | All syms          | \`BTCUSDT        | The symbol of interest |
+| exchanges       | &#x2612;   | -11h, 11h    | All exchanges     | \`finex          | The date to retreive data for chosen exchanges|
+| starttime       | &#x2612;   | -12h         | If proctype is rdb, the start of day is used. If proctype is hdb, start of previous day is used | 2020.04.16D09:40:00.000000 | The time at which to begin looking at data |
+| endtime         | &#x2612;   | -12h         | If proctype is rdb, the query time is used. If proctype is hdb, the end of previos day is used.  | 2020.04.16D12:00:00.000000 |The time at which to stop looking at data |
+| bucket          | &#x2612;   | -18h         | 00:01:00          | 00:02:00          | What bucket of time to group data by |
   
 If a null parameter value is passed in, this will remove the pertinent where clause from the query.  
 This function can be run on the RDB and/or HDB and will adjust queries accordingly.  
@@ -131,13 +131,13 @@ This function will look for opportunities of arbitrage by considering the best b
 (therefore only looks at top of book data) and indicates the profitability of any arbitrage opportunities.
 Exchange fees are not accounted for, so the actual profit will be lower than shown.
 
-| Dictionary Keys |       Description      |    Types     |     Defaults      |     Example      |
-| :-------------: | :--------------------: | :----------: | :---------------: | :--------------: |
-| **Mandatory:sym** | The symbol of interest |-12h        | If an empty symbol is passed, all syms are chosen | \`BTCUSDT |
-| exchanges       | The date to retreive data for chosen exchanges |-11h, 11h        | If an empty symbol is passed, all exchanges are chosen | \`finex |
-| starttime       | The time at which to begin looking at data |-12h     | If proctype is rdb, the start of day is used. If proctype is hdb, start of previous day is used | 2020.04.16D09:40:00.000000 |
-| endtime         | The time at which to stop looking at data |-12h | If proctype is rdb, the query time is used. If proctype is hdb, the end of previos day is used.  | 2020.04.16D12:00:00.000000 |
-| bucket          | What bucket of time to group data by |-18h | 00:01:00 | 00:02:00 |  
+| Dictionary Keys |     Mandatory    |    Types     |     Defaults      |     Example      | Description      |
+| :-------------: | :--------------: | :----------: | :---------------: | :--------------: | :--------------: |
+| sym             | &#x2611;         |-12h          | All syms          | \`BTCUSDT |The symbol of interest |
+| exchanges       | &#x2612;         |-11h, 11h     | All exchanges     | \`finex |The date to retreive data for chosen exchanges |
+| starttime       | &#x2612;         |-12h          | If proctype is rdb, the start of day is used. If proctype is hdb, start of previous day is used | 2020.04.16D09:40:00.000000 |The time at which to begin looking at data |
+| endtime         | &#x2612;         |-12h          | If proctype is rdb, the query time is used. If proctype is hdb, the end of previos day is used.  | 2020.04.16D12:00:00.000000 |The time at which to stop looking at data |
+| bucket          | &#x2612;         |-18h          | 00:01:00          | 00:02:00          |  What bucket of time to group data by |
 
 The Arbitrage function calls the topofbook function and adds columns saying if there is a chance 
 of risk free profit and what that potential profit is.  
