@@ -1,5 +1,6 @@
 # TorQ-Crypto Gateway Functions
 
+
 ## Summary table of Functions
 
       |                 Function                 |               Description                |
@@ -13,6 +14,8 @@ Here we discuss the use and give examples of pre-made functions available with t
 All the examples within this section are executed from within the RDB/HDB process.
 
 ## Summary table of Functions
+
+FORMAT:1A
 
 <center>
 
