@@ -5,11 +5,11 @@
 
 Symbol subscription is specified on a per exchange in appconfig/symconfig.csv. In this file we have included 15 symbols which are common across the 5 exchanges, but by default only Bitcoin and Ethereum are subscribed to.
 
-![Sym Config](graphics/symconfig.png)
+![Sym Config](graphics/symconfig.PNG)
 
 This symbol configuration has a dependency on appconfig/symap.csv which maps tickers across exchanges to one common identifier. Therefore if a new crypto currency is to be added both of these files must be taken into consideration. 
 
-![Sym Config2](graphics/symconfig.png)
+![Sym Config2](graphics/symconfig.PNG)
 
 ### Frequency of querying feed APIs and limit of depth of market  
 The frequency is the time at which a query is sent to the cryptocurrencies API's
