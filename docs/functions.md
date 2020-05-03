@@ -85,8 +85,8 @@ Returns top of book data on a per exchange basis at set buckets between two time
 | :-------------: | :--------: | :----------: | :---------------: | :--------------: | :---------------: |
 | sym             | 1b         | -11h         | N/A               | \`BTCUSDT        | Symbol of interest |
 | exchanges       | 0b         | -11 11h      | All exchanges     | \`finex          | Exchange(s) of interest|
-| starttime       | 0b         | -12h         | First time on last available date | 2020.04.16D09:40:00.000000 | Query start time |
-| endtime         | 0b         | -12h         | Last time on last available date | 2020.04.16D12:00:00.000000 | Query end time |
+| starttime       | 0b         | -12h         | Last available date | 2020.04.16D09:40:00.000000 | Query start time |
+| endtime         | 0b         | -12h         | Last available date | 2020.04.16D12:00:00.000000 | Query end time |
 | bucket          | 0b         | -18h         | 2*.crypto.deffreq | 00:02:00         | Bucket intervals |
   
 
