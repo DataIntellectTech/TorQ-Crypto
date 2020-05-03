@@ -3,12 +3,12 @@
 
 ## Summary table of Functions
 
-|                 Function                 |               Description                |
-| :--------------------------------------: | :--------------------------------------: |
-|    **ohlc**                              | Returns open, high, low and close quote data. |
-|    **orderbook**                         | Returns level 2 orderbook data at a specific point in time. |
-|    **topofbook**                         | Returns top of book data within a given time range. |
-|    **arbitrage**                         | Topofbook with additional arbitrage and profit columns. |
+|                 Function                 |    Input    |               Description                |
+| :--------------------------------------: | :---------: | :--------------------------------------: |
+|    **ohlc**                              |  Dictionary | Returns open, high, low and close quote data. |
+|    **orderbook**                         |  Dictionary | Returns level 2 orderbook data at a specific point in time. |
+|    **topofbook**                         |  Dictionary | Returns top of book data within a given time range. |
+|    **arbitrage**                         |  Dictionary | Topofbook with additional arbitrage and profit columns. |
 
 
 #### OHLC Function
