@@ -2,12 +2,12 @@
 
 ## Summary table of Functions
 
-|                 Function                 |               Description                |
-| :--------------------------------------: | :--------------------------------------: |
-|    **orderbook**[\`sym\`exchanges\`timestamp\`window!(symbol;symbol;timestamp;second)]    | Returns level 2 orderbook data at a specific point in time. |
-|    **ohlc**[\`date\`sym\`exchanges\`quote\`byexchange!(date;symbol;symbol;symbol;boolean)] | Returns open, high, low and close data for bid and/or ask data. |
-|    **topofbook**[\`sym\`exchanges\`starttime\`endtime\`bucket!(symbol;symbol;timestamp;timestamp;second)] | Returns level top of book data across exchanges. |
-|    **arbitrage**[\`sym\`exchanges\`starttime\`endtime\`bucket!(symbol;symbol;timestamp;timestamp;second)] | Returns topofbook with an arbitrage indicator. |
+      |                 Function                 |               Description                |
+      | :--------------------------------------: | :--------------------------------------: |
+      |    **orderbook**[\`sym\`exchanges\`timestamp\`window!(symbol;symbol;timestamp;second)]    | Returns level 2 orderbook data at a specific point in time. |
+      |    **ohlc**[\`date\`sym\`exchanges\`quote\`byexchange!(date;symbol;symbol;symbol;boolean)] | Returns open, high, low and close data for bid and/or ask data. |
+      |    **topofbook**[\`sym\`exchanges\`starttime\`endtime\`bucket!(symbol;symbol;timestamp;timestamp;second)] | Returns level top of book data across exchanges. |
+      |    **arbitrage**[\`sym\`exchanges\`starttime\`endtime\`bucket!(symbol;symbol;timestamp;timestamp;second)] | Returns topofbook with an arbitrage indicator. |
 
 Here we discuss the use and give examples of pre-made functions available with the TorQ-Crypto package.
 All the examples within this section are executed from within the RDB/HDB process.
