@@ -14,6 +14,8 @@ All the examples within this section are executed from within the RDB/HDB proces
 
 ## Summary table of Functions
 
+<center>
+
 |                 Function                 |               Description                |
 | :--------------------------------------: | :--------------------------------------: |
 |    **ohlc**                              | Returns open, high, low and close quote data. |
@@ -21,6 +23,7 @@ All the examples within this section are executed from within the RDB/HDB proces
 |    **topofbook**                         | Returns top of book data within a given time range. |
 |    **arbitrage**                         | Topofbook with additional arbitrage and profit columns. |
 
+</center>
 
 #### OHLC Function
 Returns the OHLC data for bid and/or ask data and takes a dictionary parameter as an argument.
