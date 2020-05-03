@@ -44,7 +44,7 @@ Returns level 2 orderbook at a specific point in time considering only quotes wi
 | :-------------: | :---------: | :----------: | :---------------: | :--------------: |:--------------: |
 | sym             | 1b          | -11h         | N/A               | \`BTCUSDT        | Symbol of interest |
 | exchanges       | 0b          |-11 11h       | All exchanges     | \`finex`okex     | Exchange(s) of interest |
-| timestamp       | 0b          | -12h         | Last available time| 2020.04.16D09:40:00.0000000 | Orderbook as of this time |
+| timestamp       | 0b          | -12h         | Last available time| 2020.04.16D09:40:00.0000000 | Time of orderbook |
 | window          | 0b          | -18h         | 2*.crypto.deffreq | 00:00:30         | Lookback window for quotes |
     
 If a null parameter is passed in the dictionary argument, this will remove the relevant key from the where clause of the query.
@@ -54,27 +54,27 @@ This function may be run on the RDB and/or HDB and will adjust defaults for quer
 
 Get BTCUSDT orderbook with a lookback window of 1 minute:     
 
-   q)orderbook[`sym`timestamp`exchanges`window!(`BTCUSDT;2020.03.29D15:00:00.000000000;`finex`okex`zb;00:01:00)]
-   exchange_b bidSize    bid     ask     askSize    exchange_a
-   -----------------------------------------------------------
-   okex       0.3764075  6146.5  6143.51 0.0002     zb
-   okex       0.30097    6146.4  6144.19 0.0004     zb
-   okex       0.19998    6146.2  6145.05 0.002      finex
-   okex       0.07       6146.1  6145.1  0.0008     zb
-   okex       0.39996    6146    6145.3  0.002      finex
-   okex       0.001      6145.8  6145.6  0.0246     zb
-   okex       1.5        6145.7  6146.51 0.096      zb
-   okex       0.0011     6145.6  6146.6  0.001      okex
-   okex       0.00433655 6145.5  6147.5  0.001      okex
-   okex       0.59994    6145.4  6147.6  0.00607957 okex
-   zb         0.188      6141.1  6147.67 0.133      zb
-   zb         0.043      6140.62 6147.9  0.00650741 okex
-   zb         0.047      6140.61 6147.92 0.1605     finex
-   zb         0.037      6140.48 6148    0.07928215 okex
-   finex      1.8368     6139.74 6148.1  0.1022373  okex
-   zb         0.033      6138.37 6148.2  0.2075531  okex
-   finex      0.1532     6138.24 6148.3  0.504      okex
-   zb         1          6137.53 6148.4  0.5139502  okex
+    q)orderbook[`sym`timestamp`exchanges`window!(`BTCUSDT;2020.03.29D15:00:00.000000000;`finex`okex`zb;00:01:00)]
+    exchange_b bidSize    bid     ask     askSize    exchange_a
+    -----------------------------------------------------------
+    okex       0.3764075  6146.5  6143.51 0.0002     zb
+    okex       0.30097    6146.4  6144.19 0.0004     zb
+    okex       0.19998    6146.2  6145.05 0.002      finex
+    okex       0.07       6146.1  6145.1  0.0008     zb
+    okex       0.39996    6146    6145.3  0.002      finex
+    okex       0.001      6145.8  6145.6  0.0246     zb
+    okex       1.5        6145.7  6146.51 0.096      zb
+    okex       0.0011     6145.6  6146.6  0.001      okex
+    okex       0.00433655 6145.5  6147.5  0.001      okex
+    okex       0.59994    6145.4  6147.6  0.00607957 okex
+    zb         0.188      6141.1  6147.67 0.133      zb
+    zb         0.043      6140.62 6147.9  0.00650741 okex
+    zb         0.047      6140.61 6147.92 0.1605     finex
+    zb         0.037      6140.48 6148    0.07928215 okex
+    finex      1.8368     6139.74 6148.1  0.1022373  okex
+    zb         0.033      6138.37 6148.2  0.2075531  okex
+    finex      0.1532     6138.24 6148.3  0.504      okex
+    zb         1          6137.53 6148.4  0.5139502  okex
 
 
 
@@ -85,8 +85,8 @@ Returns top of book data on a per exchange basis at set buckets between two time
 | :-------------: | :--------: | :----------: | :---------------: | :--------------: | :---------------: |
 | sym             | 1b         | -11h         | N/A               | \`BTCUSDT        | Symbol of interest |
 | exchanges       | 0b         | -11 11h      | All exchanges     | \`finex          | Exchange(s) of interest|
-| starttime       | 0b         | -12h         | First time of last available date | 2020.04.16D09:40:00.000000 | Query start time  |
-| endtime         | 0b         | -12h         | Last time of last available date | 2020.04.16D12:00:00.000000 | Query end time |
+| starttime       | 0b         | -12h         | Last available date | 2020.04.16D09:40:00.000000 | Query start time  |
+| endtime         | 0b         | -12h         | Last available date | 2020.04.16D12:00:00.000000 | Query end time |
 | bucket          | 0b         | -18h         | 2*.crypto.deffreq | 00:02:00         | Bucket intervals |
   
 
@@ -113,8 +113,8 @@ may be possible to find a more profitable opportunity.
 | :-------------: | :--------: | :----------: | :---------------: | :--------------: | :---------------: |
 | sym             | 1b         | -11h         | N/A               | \`BTCUSDT        | Symbol of interest |
 | exchanges       | 0b         | -11 11h      | All exchanges     | \`finex          | Exchange(s) of interest|
-| starttime       | 0b         | -12h         | First time of last available date | 2020.04.16D09:40:00.000000 | Query start time  |
-| endtime         | 0b         | -12h         | Last time of last available date | 2020.04.16D12:00:00.000000 | Query end time |
+| starttime       | 0b         | -12h         | Last available date | 2020.04.16D09:40:00.000000 | Query start time  |
+| endtime         | 0b         | -12h         | Last available date | 2020.04.16D12:00:00.000000 | Query end time |
 | bucket          | 0b         | -18h         | 2*.crypto.deffreq | 00:02:00         | Bucket intervals |
 
 
