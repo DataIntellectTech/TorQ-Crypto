@@ -3,22 +3,6 @@
 
 ## Summary table of Functions
 
-      |                 Function                 |               Description                |
-      | :--------------------------------------: | :--------------------------------------: |
-      |    **orderbook**[\`sym\`exchanges\`timestamp\`window!(symbol;symbol;timestamp;second)]    | Returns level 2 orderbook data at a specific point in time. |
-      |    **ohlc**[\`date\`sym\`exchanges\`quote\`byexchange!(date;symbol;symbol;symbol;boolean)] | Returns open, high, low and close data for bid and/or ask data. |
-      |    **topofbook**[\`sym\`exchanges\`starttime\`endtime\`bucket!(symbol;symbol;timestamp;timestamp;second)] | Returns level top of book data across exchanges. |
-      |    **arbitrage**[\`sym\`exchanges\`starttime\`endtime\`bucket!(symbol;symbol;timestamp;timestamp;second)] | Returns topofbook with an arbitrage indicator. |
-
-Here we discuss the use and give examples of pre-made functions available with the TorQ-Crypto package.
-All the examples within this section are executed from within the RDB/HDB process.
-
-## Summary table of Functions
-
-FORMAT:1A
-
-<center>
-
 |                 Function                 |               Description                |
 | :--------------------------------------: | :--------------------------------------: |
 |    **ohlc**                              | Returns open, high, low and close quote data. |
@@ -26,14 +10,13 @@ FORMAT:1A
 |    **topofbook**                         | Returns top of book data within a given time range. |
 |    **arbitrage**                         | Topofbook with additional arbitrage and profit columns. |
 
-</center>
 
 #### OHLC Function
-Returns the OHLC data for bid and/or ask data and takes a dictionary parameter as an argument.
+Returns the OHLC quote data for specified dates with the option to break down by exchange.
 
 |      Keys       |  Mandatory  |    Types     |     Defaults      |     Example      |    Description    |
 | :-------------: | :---------: | :----------: | :---------------: | :--------------: |  :--------------: |
-| sym             | 1b          |-12 12h       | All symbols       | \`BTCUSDT        | Symbol(s) of interest |
+| sym             | 1b          |-12 12h       | All syms          | \`BTCUSDT        | Symbol(s) of interest |
 | date            | 0b          |-14 14h       | Most recent date  | 2020.03.29       | Date(s) to query |
 | exchanges       | 0b          |-14 14h       | All exchanges     | \`finex`zb       | Exchange(s) of interest |
 | quote           | 0b          | -12 12h      | Bid & Ask         | \`bid            | Quote of interest |
@@ -55,157 +38,98 @@ Get BTCUSDT data broken down by exchange:
 
 
 #### Orderbook Function
-Returns level 2 orderbook and takes a dictionary parameter as an argument.
+Returns level 2 orderbook at a specific point in time considering only quotes within the lookback window.
 
 | Dictionary Keys |  Mandatory  |    Types     |     Defaults      |     Example      |  Description    |
 | :-------------: | :---------: | :----------: | :---------------: | :--------------: |:--------------: |
-| sym             | &#x2611;    | -11h         | All syms          | \`BTCUSDT        | The symbol of interest |
-| exchanges       | &#x2612;    |-11h, 11h     | All exchanges     | \`finex          | The exchanges to be queried |
-| timestamp       | &#x2612;    | -12h         | If proctype is rdb, default time is the last time data is received. If proctype is hdb, default time is the last time data was received for the previous day| 2020.04.16D09:40:00.0000000 | The time to subtract the window from |
-| window          | &#x2612;    | -18h         | 2*.crypto.deffreq | 00:00:30         | The amount of time from the timestamp to look at |
+| sym             | 1b          | -11h         | N/A               | \`BTCUSDT        | Symbol of interest |
+| exchanges       | 0b          |-11 11h       | All exchanges     | \`finex`okex     | Exchange(s) of interest |
+| timestamp       | 0b          | -12h         | Last available time| 2020.04.16D09:40:00.0000000 | Orderbook as of this time |
+| window          | 0b          | -18h         | 2*.crypto.deffreq | 00:00:30         | Lookback window for quotes |
     
 If a null parameter is passed in the dictionary argument, this will remove the relevant key from the where clause of the query.
 This function may be run on the RDB and/or HDB and will adjust defaults for queries accordingly.   
 
 ###### Example usage:  
-Get latest BTCUSDT data from exchange table:      
 
-    q)orderbook[(enlist `sym)!enlist (`BTCUSDT)]
-    exchange_b  bidSize    bid     ask      askSize    exchange_a 
-    -------------------------------------------------------------
-    okex        2.076665   6951.4  6949.5   0.511969   huobi
-    okex        0.001      6950.7  6949.9   0.001      huobi
-    okex        0.0064022  6950.6  6950.42  7.082231   bhex 
-    okex        0.3        6950.5  6950.49  0.2        bhex 
-    ..  
+Get BTCUSDT orderbook with a lookback window of 1 minute:     
 
-Get BTCUSDT data from finex and bhex within a window of 2 hours from the timestamp provided:     
+   q)orderbook[`sym`timestamp`exchanges`window!(`BTCUSDT;2020.03.29D15:00:00.000000000;`finex`okex`zb;00:01:00)]
+   exchange_b bidSize    bid     ask     askSize    exchange_a
+   -----------------------------------------------------------
+   okex       0.3764075  6146.5  6143.51 0.0002     zb
+   okex       0.30097    6146.4  6144.19 0.0004     zb
+   okex       0.19998    6146.2  6145.05 0.002      finex
+   okex       0.07       6146.1  6145.1  0.0008     zb
+   okex       0.39996    6146    6145.3  0.002      finex
+   okex       0.001      6145.8  6145.6  0.0246     zb
+   okex       1.5        6145.7  6146.51 0.096      zb
+   okex       0.0011     6145.6  6146.6  0.001      okex
+   okex       0.00433655 6145.5  6147.5  0.001      okex
+   okex       0.59994    6145.4  6147.6  0.00607957 okex
+   zb         0.188      6141.1  6147.67 0.133      zb
+   zb         0.043      6140.62 6147.9  0.00650741 okex
+   zb         0.047      6140.61 6147.92 0.1605     finex
+   zb         0.037      6140.48 6148    0.07928215 okex
+   finex      1.8368     6139.74 6148.1  0.1022373  okex
+   zb         0.033      6138.37 6148.2  0.2075531  okex
+   finex      0.1532     6138.24 6148.3  0.504      okex
+   zb         1          6137.53 6148.4  0.5139502  okex
 
-    q)orderbook[`sym`timestamp`exchanges`window!(`BTCUSDT;.proc.cp[];`finex`bhex;02:00:00)]
-    exchange_b  bidSize                 bid                 ask                 askSize               exchange_a 
-    ------------------------------------------------------------------------------------------------------------
-    bhex        0.064843999999999999    7295.9899999999998  7296.7799999999997  0.18113599999999999   bhex
-    bhex        0.1767                  7295.8999999999996  7296.79             0.110959              bhex
-    bhex        0.10000000000000001     7295.8800000000001  7297.04             0.96191800000000005   bhex
-    bhex        0.037999999999999999    7295.8699999999999  7297.2200000000003  0.251                 bhex
-    ..
-
-
-#### OHLC Function
-Returns the OHLC data for bid and/or ask data and takes a dictionary parameter as an argument.  
-
-| Dictionary Keys |  Mandatory  |    Types     |     Defaults      |     Example      |    Description    |
-| :-------------: | :---------: | :----------: | :---------------: | :--------------: |  :--------------: |
-| sym             | &#x2611;    |-12h          | All syms          | \`BTCUSDT        | The symbol of interest |
-| date            | &#x2612;    |-14h          | All exchanges     | \`finex          | The date to retreive data for |
-| quote           | &#x2612;    | -12h, 12h    | All bid and ask columns | \`bid      | The bid and/or ask columns required by the user |
-| byexchange      | &#x2612;    | -1h          | 0b                | 1b               |Allows user to filter ohlc data at individual exchange level |
-
-###### Example usage:
-Get latest OHLC data for BTCUSDT:  
-
-    q)ohlc[enlist[`sym]!enlist `BTCUSDT]
-    date       sym    | openBid closeBid bidHigh bidLow  openAsk closeAsk askHigh askLow
-    ------------------| -----------------------------------------------------------------
-    2020.04.08 BTCUSDT| 7354.4  7309.2   7369.9  7241.15 7355.1  7309.5   7370.37 7241.72
-
-
-Get only bid data by exchange for BTCUSDT:  
-
-    q)ohlc[`date`sym`exchanges`quote`byexchange!(.z.d;`BTCUSDT;`finex`okex;`bid;1b)]
-    date       sym     exchange| openBid closeBid bidHigh bidLow
-    ---------------------------| --------------------------------
-    2020.04.09 BTCUSDT finex   | 7354.33 7296.42  7366.43 7245.03
-    2020.04.09 BTCUSDT okex    | 7348.2  7297.8   7369.9  7242
 
 
 #### Topofbook Function  
-Creates a table showing top of the book for each exchange (Level 1) at specified intervals between two timestamps.
+Returns top of book data on a per exchange basis at set buckets between two timestamps. 
 
 | Dictionary Keys | Mandatory  |    Types     |     Defaults      |     Example      |  Description      |
 | :-------------: | :--------: | :----------: | :---------------: | :--------------: | :---------------: |
-| sym             | &#x2611;   | -11h         | All syms          | \`BTCUSDT        | The symbol of interest |
-| exchanges       | &#x2612;   | -11h, 11h    | All exchanges     | \`finex          | The date to retreive data for chosen exchanges|
-| starttime       | &#x2612;   | -12h         | If proctype is rdb, the start of day is used. If proctype is hdb, start of previous day is used | 2020.04.16D09:40:00.000000 | The time at which to begin looking at data |
-| endtime         | &#x2612;   | -12h         | If proctype is rdb, the query time is used. If proctype is hdb, the end of previos day is used.  | 2020.04.16D12:00:00.000000 |The time at which to stop looking at data |
-| bucket          | &#x2612;   | -18h         | 00:01:00          | 00:02:00          | What bucket of time to group data by |
+| sym             | 1b         | -11h         | N/A               | \`BTCUSDT        | Symbol of interest |
+| exchanges       | 0b         | -11 11h      | All exchanges     | \`finex          | Exchange(s) of interest|
+| starttime       | 0b         | -12h         | First time of last available date | 2020.04.16D09:40:00.000000 | Query start time  |
+| endtime         | 0b         | -12h         | Last time of last available date | 2020.04.16D12:00:00.000000 | Query end time |
+| bucket          | 0b         | -18h         | 2*.crypto.deffreq | 00:02:00         | Bucket intervals |
   
-If a null parameter value is passed in, this will remove the pertinent where clause from the query.  
-This function can be run on the RDB and/or HDB and will adjust queries accordingly.  
 
 ###### Example usage:
-Get level 1 data for BTCUSDT from all exchanges:  
 
-    q)topofbook[(enlist `sym)!enlist `BTCUSDT]
-    exchangeTime                  okexBid            okexAsk            okexBidSize            okexAskSize           huobiBid           huobiAsk           huobiBidSize           huobiAskSize ..
-    -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------..
-    2020.04.15D00:01:00.000000000 6856               6856.1000000000004 0.17378205999999999    0.019619279999999999  6859.1000000000004 6859.1999999999998 0.082798999999999998   0.118543     ..
-    2020.04.15D00:02:00.000000000 6853.6000000000004 6853.6999999999998 0.24825765999999999    0.0040000000000000001 6851.6000000000004 6851.8000000000002 0.037240000000000002   2.27919200000..
-    2020.04.15D00:03:00.000000000 6815.5             6815.6000000000004 0.14455156999999999    0.0039345500000000002 6813.5             6813.6999999999998 0.170738               0.25659300000..
-    2020.04.15D00:04:00.000000000 6827.8999999999996 6828               2.6327339599999999     0.0040000000000000001 6828.3000000000002 6829.8999999999996 0.206536               0.12814600000..
-    2020.04.15D00:05:00.000000000 6831.8999999999996 6832               0.61994375000000002    0.001                 6830.3000000000002 6830.6000000000004 0.002                  1.69569799999..
-    2020.04.15D00:06:00.000000000 6827.8000000000002 6827.8999999999996 0.58100854000000002    0.002                 6830.8000000000002 6831.3000000000002 2.1928580000000002     0.12042799999..
-    2020.04.15D00:07:00.000000000 6833.6000000000004 6833.6999999999998 0.20866628000000001    0.001                 6832.6999999999998 6832.8000000000002 0.10000000000000001    2.10644400000..
-    2020.04.15D00:08:00.000000000 6836.3000000000002 6836.3999999999996 0.021672509999999999   0.0050000000000000001 6833.1000000000004 6834.6999999999998 0.10000000000000001    0.012423     ..
-    2020.04.15D00:09:00.000000000 6837.1999999999998 6837.3000000000002 0.055465779999999999   0.001                 6835.1999999999998 6836.6000000000004 0.0074260000000000003  1.99113199999..
-    2020.04.15D00:10:00.000000000 6829               6829.1000000000004 0.089577180000000006   0.0015053             6831.8000000000002 6832.3000000000002 0.050000000000000003   0.00077399999..
-    ..
+Top of book data for ETHUSDT across zb and huobi exchanges: 
 
-Get level 1 data in the last 2 hours in buckets of 5 mins for BTCUSDT:  
+    q)topofbook[`sym`exchanges`starttime`endtime!(`ETHUSDT;`zb`huobi;2020.03.29D15:00:00.000000000;2020.03.29D15:05:00.000000000)]
+    exchangeTime                  zbBid  zbAsk  zbBidSize zbAskSize huobiBid huobiAsk huobiBidSize huobiAskSize
+    -----------------------------------------------------------------------------------------------------------
+    2020.03.29D15:01:00.000000000 129.37 129.42 1.43      0.002     129.3    129.4    30.6389      294.2774
+    2020.03.29D15:02:00.000000000 129.28 129.33 2.31      0.001     129.2    129.3    0.6546       714.6843
+    2020.03.29D15:03:00.000000000 129.25 129.34 1.77      0.024     129.1    129.2    127.2271     74.5471
+    2020.03.29D15:04:00.000000000 129.26 129.31 1.38      0.001     129.1    129.2    328.819      1
+    2020.03.29D15:05:00.000000000 129.16 129.22 2.13      0.001     129.1    129.2    25.2141      1081.714
 
-    q)topofbook[`sym`exchanges`starttime`endtime`bucket!(`BTCUSDT;`;.proc.cp[]-02:00:00;.proc.cp[];00:05:00)]
-    exchangeTime                  finexBid           finexAsk           finexBidSize         finexAskSize           huobiBid           huobiAsk           huobiBidSize         huobiAskSize    ..
-    -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------..
-    2020.04.15D14:15:00.000000000 6728.4399999999996 6738.6499999999996 0.1011               0.0014                 6735.6000000000004 6735.6999999999998 0.24300099999999999  0.32364700000000..
-    2020.04.15D14:20:00.000000000 6727.29            6729.5             0.32600000000000001  0.00059999999999999995 6733.6999999999998 6733.8000000000002 0.46999999999999997  0.43773800000000..
-    2020.04.15D14:25:00.000000000 6733.9499999999998 6735               0.039600000000000003 0.0040000000000000001  6736.5             6736.6000000000004 0.37073800000000001  0.07424899999999..
-    2020.04.15D14:30:00.000000000 6745.5200000000004 6746.0699999999997 0.0235               0.0088000000000000005  6741.1000000000004 6741.8000000000002 5.5815239999999999   0.07503700000000..
-    2020.04.15D14:35:00.000000000 6757.5200000000004 6761.3000000000002 3.4832000000000001   0.010500000000000001   6761.3999999999996 6762.8000000000002 0.1144               0.08823499999999..
-    2020.04.15D14:40:00.000000000 6744.46            6754.6199999999999 0.69850000000000001  0.0079000000000000008  6750               6750.8000000000002 1.0366550000000001   0.00512699999999..
-    2020.04.15D14:45:00.000000000 6737.9799999999996 6737.9899999999998 0.25                 0.0016999999999999999  6739.6000000000004 6739.6999999999998 0.24845300000000001  0.150533        ..
-    2020.04.15D14:50:00.000000000 6740.0299999999997 6741.1000000000004 0.5                  0.0011000000000000001  6739.8999999999996 6740               0.068198999999999996 1.17723159104302..
-    2020.04.15D14:55:00.000000000 6733.3299999999999 6733.3999999999996 0.79620000000000002  0.56079999999999997    6729.6999999999998 6730               0.41671999999999998  0.03428599999999..
-    2020.04.15D15:00:00.000000000 6721.0299999999997 6721.1599999999999 0.2089               0.0061999999999999998  6719.1000000000004 6720.1000000000004 0.25274099999999999  0.001639        ..
-    ..  
 
 #### Arbitrage Function  
-This function will look for opportunities of arbitrage by considering the best bid/ask across exchanges 
-(therefore only looks at top of book data) and indicates the profitability of any arbitrage opportunities.
-Exchange fees are not accounted for, so the actual profit will be lower than shown.
+Returns top of book with additional profit and arbitrage columns. Note that profit here is reflective 
+of the exchanges with the greates difference between bid/ask. When sizes are also taken into account it
+may be possible to find a more profitable opportunity.
 
-| Dictionary Keys |     Mandatory    |    Types     |     Defaults      |     Example      | Description      |
-| :-------------: | :--------------: | :----------: | :---------------: | :--------------: | :--------------: |
-| sym             | &#x2611;         |-12h          | All syms          | \`BTCUSDT |The symbol of interest |
-| exchanges       | &#x2612;         |-11h, 11h     | All exchanges     | \`finex |The date to retreive data for chosen exchanges |
-| starttime       | &#x2612;         |-12h          | If proctype is rdb, the start of day is used. If proctype is hdb, start of previous day is used | 2020.04.16D09:40:00.000000 |The time at which to begin looking at data |
-| endtime         | &#x2612;         |-12h          | If proctype is rdb, the query time is used. If proctype is hdb, the end of previos day is used.  | 2020.04.16D12:00:00.000000 |The time at which to stop looking at data |
-| bucket          | &#x2612;         |-18h          | 00:01:00          | 00:02:00          |  What bucket of time to group data by |
+| Dictionary Keys | Mandatory  |    Types     |     Defaults      |     Example      |  Description      |
+| :-------------: | :--------: | :----------: | :---------------: | :--------------: | :---------------: |
+| sym             | 1b         | -11h         | N/A               | \`BTCUSDT        | Symbol of interest |
+| exchanges       | 0b         | -11 11h      | All exchanges     | \`finex          | Exchange(s) of interest|
+| starttime       | 0b         | -12h         | First time of last available date | 2020.04.16D09:40:00.000000 | Query start time  |
+| endtime         | 0b         | -12h         | Last time of last available date | 2020.04.16D12:00:00.000000 | Query end time |
+| bucket          | 0b         | -18h         | 2*.crypto.deffreq | 00:02:00         | Bucket intervals |
 
-The Arbitrage function calls the topofbook function and adds columns saying if there is a chance 
-of risk free profit and what that potential profit is.  
 
 ###### Example usage:  
-Get arbitrage data for BTCUSDT from all exchanges:  
 
-    q)arbitrage[(enlist `sym)!enlist `BTCUSDT]
-    exchangeTime                  huobiBid huobiAsk huobiBidSize huobiAskSize bhexBid bhexAsk bhexBid..
-    -------------------------------------------------------------------------------------------------..
-    2020.04.09D00:01:00.000000000 7341.7   7343.6   0.048634     0.012121     7351.66 7351.74 0.19005..
-    2020.04.09D00:02:00.000000000 7324.1   7325.9   2.271624     0.295234     7326.57 7326.65 0.13200..
-    2020.04.09D00:03:00.000000000 7336.7   7336.8   0.1          0.406        7333.9  7335.44 0.07484..
-    2020.04.09D00:04:00.000000000 7332.7   7334.2   2.15104      2.089884     7334.47 7335.32 1.93197..
-    ..
-
-Get arbitrage data for the last 2 hours in buckets of 5 mins for BTCUSDT on finex and zb exchanges:  
+Top of book with arbitrage indicator for ETHUSDT across zb and huobi exchanges:  
  
-    q)arbitrage[`sym`exchanges`starttime`endtime`bucket!(`BTCUSDT;`finex`zb;.proc.cp[]-02:00:00;.proc.cp[];00:05:00)]
-    exchangeTime                  finexBid finexAsk finexBidSize finexAskSize zbBid   zbAsk   zbBidSi..
-    -------------------------------------------------------------------------------------------------..
-    2020.04.09D09:10:00.000000000 7314.05  7314.15  0.0005       0.0029                              ..
-    2020.04.09D09:15:00.000000000 7317.09  7317.1   0.0812       0.0021       7316.1  7319.28 1.6    ..
-    2020.04.09D09:20:00.000000000 7317.96  7318.57  0.1625       0.0069       7311.13 7314.58 0.039  ..
-    2020.04.09D09:25:00.000000000 7312.85  7315.02  0.0005       0.0006       7313.97 7316.47 0.273  ..
-    ..
+    q)arbitrage[`sym`exchanges`starttime`endtime!(`ETHUSDT;`zb`huobi;2020.03.29D15:00:00.000000000;2020.03.29D15:05:00.000000000)]
+    exchangeTime                  zbBid  zbAsk  zbBidSize zbAskSize huobiBid huobiAsk huobiBidSize huobiAskSize profit arbitrage
+    ----------------------------------------------------------------------------------------------------------------------------
+    2020.03.29D15:01:00.000000000 129.37 129.42 1.43      0.002     129.3    129.4    30.6389      294.2774     0      0
+    2020.03.29D15:02:00.000000000 129.28 129.33 2.31      0.001     129.2    129.3    0.6546       714.6843     0      0
+    2020.03.29D15:03:00.000000000 129.25 129.34 1.77      0.024     129.1    129.2    127.2271     74.5471      0.0885 1
+    2020.03.29D15:04:00.000000000 129.26 129.31 1.38      0.001     129.1    129.2    328.819      1            0.06   1
+    2020.03.29D15:05:00.000000000 129.16 129.22 2.13      0.001     129.1    129.2    25.2141      1081.714     0      0
 
 
 ### Using Functions via Gateway  
