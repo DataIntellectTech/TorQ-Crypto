@@ -1,21 +1,23 @@
 # TorQ-Crypto Gateway Functions
 
+We have created four functions that will help analyse data collected by the feeds. These functions
+are loaded into the RDB and HDB processes. 
 
 ## Summary table of Functions
 
-|                 Function                 |    Input    |               Description                |
-| :--------------------------------------: | :---------: | :--------------------------------------: |
-|    **ohlc**                              |  Dictionary | Returns open, high, low and close quote data. |
-|    **orderbook**                         |  Dictionary | Returns level 2 orderbook data at a specific point in time. |
-|    **topofbook**                         |  Dictionary | Returns top of book data within a given time range. |
-|    **arbitrage**                         |  Dictionary | Topofbook with additional arbitrage and profit columns. |
+|                 Function                 |               Description                |
+| :--------------------------------------  | :--------------------------------------  |
+|    **ohlc**                              | Returns open, high, low and close quote data. |
+|    **orderbook**                         | Returns level 2 orderbook data at a specific point in time. |
+|    **topofbook**                         | Returns top of book data within a given time range. |
+|    **arbitrage**                         | Topofbook with additional arbitrage and profit columns. |
 
 
 #### OHLC Function
 Returns the OHLC quote data for specified dates with the option to break down by exchange.
 
 |      Keys       |  Mandatory  |    Types     |     Defaults      |     Example      |    Description    |
-| :-------------: | :---------: | :----------: | :---------------: | :--------------: |  :--------------: |
+| :-------------  | :---------: | :----------  | :---------------  | :--------------  |  :--------------  |
 | sym             | 1b          |-12 12h       | All syms          | \`BTCUSDT        | Symbol(s) of interest |
 | date            | 0b          |-14 14h       | Most recent date  | 2020.03.29       | Date(s) to query |
 | exchanges       | 0b          |-14 14h       | All exchanges     | \`finex`zb       | Exchange(s) of interest |
@@ -27,6 +29,7 @@ Returns the OHLC quote data for specified dates with the option to break down by
 Get BTCUSDT data broken down by exchange:
 
     q)ohlc[`date`sym`exchanges`quote`byexchange!(2020.03.29 2020.03.30;`BTCUSDT;`finex`okex`zb;`bid;1b)]
+    
     date       sym     exchange| openBid closeBid bidHigh bidLow
     ---------------------------| --------------------------------
     2020.03.29 BTCUSDT finex   | 6238.21 5893.46  6263.52 5870
@@ -41,11 +44,11 @@ Get BTCUSDT data broken down by exchange:
 Returns level 2 orderbook at a specific point in time considering only quotes within the lookback window.
 
 |      Keys       |  Mandatory  |    Types     |     Defaults      |     Example      |  Description    |
-| :-------------: | :---------: | :----------: | :---------------: | :--------------: |:--------------: |
-| sym             | 1b          | -11h         | N/A               | \`BTCUSDT        | Symbol of interest |
-| exchanges       | 0b          |-11 11h       | All exchanges     | \`finex`okex     | Exchange(s) of interest |
-| timestamp       | 0b          | -12h         | Last available time| 2020.04.16D09:40:00.0000000 | Time of orderbook |
-| window          | 0b          | -18h         | 2*.crypto.deffreq | 00:00:30         | Lookback window for quotes |
+| :-------------  | :---------: | :----------  | :---------------  | :--------------  |:--------------  |
+| sym             | 1b          | -11h         | N/A               | \`BTCUSDT        | Symbol of interest|
+| exchanges       | 0b          |-11 11h       | All exchanges     | \`finex`okex     | Exchange(s) of interest|
+| timestamp       | 0b          | -12h         | Last available time| 2020.04.16D09:40:00.0000000 | Time of orderbook|
+| window          | 0b          | -18h         | 2*.crypto.deffreq | 00:00:30         | Lookback window|
     
 If a null parameter is passed in the dictionary argument, this will remove the relevant key from the where clause of the query.
 This function may be run on the RDB and/or HDB and will adjust defaults for queries accordingly.   
@@ -82,7 +85,7 @@ Get BTCUSDT orderbook with a lookback window of 1 minute:
 Returns top of book data on a per exchange basis at set buckets between two timestamps. 
 
 |     Keys        | Mandatory  |    Types     |     Defaults      |     Example      |  Description      |
-| :-------------: | :--------: | :----------: | :---------------: | :--------------: | :---------------: |
+| :-------------  | :--------  | :----------  | :---------------  | :--------------  | :---------------  |
 | sym             | 1b         | -11h         | N/A               | \`BTCUSDT        | Symbol of interest |
 | exchanges       | 0b         | -11 11h      | All exchanges     | \`finex          | Exchange(s) of interest|
 | starttime       | 0b         | -12h         | Last available date | 2020.04.16D09:40:00.000000 | Query start time |
@@ -110,7 +113,7 @@ of the exchanges with the greates difference between bid/ask. When sizes are als
 may be possible to find a more profitable opportunity.
 
 |      Keys       | Mandatory  |    Types     |     Defaults      |     Example      |  Description      |
-| :-------------: | :--------: | :----------: | :---------------: | :--------------: | :---------------: |
+| :-------------  | :--------: | :----------  | :---------------  | :--------------  | :---------------  |
 | sym             | 1b         | -11h         | N/A               | \`BTCUSDT        | Symbol of interest |
 | exchanges       | 0b         | -11 11h      | All exchanges     | \`finex          | Exchange(s) of interest|
 | starttime       | 0b         | -12h         | Last available date | 2020.04.16D09:40:00.000000 | Query start time |
