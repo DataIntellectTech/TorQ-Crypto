@@ -3,22 +3,12 @@
 We have created four functions that will help analyse data collected by the feeds. These functions
 are loaded into the RDB and HDB processes. 
 
-## Summary table of Functions
-
-|                 Function                 |               Description                |
-| :--------------------------------------  | :--------------------------------------  |
-|    **ohlc**                              | Returns open, high, low and close quote data. |
-|    **orderbook**                         | Returns level 2 orderbook data at a specific point in time. |
-|    **topofbook**                         | Returns top of book data within a given time range. |
-|    **arbitrage**                         | Topofbook with additional arbitrage and profit columns. |
-
-
-#### OHLC Function
+### OHLC Function
 Returns the OHLC quote data for specified dates with the option to break down by exchange.
 
 |      Keys       |  Mandatory  |    Types     |     Defaults      |     Example      |    Description    |
 | :-------------  | :---------: | :----------  | :---------------  | :--------------  |  :--------------  |
-| sym             | 1b          |-12 12h       | All syms          | \`BTCUSDT        | Symbol(s) of interest |
+| sym             | 1b          |-12 12h       | All syms          | \`BTCUSDT`ETHUSDT| Symbol(s) of interest |
 | date            | 0b          |-14 14h       | Most recent date  | 2020.03.29       | Date(s) to query |
 | exchanges       | 0b          |-14 14h       | All exchanges     | \`finex`zb       | Exchange(s) of interest |
 | quote           | 0b          | -12 12h      | Bid & Ask         | \`bid            | Quote of interest |
@@ -40,7 +30,7 @@ Get BTCUSDT data broken down by exchange:
     2020.03.30 BTCUSDT zb      | 5885.56 6387.76  6570.58 5861.52
 
 
-#### Orderbook Function
+### Orderbook Function
 Returns level 2 orderbook at a specific point in time considering only quotes within the lookback window.
 
 |      Keys       |  Mandatory  |    Types     |     Defaults      |     Example      |  Description    |
@@ -58,6 +48,7 @@ This function may be run on the RDB and/or HDB and will adjust defaults for quer
 Get BTCUSDT orderbook with a lookback window of 1 minute:     
 
     q)orderbook[`sym`timestamp`exchanges`window!(`BTCUSDT;2020.03.29D15:00:00.000000000;`finex`okex`zb;00:01:00)]
+    
     exchange_b bidSize    bid     ask     askSize    exchange_a
     -----------------------------------------------------------
     okex       0.3764075  6146.5  6143.51 0.0002     zb
@@ -81,11 +72,11 @@ Get BTCUSDT orderbook with a lookback window of 1 minute:
 
 
 
-#### Topofbook Function  
+### Topofbook Function  
 Returns top of book data on a per exchange basis at set buckets between two timestamps. 
 
 |     Keys        | Mandatory  |    Types     |     Defaults      |     Example      |  Description      |
-| :-------------  | :--------  | :----------  | :---------------  | :--------------  | :---------------  |
+| :-------------  | :--------: | :----------  | :---------------  | :--------------  | :---------------  |
 | sym             | 1b         | -11h         | N/A               | \`BTCUSDT        | Symbol of interest |
 | exchanges       | 0b         | -11 11h      | All exchanges     | \`finex          | Exchange(s) of interest|
 | starttime       | 0b         | -12h         | Last available date | 2020.04.16D09:40:00.000000 | Query start time |
@@ -98,6 +89,7 @@ Returns top of book data on a per exchange basis at set buckets between two time
 Top of book data for ETHUSDT across zb and huobi exchanges: 
 
     q)topofbook[`sym`exchanges`starttime`endtime!(`ETHUSDT;`zb`huobi;2020.03.29D15:00:00.000000000;2020.03.29D15:05:00.000000000)]
+    
     exchangeTime                  zbBid  zbAsk  zbBidSize zbAskSize huobiBid huobiAsk huobiBidSize huobiAskSize
     -----------------------------------------------------------------------------------------------------------
     2020.03.29D15:01:00.000000000 129.37 129.42 1.43      0.002     129.3    129.4    30.6389      294.2774
@@ -107,7 +99,7 @@ Top of book data for ETHUSDT across zb and huobi exchanges:
     2020.03.29D15:05:00.000000000 129.16 129.22 2.13      0.001     129.1    129.2    25.2141      1081.714
 
 
-#### Arbitrage Function  
+### Arbitrage Function  
 Returns top of book with additional profit and arbitrage columns. Note that profit here is reflective 
 of the exchanges with the greates difference between bid/ask. When sizes are also taken into account it
 may be possible to find a more profitable opportunity.
@@ -126,6 +118,7 @@ may be possible to find a more profitable opportunity.
 Top of book with arbitrage indicator for ETHUSDT across zb and huobi exchanges:  
  
     q)arbitrage[`sym`exchanges`starttime`endtime!(`ETHUSDT;`zb`huobi;2020.03.29D15:00:00.000000000;2020.03.29D15:05:00.000000000)]
+    
     exchangeTime                  zbBid  zbAsk  zbBidSize zbAskSize huobiBid huobiAsk huobiBidSize huobiAskSize profit arbitrage
     ----------------------------------------------------------------------------------------------------------------------------
     2020.03.29D15:01:00.000000000 129.37 129.42 1.43      0.002     129.3    129.4    30.6389      294.2774     0      0
@@ -133,6 +126,16 @@ Top of book with arbitrage indicator for ETHUSDT across zb and huobi exchanges:
     2020.03.29D15:03:00.000000000 129.25 129.34 1.77      0.024     129.1    129.2    127.2271     74.5471      0.0885 1
     2020.03.29D15:04:00.000000000 129.26 129.31 1.38      0.001     129.1    129.2    328.819      1            0.06   1
     2020.03.29D15:05:00.000000000 129.16 129.22 2.13      0.001     129.1    129.2    25.2141      1081.714     0      0
+
+##### Additional Information:
+
+It is important to note that these functions do not account for:
+
+| *Exchange fees*
+| *Transaction costs*
+| *Request latency*
+
+
 
 
 ### Using Functions via Gateway  
