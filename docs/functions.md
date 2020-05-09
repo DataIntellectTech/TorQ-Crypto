@@ -128,8 +128,8 @@ Top of book with arbitrage indicator for ETHUSDT across zb and huobi exchanges:
 
 It is important to note that these functions do not account for:
 
-- Exchange fees
-- Transaction costs
-- Request latency
+-    Exchange fees
+-    Transaction costs
+-    Request latency
 
 

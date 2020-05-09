@@ -6,11 +6,11 @@ The feed handler processes collect real time crypto currency data though
 RESTful APIs. We have added 5 feeds which collect data from the following 
 exchanges:
 
--    OKEX (okex) 
--    DigiFinex (finex) 
--    Huobi (huobi) 
--    ZB (zb) 
--    Blue Helix (bhex) 
+-    [OKEX](https://www.okex.com/docs/en/) 
+-    [DigiFinex](https://docs.digifinex.vip/en-ww/v3/) 
+-    [Huobi](https://huobiapi.github.io/docs/spot/v1/en/#introduction) 
+-    [ZB](https://www.zb.com/api) 
+-    [Blue Helix](https://github.com/bhexopen/BHEX-OpenApi) 
 
 Each feed collects level 2 order book data for its subscribed symbols at a set 
 frequency and limited which is discussed here. After converting the JSON response 
@@ -24,9 +24,6 @@ ticker plant:
 This diagram summarises the data capture:
 
 ![Sym Config](graphics/dataflow.PNG)
-
-![Sym Config](graphics/dataflow2.PNG)
-
 
 ### Tables
 
