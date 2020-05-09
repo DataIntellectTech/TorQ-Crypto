@@ -27,10 +27,10 @@ This diagram summarises the data capture:
 
 ### Tables
 
-Each feed pusblishes data to three tables in the RDB; exchange, exchange_top
+Each feed publishes data to three tables in the RDB; exchange, exchange_top
 and a table specific to its own exchange. The exchange table contain a superset
-of L2 data collect from all exchange with exhange_top containg only top of book 
-data. It is these exhanges table which are used in the inbuilt functions to compare
+of L2 data collected from all exchange with exchange_top containing only top of book 
+data. It is these exchanges table which are used in the inbuilt functions to compare
 quotes across exchanges and over time. 
 
     meta exchange
@@ -56,3 +56,10 @@ quotes across exchanges and over time.
     bidSize     | f
     ask         | f
     askSize     | f
+
+##### Additional Information:
+
+The HTTP requests that the feed processes send do not have a time out and it is 
+possible for these requests to fail on the exchange side for myriad of reasons. In 
+such cases a small gap may be seen in the data, typically this will not be more 
+than a few minutes.
