@@ -40,9 +40,6 @@ Returns level 2 orderbook at a specific point in time considering only quotes wi
 | timestamp       | 0b          | -12h         | Last available time| 2020.04.16D09:40:00.0000000 | Time of orderbook|
 | window          | 0b          | -18h         | 2*.crypto.deffreq | 00:00:30         | Lookback window|
     
-If a null parameter is passed in the dictionary argument, this will remove the relevant key from the where clause of the query.
-This function may be run on the RDB and/or HDB and will adjust defaults for queries accordingly.   
-
 ###### Example usage:  
 
 Get BTCUSDT orderbook with a lookback window of 1 minute:     
@@ -131,43 +128,8 @@ Top of book with arbitrage indicator for ETHUSDT across zb and huobi exchanges:
 
 It is important to note that these functions do not account for:
 
-| *Exchange fees*
-| *Transaction costs*
-| *Request latency*
+- Exchange fees
+- Transaction costs
+- Request latency
 
 
-
-
-### Using Functions via Gateway  
-We recommend using these functions for synchronous querying of the RDB/HDB via the gateway.  
-- open a handle to the gateway with
-
-    ``q)h:hopen `:localhost:port:user:pass `` 
-
-- use the following template  
-``
-    h(`.gw.syncexec;"function[dictionary]";`serverstoquery) 
-``  
-
-The following are some example queries to the RDB and/or the HDB via the gateway.  
-
-    ``h(`.gw.syncexec;"orderbook[`sym`exchanges!(`SYMBOL;`zb)]";`rdb)`` 
-
-    ``h(`.gw.syncexec;"orderbook[`timestamp`sym`exchanges`window!(2020.03.30D09:00:00.000000;`BTCUSDT;`okex`zb;02:00:00)]";`hdb)``
-
-
-    ``h(`.gw.syncexec;"topofbook[`sym`exchanges`starttime`endtime!(`BTCUSDT;`huobi`finex;2020.03.29D00:00:00.0000000;2020.03.29D23:59:59.0000000)]";`hdb)``  
-
-### Custom queries 
-The above function are for users ease-of-use. Users may build their own queries for their requirements.  
-
-For example, to retrieve the best ask and best bid per hour from finex and zb exchanges on 29.03.2020:  
-
-    q)h(`.gw.syncexec;"select min ask, max bid by (`date$exchangeTime)+60+60 xbar exchangeTime.second, exchange from exchange_top where date=2020.03.29,  exchange in `finex`zb";`hdb)
-    exchangeTime                  exchange| ask    bid
-    --------------------------------------| --------------
-    2020.03.29D00:01:00.000000000 finex   | 130.93 6249.7
-    2020.03.29D00:01:00.000000000 zb      | 131.21 6253.13
-    2020.03.29D00:02:00.000000000 finex   | 131.57 6260.95
-    2020.03.29D00:02:00.000000000 zb      | 131.44 6262.12
-    ..
