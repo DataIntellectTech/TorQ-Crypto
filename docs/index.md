@@ -1,7 +1,7 @@
 # TorQ Crypto
 
 
-![Aquaq Logo](graphics/aquaqlogo.PNG)
+![Aquaq Logo](graphics/aquaqlogo.png)
 
 ![Aquaq Logo](graphics/aquaqlogo2.PNG)
 
