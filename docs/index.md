@@ -1,9 +1,8 @@
 # TorQ Crypto
 
 
-![Aquaq Logo](graphics/aquaqlogo.png)
-
 ![Aquaq Logo](graphics/aquaqlogo2.PNG)
+
 
 TorQ Crypto provides an example of how an application can be built and 
 deployed on top of the TorQ framework. This framework behaves in a similar 
