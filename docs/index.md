@@ -1,7 +1,7 @@
 # TorQ Crypto
 
 
-![Aquaq Logo](graphics/aquaqlogo2.PNG)
+![Aquaq Logo](graphics/aquaqlogo.PNG)
 
 
 TorQ Crypto provides an example of how an application can be built and 
@@ -15,7 +15,7 @@ TorQ and the Finance Starter pack are linked below:
 
 TorQ Crypto includes:
 
-- Collection of real time level 2 order book data 
+- Collection of real time level 2 order book data for 13 currency pairs 
 - Full configurable subscription to 5 Cryptocurrency exchanges
 - Custom API functions for data analysis 
 
