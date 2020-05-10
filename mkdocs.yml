@@ -1,0 +1,26 @@
+site_name: TorQ Crypto
+site_favicon: graphics/favicon.ico
+pages:
+    - Home: index.md
+    - Getting Started: gettingstarted.md
+    - Data Capture: data.md
+    - Configuration: configuration.md
+    - Functions: functions.md
+    - Gateway: gateway.md
+copyright: 'Copyright &copy 2020 AquaQ Analytics Limited.  Kx &reg and kdb+ are registered trademarks of Kx Systems Inc.'
+
+theme: 'material'
+repo_name: 'GitHub'
+repo_url: 'https://github.com/AquaQAnalytics/TorQ-Crypto'
+extra:
+   logo: 'graphics/TorQ-logo.png'
+   palette:
+      primary: 'indigo'
+      accent: 'green'
+   author:
+      github: 'AquaQAnalytics'
+      twitter: 'AquaQAnalytics'
+
+google_analytics:
+   - 'UA-51911331-4'
+   - 'auto'

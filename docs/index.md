@@ -15,9 +15,10 @@ TorQ and the Finance Starter pack are linked below:
 
 TorQ Crypto includes:
 
-- Collection of real time level 2 order book data for 13 currency pairs 
-- Full configurable subscription to 5 Cryptocurrency exchanges
-- Custom API functions for data analysis 
+- Fullly configurable subscription to 5 Cryptocurrency exchanges
+- Collection and storage  of real time level 2 order book data
+- Custom API functions for data analysis
+
 
 Once started, TorQ will collect Cryptocurrency and and push it into an 
 in-memory real-time database. It will persist this data to disk every 

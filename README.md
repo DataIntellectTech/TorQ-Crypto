@@ -7,8 +7,8 @@ with the main difference being that TorQ Crypto collects and stores real data.
 
 This package includes:
 
-- Collection of real time level 2 order book data for 13 currency pairs
-- Full configurable subscription to 5 Cryptocurrency exchanges
+- Fully configurable subscription to 5 Cryptocurrency exchanges
+- Collection and storage  of real time level 2 order book data
 - Custom API functions for data analysis
 
 ## Installation 
@@ -72,6 +72,7 @@ tables being populated:
 
     ~/crypto/deploy:cross@homer$ . torq.sh stop rdb1
     ~/crypto/deploy:cross@homer$ . torq.sh debug rdb1
+    
     q)tables[]!count each `. tables[]
     bhex        | 10
     exchange    | 50

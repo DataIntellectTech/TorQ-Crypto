@@ -200,7 +200,7 @@ when the feeds where subscribed to Bitcoin and Ethereum.
     |   `-- sym
     |-- database.q
 
-The Demo Pack consists of:
+The package consists of:
 
 -   fullly configurable Cyptocurrency exchange feed handlers
 
