@@ -2,6 +2,10 @@
 
 ![Aquaq Logo](graphics/logoaquaq.PNG)
 
+![Aquaq Logo](graphics/logoaquaq2.PNG)
+
+![Aquaq Logo](graphics/logoaqua.PNG)
+
 TorQ Crypto provides an example of how an application can be built and 
 deployed on top of the TorQ framework. This framework behaves in a similar 
 manner to the Finance Starter Pack with the main difference being that 
