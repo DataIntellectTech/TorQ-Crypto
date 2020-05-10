@@ -217,9 +217,5 @@ The Demo Pack consists of:
 Make It Your Own
 ----------------
 
-The system is production ready. To customize it for a specific data set,
-modify the schema file and replace the feed process with a feed of data
-from a live system.
-
 This system is production ready. Users may customize what currencies are 
 subscribed to, the rate of data retreval and even add new feed handlers!
