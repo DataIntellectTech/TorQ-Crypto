@@ -3,7 +3,8 @@
 TorQ Crypto provides an example of how an application can be built and 
 deployed on top of the [TorQ framework](https://aquaqanalytics.github.io/TorQ/). 
 This application  behaves in a similar manner to the Finance Starter Pack 
-with the main difference being that TorQ Crypto collects and stores real data. 
+with the main difference being that TorQ Crypto collects and stores real 
+time data. 
 
 This package includes:
 
@@ -67,7 +68,7 @@ script.
      14:27:49  |  huobifeed1     |  up      |  8932  |  46020
      14:27:49  |  bhexfeed1      |  up      |  9035  |  46021
 
-By entering the RDB process in debug mode you should the following
+By entering the RDB process in debug mode you should see the following
 tables being populated:
 
     ~/crypto/deploy:cross@homer$ . torq.sh stop rdb1
@@ -83,4 +84,4 @@ tables being populated:
     zb          | 10
 
 
-More information on how to configure and get started can be found here.
+More information on how to configure and get started can be found [here](docswebsite).

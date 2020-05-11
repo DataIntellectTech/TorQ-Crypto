@@ -63,7 +63,7 @@ The stack can be stopped by running . torq.sh stop all
 
 It is straight forward to run processes in debug mode with TorQ 
 as show below. After starting you stack you should see the tables 
-in the RDB being to populate:
+in the RDB beginning to populate:
 
     ~/crypto/deploy:cross@homer$ . torq.sh stop rdb1
     ~/crypto/deploy:cross@homer$ . torq.sh debug rdb1
