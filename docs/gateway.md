@@ -6,7 +6,7 @@ to avail of query routing and load balancing. Full gateway functionality is disc
 To use, connect to the gateway process from q process, qcon or from an IDE.An example is shown below 
 running from an IDE.
 
-Add Qpad Screen shot
+![Qpad Screenshot](graphics/qpad.PNG)
 
 Example queries are listed below.
 
