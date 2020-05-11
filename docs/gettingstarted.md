@@ -26,7 +26,7 @@
 
 ### Start-up
 
-After specifiying your sever in config/process.csv and KDB base port
+After specifying your sever in config/process.csv and KDB base port
 in setenv.sh. You can set your environment variables and run the start
 script.
 
@@ -61,7 +61,7 @@ The stack can be stopped by running . torq.sh stop all
 
 ### TorQ Debug Mode
 
-It is stright forward to run processes in debug mode with TorQ 
+It is straight forward to run processes in debug mode with TorQ 
 as show below. After starting you stack you should see the tables 
 in the RDB being to populate:
 
@@ -76,7 +76,7 @@ in the RDB being to populate:
     okex        | 10
     zb          | 10
 
-We have also included HDB paritions from 2020.03.29/2020.03.29
+We have also included HDB partitions from 2020.03.29 and 2020.03.29
 when the feeds where subscribed to Bitcoin and Ethereum.  
 
      ~/crypto/deploy:cross@homer$ . torq.sh stop hdb1
@@ -202,7 +202,7 @@ when the feeds where subscribed to Bitcoin and Ethereum.
 
 The package consists of:
 
--   fullly configurable Cyptocurrency exchange feed handlers
+-   fully configurable Cyptocurrency exchange feed handlers
 
 -   a slightly modified version of kdb+tick from Kx Systems
 
@@ -218,4 +218,4 @@ Make It Your Own
 ----------------
 
 This system is production ready. Users may customize what currencies are 
-subscribed to, the rate of data retreval and even add new feed handlers!
+subscribed to, the rate of data retrieval and even add new feed handlers!

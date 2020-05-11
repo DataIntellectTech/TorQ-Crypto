@@ -3,7 +3,7 @@
 We recommend executing the previously discussed database functions through the gateway processes
 to avail of query routing and load balancing. Full gateway functionality is discussed [here](http://aquaqanalytics.github.io/TorQ/Processes/#gateway).
 
-To use, connect to the gateway process from q process, qcon or from an IDE.An example is shown below 
+To use, connect to the gateway from q process, qcon or from an IDE. An example is shown below 
 running from an IDE.
 
 ![Qpad Screenshot](graphics/qpad.PNG)
@@ -46,6 +46,6 @@ Example queries are listed below.
 ##### Additional Information:
 
 It is important to note that using syncexec to execute these inbuilt functions across the RDB
-and HDB simultaneously may not alway produce logical results. This is because syncexec runs the
+and HDB simultaneously may not always produce logical results. This is because syncexec runs the
 function independently on each processes and will raze the results.
 

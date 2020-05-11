@@ -31,7 +31,7 @@ Get BTCUSDT data broken down by exchange:
 
 
 ### Orderbook Function
-Returns level 2 orderbook at a specific point in time considering only quotes within the lookback window.
+Returns level 2 orderbook at a specific point in time considering only quotes within the look-back window.
 
 |      Keys       |  Mandatory  |    Types     |     Defaults      |     Example      |  Description    |
 | :-------------  | :---------: | :----------  | :---------------  | :--------------  |:--------------  |
@@ -98,7 +98,7 @@ Top of book data for ETHUSDT across zb and huobi exchanges:
 
 ### Arbitrage Function  
 Returns top of book with additional profit and arbitrage columns. Note that profit here is reflective 
-of the exchanges with the greates difference between bid/ask. When sizes are also taken into account it
+of the exchanges with the greatest difference between bid and ask. When sizes are also taken into account it
 may be possible to find a more profitable opportunity.
 
 |      Keys       | Mandatory  |    Types     |     Defaults      |     Example      |  Description      |
