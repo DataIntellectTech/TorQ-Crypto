@@ -27,7 +27,7 @@ This diagram summarises the data capture:
 
 ### Tables
 
-Each feed publishes data to three tables in the RDB; exchange, exchange_top
+Each feed publishes data to three tables in the RDB - exchange, exchange_top
 and a table specific to its own exchange. The exchange table contains a superset
 of L2 data collected from all exchanges with exchange_top containing only top-of-book 
 data. It is these exchange table which are used in the inbuilt functions to compare
