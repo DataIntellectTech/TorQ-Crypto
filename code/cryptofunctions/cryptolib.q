@@ -1,20 +1,48 @@
 // TorQ-Crypto functions
-// Collaborators: Cormac Ross, James Rutledge, Catherine Higgins, Nicole Watterson, Michael Potter
 
-// Function for logging and signalling errors
-errfunc:{.lg.e[x;"Crypto User Error:",y];'y};
+/
+                          **** OPEN HIGH LOW CLOSE (OHLC) FUNCTION ****
+  Returns the OHLC quote data for specified dates with the option to break down by exchange.
+  Takes a dictionary as an argument. The only mandatory key is sym, the others will revert to defaults.
+
+  Example usage:
+  ohlc[`date`sym`exchanges`quote`byexchange!(2020.03.29 2020.03.30;`BTCUSDT;`finex`okex`zb;`bid;1b)]  ->  Get BTCUSDT data broken down by exchange
+\
+
+ohlc:{[dict]
+  allkeys:`date`sym`exchanges`quote`byexchange;
+  typecheck[allkeys!14 11 11 11 1h;01000b;dict];
+
+  // Set default null dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
+  defaultdate:$[`rdb in .proc.proctype; .proc.cd[]; last date];
+  d:setdefaults[allkeys!(defaultdate;`;`;`ask`bid;0b);dict];
+
+  // Create sym and exchange lists, bid and ask dicts for functional select
+  biddict:`openBid`closeBid`bidHigh`bidLow!((first;`bid);(last;`bid);(max;`bid);(min;`bid));
+  askdict:`openAsk`closeAsk`askHigh`askLow!((first;`ask);(last;`ask);(max;`ask);(min;`ask));
+
+  // Save exchangeTime.date/date colname as variable based on proctype
+  c:$[`rdb~.proc.proctype;`exchangeTime.date;`date];
+
+  // Conditionals to form the ohlc column dict, where clause and by clause
+  coldict:$[any i:`bid`ask in d`quote;(,/)(biddict;askdict) where i;(enlist`)!(enlist())];
+  wherecl:`date`sym`exchanges!
+    ((in;c;enlist d`date);(in;`sym;enlist d`sym);(in;`exchange;enlist d`exchanges));
+  wherecl@:where[not all each null d]except `quote`byexchange;
+
+  bycl:(`date`sym!c,`sym),$[d`byexchange;{x!x}enlist`exchange;()!()];
+
+  // Perform query - (select coldict by date:exchangeTime.date,sym from t (where exchangeTime.date in d`date, sym in syms, exchange in exchanges))
+  ?[exchange_top; wherecl; bycl; coldict]
+ };
 
 / 
                                 **** ORDER BOOK FUNCTION ****
-  This function returns a level 2 orderbook and takes a parameter dictionary as an argument.
-  Sym is the only mandatory parameter that the user has to pass in, the others will revert to defaults.
-  If a null parameter value is passed in, this will remove the pertinent where clause from the query.
-  This function can be run on the RDB and/or HDB and will adjust queries accordingly.
-  Window must be passed in as a second type (-18h).
+  Returns level 2 orderbook at a specific point in time considering only quotes within the look-back window.
+  Takes a dictionary as an argument. The only mandatory key is sym, the others will revert to defaults.
 
   Example usage:
-  orderbook[(enlist `sym)!enlist (`SYMBOL)]                                                ->  get latest SYMBOL data from table
-  orderbook[(`sym`timestamp`exchanges`window)!(`BTCUSDT;.proc.cp[];`finex`bhex;00:00:30)]  ->  get `BTCUSDT data from finex and bhex exchnages for last 30 seconds 
+  orderbook[`sym`timestamp`exchanges`window!(`BTCUSDT;2020.03.29D15:00:00;`finex`okex`zb;00:01:00)]  ->  Get `BTCUSDT orderbook with a lookback window of 1 minute 
 \
 
 orderbook:{[dict]
@@ -35,7 +63,7 @@ orderbook:{[dict]
   // If proctype is HDB, add on date to where clause at the start,
   // then join on default clause, then pass in dictionary elements which are not null
   wherecl:()!();
-  window:enlist d[`timestamp] -d[`window],0;
+  window:enlist d[`timestamp] -d[`window],1;
   if[`hdb~.proc.proctype;wherecl[`date]:(within;`date;`date$window)];
   wherecl,:`timestamp`sym`exchanges!(
     (within;`exchangeTime;window);
@@ -53,60 +81,14 @@ orderbook:{[dict]
  };
 
 /
-                          **** OPEN HIGH LOW CLOSE (OHLC) FUNCTION ****
-  This function returns OHLC data for bid and/or ask data and takes a paramter dictionary as an argument.
-  The only parameter that must be passed in is sym, the others will revert to defaults.
+                                  **** TOP OF BOOK FUNCTION ****
+  Returns top of book data on a per exchange basis at set buckets between two timestamps.
+  Takes a dictionary as an argument. The only mandatory key is sym, the others will revert to defaults.
 
   Example usage:
-  ohlc[enlist[`sym]!enlist `SYMBOL]                                             ->  get latest OHLC data for SYMBOL
-  ohlc[`date`sym`exchange`quote`byexchange!(.z.d;`SYMBOL;`finex`okex;`bid;1b)]  ->  get only bid data by exchange for SYMBOL
+  topofbook[`sym`exchanges`starttime`endtime!(`ETHUSDT;`zb`huobi;2020.03.29D15:00:00.;2020.03.29D15:05:00)] -> Top of book data for ETHUSDT across zb and huobi exchanges 
 \
 
-ohlc:{[dict]
-  allkeys:`date`sym`exchanges`quote`byexchange;
-  typecheck[allkeys!14 11 11 11 1h;01000b;dict];
-  
-  // Set default null dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
-  defaultdate:$[`rdb in .proc.proctype; .proc.cd[]; last date];
-  d:setdefaults[allkeys!(defaultdate;`;`;`ask`bid;0b);dict];
-  
-  // Filter dates based on proctype
-  d[`date]:((),d`date) inter (),$[`rdb ~ .proc.proctype;.proc.cd[];date];
-  
-  // Create sym and exchange lists, bid and ask dicts for functional select
-  biddict:`openBid`closeBid`bidHigh`bidLow!((first;`bid);(last;`bid);(max;`bid);(min;`bid));
-  askdict:`openAsk`closeAsk`askHigh`askLow!((first;`ask);(last;`ask);(max;`ask);(min;`ask));
-
-  // Save exchangeTime.date/date colname as variable based on proctype
-  c:$[`rdb~.proc.proctype;`exchangeTime.date;`date];
-
-  // Conditionals to form the ohlc column dict, where clause and by clause
-  coldict:$[any i:`bid`ask in d`quote;(,/)(biddict;askdict) where i;(enlist`)!(enlist())];
-  wherecl:`date`sym`exchanges!
-    ((in;c;enlist d`date);(in;`sym;enlist d`sym);(in;`exchange;enlist d`exchanges));
-  wherecl@:where[not all each null d]except `quote`byexchange;
-
-  bycl:(`date`sym!c,`sym),$[d`byexchange;{x!x}enlist`exchange;()!()];
-
-  // Perform query - (select coldict by date:exchangeTime.date,sym from t (where exchangeTime.date in d`date, sym in syms, exchange in exchanges))
-  ?[exchange_top; wherecl; bycl; coldict]
- };
-
-/
-                                  **** ARBITRATION FUNCTIONS ****
-  The following two functions, topofbook and arbitrage, are to do with arbitration.
-  The arbitrage function will call the topofbook function.
-  Sym is the only mandatory parameter that the user has to pass in, the others will revert to defaults.
-  If a null parameter value is passed in, this will remove the pertinent where clause from the query.
-  This function can be run on the RDB and/or HDB and will adjust queries accordingly.
-
-  topofbook[dict arg] generates a table showing the top of the book for each exchange
-  arbitrage[dict arg] then gets this table and adds a column that shows if there is an opportunity to make profit and then adds a column showing how much potential profit can be made, just looking at the bid and ask
-\
-
-//TOPOFBOOK FUNCTION
-
-// Creates a table showing the top of the book for each exchanges at a given time
 topofbook:{[dict]
   allkeys:`starttime`endtime`sym`exchanges`bucket;
   typecheck[allkeys!12 12 11 11 18h;00100b;dict];
@@ -152,11 +134,17 @@ topofbook:{[dict]
   :0!`exchangeTime xasc (,'/) exchangebook;
  };
 
-//ARBITRAGE FUNCTION
+/
+                                  **** TOP OF BOOK FUNCTION ****
+  Returns top of book with additional profit and arbitrage columns.
+  Takes a dictionary as an argument. The only mandatory key is sym, the others will revert to defaults.
 
-  // Adds a column saying if there is a chance of risk free profit and what that profit is
+  Example usage:
+  arbitrage[`sym`exchanges`starttime`endtime!(`ETHUSDT;`zb`huobi;2020.03.29D15:00:00.;2020.03.29D15:05:00)] -> Top of book with arbitrage indicator for ETHUSDT across zb and huobi exchanges
+\
+
 arbitrage:{[d]
-  // Generate arbitrage table
+  // Generate topofbook table
   arbtable:topofbook[d];
 
   // If no data is available or only one non-null exchange is passed, update arbtable with profit and arbitrage as 0
@@ -187,14 +175,16 @@ arbitrage:{[d]
   // Perform query - (update arbitrage:profit>0 from (update profit:cc from arbtable))
   :update arbitrage:profit>0 from ![arbtable;();0b;enlist[`profit]!cc]
  };
+
 /
                                     **** UTILITY FUNCTIONS ****
-  The following three functions, getcols, typecheck and setdefaults, are utility functions used elsewhere in this script
-
+  errfunc[] Function for logging and signalling errors
   getcols[] gets columns from a table which match a particular pattern, ie. "*Bid"
   setdefaults[] produces a dictionary where missing values are filled in with defaults
   typecheck[] checks the types of dictionary values that are passed in by the user
 \
+
+errfunc:{.lg.e[x;"Crypto User Error:",y];'y};
 
 getcols:{[table;word]col where(col:cols table)like word};
 
@@ -215,4 +205,3 @@ typecheck:{[typedict;requiredkeylist;dict]
   if[not all typematch;
     errfunc[`typematch;"The dictionary parameter(s) ",(", "sv string where not typematch)," must be of type(s): ",", "sv string {key'[x$\:()]}typedict where not typematch]]
  };
-
