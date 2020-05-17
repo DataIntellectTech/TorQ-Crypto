@@ -19,7 +19,7 @@ This package includes:
 2.  Download the main TorQ codebase from
     [here](https://github.com/AquaQAnalytics/TorQ/tree/master)
 
-3.  Download the TorQ Crypto from
+3.  Download TorQ Crypto from
     [here](https://github.com/AquaQAnalytics/TorQ-Crypto)
 
 4.  Place the Crypto package over the top of the main TorQ package
@@ -53,12 +53,9 @@ script.
      14:27:47  |  wdb1           |  up      |  7704  |  46005
      14:27:47  |  sort1          |  up      |  7807  |  46006
      14:27:47  |  gateway1       |  up      |  7909  |  46007
-     14:27:48  |  killtick       |  down    |
      14:27:48  |  monitor1       |  up      |  8011  |  46009
-     14:27:48  |  tpreplay1      |  down    |
      14:27:48  |  housekeeping1  |  up      |  8112  |  46011
      14:27:48  |  reporter1      |  up      |  8215  |  46012
-     14:27:48  |  compression1   |  down    |
      14:27:48  |  chainedtp1     |  up      |  8321  |  46014
      14:27:48  |  sortslave1     |  up      |  8420  |  46015
      14:27:49  |  sortslave2     |  up      |  8523  |  46016

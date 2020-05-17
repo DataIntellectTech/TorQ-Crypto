@@ -8,10 +8,10 @@ Returns the OHLC quote data for specified dates with the option to break down by
 
 |      Keys       |  Mandatory  |    Types     |     Defaults      |     Example      |    Description    |
 | :-------------  | :---------: | :----------  | :---------------  | :--------------  |  :--------------  |
-| sym             | 1b          |-12 12h       | All syms          | \`BTCUSDT`ETHUSDT| Symbol(s) of interest |
-| date            | 0b          |-14 14h       | Most recent date  | 2020.03.29       | Date(s) to query |
-| exchanges       | 0b          |-14 14h       | All exchanges     | \`finex`zb       | Exchange(s) of interest |
-| quote           | 0b          | -12 12h      | Bid & Ask         | \`bid            | Quote of interest |
+| sym             | 1b          | -11 11h      | All syms          | \`BTCUSDT`ETHUSDT| Symbol(s) of interest |
+| date            | 0b          | -14 14h      | Most recent date  | 2020.03.29       | Date(s) to query |
+| exchanges       | 0b          | -11 11h      | All exchanges     | \`finex`zb       | Exchange(s) of interest |
+| quote           | 0b          | -11 11h      | Bid & Ask         | \`bid            | Quote of interest |
 | byexchange      | 0b          | -1h          | 0b                | 1b               | Breakdown by exchange |
 
 ###### Example usage:
@@ -36,7 +36,7 @@ Returns level 2 orderbook at a specific point in time considering only quotes wi
 |      Keys       |  Mandatory  |    Types     |     Defaults      |     Example      |  Description    |
 | :-------------  | :---------: | :----------  | :---------------  | :--------------  |:--------------  |
 | sym             | 1b          | -11h         | N/A               | \`BTCUSDT        | Symbol of interest|
-| exchanges       | 0b          |-11 11h       | All exchanges     | \`finex`okex     | Exchange(s) of interest|
+| exchanges       | 0b          | -11 11h      | All exchanges     | \`finex`okex     | Exchange(s) of interest|
 | timestamp       | 0b          | -12h         | Last available time| 2020.04.16D09:40:00.0000000 | Time of orderbook|
 | window          | 0b          | -18h         | 2*.crypto.deffreq | 00:00:30         | Lookback window|
     
