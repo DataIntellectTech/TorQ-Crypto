@@ -7,17 +7,14 @@ localhost,{KDBBASEPORT}+4,hdb,hdb2,${TORQHOME}/appconfig/passwords/accesslist.tx
 localhost,{KDBBASEPORT}+5,wdb,wdb1,${TORQHOME}/appconfig/passwords/accesslist.txt,1,1,,,${KDBCODE}/processes/wdb.q,1,,q
 localhost,{KDBBASEPORT}+6,sort,sort1,${TORQHOME}/appconfig/passwords/accesslist.txt,1,1,,,${KDBCODE}/processes/wdb.q,1,-s -2,q
 localhost,{KDBBASEPORT}+7,gateway,gateway1,${TORQHOME}/appconfig/passwords/accesslist.txt,1,1,,4000,${KDBCODE}/processes/gateway.q,1,,q
-localhost,{KDBBASEPORT}+8,kill,killtick,,1,0,,,${KDBCODE}/processes/kill.q,0,,q
 localhost,{KDBBASEPORT}+9,monitor,monitor1,,1,0,,,${KDBCODE}/processes/monitor.q,1,,q
-localhost,{KDBBASEPORT}+10,tickerlogreplay,tpreplay1,,1,0,,,,0,,q
-localhost,{KDBBASEPORT}+11,housekeeping,housekeeping1,${TORQHOME}/appconfig/passwords/accesslist.txt,1,0,,,${KDBCODE}/processes/housekeeping.q,1,,q
-localhost,{KDBBASEPORT}+12,reporter,reporter1,${TORQHOME}/appconfig/passwords/accesslist.txt,1,0,,,${KDBCODE}/processes/reporter.q,1,,q
-localhost,{KDBBASEPORT}+13,compression,compression1,,1,0,,,${KDBCODE}/processes/compression.q,0,,q
-localhost,{KDBBASEPORT}+14,chainedtp,chainedtp1,${TORQHOME}/appconfig/passwords/accesslist.txt,1,0,,,${KDBCODE}/processes/chainedtp.q,1,,q
-localhost,{KDBBASEPORT}+15,sortslave,sortslave1,,1,1,,,${KDBCODE}/processes/wdb.q,1,,q
-localhost,{KDBBASEPORT}+16,sortslave,sortslave2,,1,1,,,${KDBCODE}/processes/wdb.q,1,,q
-localhost,{KDBBASEPORT}+17,finexfeed,finexfeed1,,1,0,,,${KDBCODE}/processes/finexfeed.q,1,-parentproctype cryptofeed -P 17,q
-localhost,{KDBBASEPORT}+18,okexfeed,okexfeed1,,1,0,,,${KDBCODE}/processes/okexfeed.q,1,-parentproctype cryptofeed -P 17,q
-localhost,{KDBBASEPORT}+19,zbfeed,zbfeed1,,1,0,,,${KDBCODE}/processes/zbfeed.q,1,-parentproctype cryptofeed -P 17,q
-localhost,{KDBBASEPORT}+20,huobifeed,huobifeed1,,1,0,,,${KDBCODE}/processes/huobifeed.q,1,-parentproctype cryptofeed -P 17,q
-localhost,{KDBBASEPORT}+21,bhexfeed,bhexfeed1,,1,0,,,${KDBCODE}/processes/bhexfeed.q,1,-parentproctype cryptofeed -P 17,q
+localhost,{KDBBASEPORT}+10,housekeeping,housekeeping1,${TORQHOME}/appconfig/passwords/accesslist.txt,1,0,,,${KDBCODE}/processes/housekeeping.q,1,,q
+localhost,{KDBBASEPORT}+11,reporter,reporter1,${TORQHOME}/appconfig/passwords/accesslist.txt,1,0,,,${KDBCODE}/processes/reporter.q,1,,q
+localhost,{KDBBASEPORT}+12,chainedtp,chainedtp1,${TORQHOME}/appconfig/passwords/accesslist.txt,1,0,,,${KDBCODE}/processes/chainedtp.q,1,,q
+localhost,{KDBBASEPORT}+13,sortslave,sortslave1,,1,1,,,${KDBCODE}/processes/wdb.q,1,,q
+localhost,{KDBBASEPORT}+14,sortslave,sortslave2,,1,1,,,${KDBCODE}/processes/wdb.q,1,,q
+localhost,{KDBBASEPORT}+15,finexfeed,finexfeed1,,1,0,,,${KDBCODE}/processes/finexfeed.q,1,-parentproctype cryptofeed -P 17,q
+localhost,{KDBBASEPORT}+16,okexfeed,okexfeed1,,1,0,,,${KDBCODE}/processes/okexfeed.q,1,-parentproctype cryptofeed -P 17,q
+localhost,{KDBBASEPORT}+17,zbfeed,zbfeed1,,1,0,,,${KDBCODE}/processes/zbfeed.q,1,-parentproctype cryptofeed -P 17,q
+localhost,{KDBBASEPORT}+18,huobifeed,huobifeed1,,1,0,,,${KDBCODE}/processes/huobifeed.q,1,-parentproctype cryptofeed -P 17,q
+localhost,{KDBBASEPORT}+19,bhexfeed,bhexfeed1,,1,0,,,${KDBCODE}/processes/bhexfeed.q,1,-parentproctype cryptofeed -P 17,q

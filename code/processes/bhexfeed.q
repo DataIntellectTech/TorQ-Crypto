@@ -30,7 +30,7 @@ feed:{
  }
 
 quotes:{
-  d:@[(.j.k .Q.hg`$.bhex.main_url,x,"&limit=",.bhex.limit);`sym`limit;:;(upper x;.bhex.limit)];
+  d:@[(.j.k .Q.hg .bhex.main_url,x,"&limit=",.bhex.limit);`sym`limit;:;(upper x;.bhex.limit)];
   update bid:"F"$(first each bids),
          bidSize:"F"$(last each bids),
          ask:"F"$(first each asks),

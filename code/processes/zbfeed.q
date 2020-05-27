@@ -31,7 +31,7 @@ feed:{
  }
 
 quotes:{[x]
-  d:@[(.j.k .Q.hg`$.zb.main_url,x,"&size=",.zb.limit);`sym`limit;:;(upper x except "-_";.zb.limit)];
+  d:@[(.j.k .Q.hg .zb.main_url,x,"&size=",.zb.limit);`sym`limit;:;(upper x except "-_";.zb.limit)];
   update bid:first each bids, 
          bidSize:last each bids,
          ask:first each asks, 
