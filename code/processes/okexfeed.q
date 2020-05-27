@@ -31,7 +31,7 @@ feed:{[]
  }
 
 quotes:{[x]
-  d:@[(.j.k .Q.hg `$.okex.main_url,x,"/book?size=",.okex.limit);`sym`limit;:;(upper x except "-_";.okex.limit)];
+  d:@[(.j.k .Q.hg .okex.main_url,x,"/book?size=",.okex.limit);`sym`limit;:;(upper x except "-_";.okex.limit)];
   update  bid:first each bids,
           bidSize:.[bids;(::;1)],
           ask:first each asks,

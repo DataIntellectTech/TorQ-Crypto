@@ -30,12 +30,12 @@ feed:{
  }
 
 quotes:{
-  d:@[(.j.k .Q.hg`$.huobi.main_url,x,"&depth=",.huobi.limit)`tick;`sym`limit;:;(upper x;.huobi.limit)];
+  d:@[(r:.j.k .Q.hg .huobi.main_url,x,"&depth=",.huobi.limit)`tick;`sym`limit;:;(upper x;.huobi.limit)];
   update bid:first each bids,
          bidSize:last each bids,
          ask:first each asks,
          askSize:last each asks,
-         date:"P"$string"i"$ts%1e3
+         date:"P"$string"i"$r[`ts]%1e3
   from d
  }
 
