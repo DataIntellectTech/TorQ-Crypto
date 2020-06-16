@@ -1,6 +1,6 @@
 # TorQ-Crypto
 
-TorQ Crypto provides an example of how an application can be built and 
+TorQ-Crypto provides an example of how an application can be built and 
 deployed on top of the [TorQ framework](https://aquaqanalytics.github.io/TorQ/). 
 This application  behaves in a similar manner to the Finance Starter Pack 
 with the main difference being that TorQ Crypto collects and stores real 
@@ -8,7 +8,7 @@ time data.
 
 This package includes:
 
-- Fully configurable subscription to 5 Cryptocurrency exchanges
+- Fully configurable subscription to 5 cryptocurrency exchanges
 - Collection and storage  of real time level 2 order book data
 - Custom API functions for data analysis
 
@@ -81,4 +81,4 @@ tables being populated:
     zb          | 10
 
 
-More information on how to configure and get started can be found [here](docswebsite).
+More information on how to configure and get started can be found [here](https://aquaqanalytics.github.io/TorQ-Crypto/).
