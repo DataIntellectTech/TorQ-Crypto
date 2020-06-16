@@ -2,7 +2,7 @@
 
 ### Feed Handlers
 
-The feed handler processes collect real time Cryptocurrency data though 
+The feed handler processes collect real time cryptocurrency data though 
 RESTful APIs. We have added 5 feeds which collect data from the following 
 exchanges:
 
@@ -13,9 +13,9 @@ exchanges:
 -    [Blue Helix](https://github.com/bhexopen/BHEX-OpenApi) 
 
 Each feed collects level 2 order book data for its subscribed symbols at a set 
-frequency and limit which is discussed [here](configpage). After converting the JSON response 
-to a KDB table the following standardisation occurs before the data is sent to the 
-ticker plant:
+frequency and limit which is discussed [here](https://aquaqanalytics.github.io/TorQ-Crypto/configuration/). 
+After converting the JSON response to a KDB table the following standardisation 
+occurs before the data is sent to the ticker plant:
 
 -    Conversion of times to KDB timestamps 
 -    Quotes arranged in order of best to worst 

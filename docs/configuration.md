@@ -14,7 +14,7 @@ of 30 seconds and a limit of 10 across all exchanges.
 
 
 In the individual settings files for each exchange we have set the frequency 
-and limit to the default values. However these can be changed on a per exchanges 
+and limit to the default values. However these can be changed on a per exchange 
 basis. In the example below from appconfig/settings/huobifeed.q the huboi feed 
 will query its respective API every 30 seconds retrieving a maximum for 10 quotes 
 for its subscribed symbols. 

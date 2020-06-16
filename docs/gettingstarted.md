@@ -73,7 +73,7 @@ in the RDB beginning to populate:
     okex        | 10
     zb          | 10
 
-We have also included HDB partitions from 2020.03.29 and 2020.03.29
+We have also included HDB partitions from 2020.03.29 and 2020.03.30
 when the feeds where subscribed to Bitcoin and Ethereum.  
 
      ~/crypto/deploy:cross@homer$ . torq.sh stop hdb1
@@ -199,7 +199,7 @@ when the feeds where subscribed to Bitcoin and Ethereum.
 
 The package consists of:
 
--   fully configurable Cyptocurrency exchange feed handlers
+-   fully configurable cyptocurrency exchange feed handlers
 
 -   a slightly modified version of kdb+tick from Kx Systems
 
