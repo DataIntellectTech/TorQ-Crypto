@@ -11,7 +11,7 @@ HOPENTIMEOUT:30000
 
 
 \d .finex
-main_url:"https://openapi.digifinex.vip/v3/order_book?symbol="                 // URL used for Coinbase API requests
+main_url:"https://openapi.digifinex.com/v3/order_book?symbol="                 // URL used for Coinbase API requests
 limit:.crypto.deflimit
 freq:.crypto.deffreq
 \d .

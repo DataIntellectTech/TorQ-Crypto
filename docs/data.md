@@ -7,10 +7,10 @@ RESTful APIs. We have added 5 feeds which collect data from the following
 exchanges:
 
 -    [OKEX](https://www.okex.com/docs/en/) 
--    [DigiFinex](https://docs.digifinex.vip/en-ww/v3/) 
+-    [DigiFinex](https://docs.digifinex.com/en-ww/v3/) 
 -    [Huobi](https://huobiapi.github.io/docs/spot/v1/en/#introduction) 
 -    [ZB](https://www.zb.com/api) 
--    [Blue Helix](https://github.com/bhexopen/BHEX-OpenApi) 
+-    [Bluehelix/HBTC](https://github.com/bhexopen/BHEX-OpenApi) 
 
 Each feed collects level 2 order book data for its subscribed symbols at a set 
 frequency and limit which is discussed [here](https://aquaqanalytics.github.io/TorQ-Crypto/configuration/). 
