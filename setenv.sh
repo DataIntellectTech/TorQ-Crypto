@@ -11,21 +11,23 @@ else
 fi
 
 export TORQHOME=${dirpath}
+export TORQAPPHOME=${TORQHOME}
+export TORQDATAHOME=${TORQHOME}
 export KDBCONFIG=${TORQHOME}/config
 export KDBCODE=${TORQHOME}/code
-export KDBLOG=${TORQHOME}/logs
+export KDBLOG=${TORQDATAHOME}/logs
 export KDBHTML=${TORQHOME}/html
 export KDBLIB=${TORQHOME}/lib
-export KDBHDB=${TORQHOME}/hdb/database
-export KDBWDB=${TORQHOME}/wdbhdb
+export KDBHDB=${TORQDATAHOME}/hdb/database
+export KDBWDB=${TORQDATAHOME}/wdbhdb
 
 # set rlwrap and qcon paths for use in torq.sh qcon flag functions
 export RLWRAP="rlwrap"
 export QCON="qcon"
 
 # set the application specific configuration directory
-export KDBAPPCONFIG=${TORQHOME}/appconfig
-export KDBAPPCODE=${TORQHOME}/code
+export KDBAPPCONFIG=${TORQAPPHOME}/appconfig
+export KDBAPPCODE=${TORQAPPHOME}/code
 # set KDBBASEPORT to the default value for a TorQ Installation
 export KDBBASEPORT=9000
 # set TORQPROCESSES to the default process csv
