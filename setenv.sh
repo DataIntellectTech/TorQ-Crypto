@@ -15,11 +15,16 @@ export TORQAPPHOME=${TORQHOME}
 export TORQDATAHOME=${TORQHOME}
 export KDBCONFIG=${TORQHOME}/config
 export KDBCODE=${TORQHOME}/code
+export KDBTESTS=${TORQHOME}/tests
 export KDBLOG=${TORQDATAHOME}/logs
 export KDBHTML=${TORQHOME}/html
 export KDBLIB=${TORQHOME}/lib
-export KDBHDB=${TORQDATAHOME}/hdb/database
+export KDBHDB=${TORQDATAHOME}/hdb
 export KDBWDB=${TORQDATAHOME}/wdbhdb
+export KDBDQCDB=${TORQDATAHOME}/dqe/dqcdb/database
+export KDBDQEDB=${TORQDATAHOME}/dqe/dqedb/database
+export KDBTPLOG=${TORQDATAHOME}/tplogs
+export KDBPCAPS=${TORQAPPHOME}/pcaps
 
 # set rlwrap and qcon paths for use in torq.sh qcon flag functions
 export RLWRAP="rlwrap"
@@ -28,15 +33,24 @@ export QCON="qcon"
 # set the application specific configuration directory
 export KDBAPPCONFIG=${TORQAPPHOME}/appconfig
 export KDBAPPCODE=${TORQAPPHOME}/code
+
 # set KDBBASEPORT to the default value for a TorQ Installation
-export KDBBASEPORT=9000
+export KDBBASEPORT=6000
+
 # set TORQPROCESSES to the default process csv
 export TORQPROCESSES=${KDBAPPCONFIG}/process.csv
+
+# set DOGSTATSD_PORT to the default value for datadog daemon
+export DOGSTATSD_PORT=8125
+
 # if using the email facility, modify the library path for the email lib depending on OS
 # e.g. linux:
 # export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$KDBLIB/l[32|64]
-# e.g. osx:
+# e.g. macOS:
 # export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$KDBLIB/m[32|64]
+
+# Please input the API token obtained from IEX here
+export IEX_PUBLIC_TOKEN=""
 
 TORQSSLCERT=${KDBLOG}/torqsslcert.txt
 touch ${TORQSSLCERT}
@@ -48,3 +62,4 @@ if [ -z "${SSL_CA_CERT_FILE}" ]; then
 else
   echo "`date`    The SSL security certificate already exists. If https requests fail it may be because of inappropriate certification." </dev/null >>$TORQSSLCERT
 fi
+
