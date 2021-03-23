@@ -6,14 +6,13 @@
 
 syms:.crypto.symmap'[exec sym from .crypto.symconfig where okexsym;`okexsym]
 
-.okex.prev:([]time:`timestamp$(); sym:`g#`symbol$(); exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
+.okex.prev:([]sym:`g#`symbol$(); exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
 
 feed:{[]
   if[10h~type .okex.syms;.okex.syms:enlist .okex.syms];
   qt:.okex.quotes'[.okex.syms];
   if[99h~type qt;qt:enlist qt];
-  t:select time:.z.p,
-           sym:`$sym,
+  t:select sym:`$sym,
            exchangeTime:timestamp,
            exchange:`okex,
            bid:"F"$bid,
@@ -21,11 +20,11 @@ feed:{[]
            ask:asc each "F"$ask,
            askSize:asc each "F"$askSize 
   from qt;
-  if[0=count ts:@[t;where not max (~\:/:/)`time`exchangeTime _/:tl:(t;{(1|count x)#x}.okex.prev)];:()];
-    h:neg .servers.gethandlebytype[`tickerplant;`any];
+  if[0=count ts:@[t;where not max (~\:/:/)enlist[`exchangeTime] _/:tl:(t;{(1|count x)#x}.okex.prev)];:()];
+    h:neg .servers.gethandlebytype[`segmentedtickerplant;`any];
     h(`.u.upd;`exchange;value flip ts);
     h(`.u.upd;`okex;value flip delete exchange from ts);
-    ts:@[tt 0;where not max (~\:/:/)`time`exchangeTime _/:tt:{@[x;where 0=type each flip x;first each]}each tl];
+    ts:@[tt 0;where not max (~\:/:/)enlist[`exchangeTime] _/:tt:{@[x;where 0=type each flip x;first each]}each tl];
     if[count ts; h(`.u.upd;`exchange_top;value flip ts)];
     .okex.prev:t;
  }
