@@ -63,8 +63,8 @@ orderbook:{[dict]
 
   // Set default dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
   defaulttime:$[`rdb in .proc.proctype;
-    exec last exchangeTime from exchange;
-    first exec exchangeTime from select last exchangeTime from exchange where date=last date];
+    exec last exchangeTime from exchange_top;
+    first exec exchangeTime from select last exchangeTime from exchange_top where date=last date];
   d:setdefaults[allkeys!(defaulttime;`;`;`second$2*.crypto.deffreq);dict];
 
   // Create extra key if on HDB and order dictionary by date
@@ -82,7 +82,7 @@ orderbook:{[dict]
     (in;`exchange;enlist d`exchanges));
   wherecl@:(where not all each null d) except `window;
   // Define book builder projected function
-  book:{[wherecl;columns]ungroup columns#0!?[exchange;wherecl;{x!x}enlist`exchange;()]}wherecl;
+  book:{[wherecl;columns]ungroup columns#0!?[exchange_top;wherecl;{x!x}enlist`exchange;()]}wherecl;
 
   // Create bid and ask books and join to create order book
   bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`exchange`bid`bidSize];
