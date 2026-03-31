@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TorQ Crypto — Live Market Data</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+
+<header>
+  <h1>TorQ Crypto &mdash; Live Market Data</h1>
+  <span id="conn-status" class="disconnected">Disconnected</span>
+</header>
+
+<main>
+
+  <!-- Consolidated order book — live via WebSocket (getconsolidated) -->
+  <section>
+    <h2>Consolidated Order Book</h2>
+    <div id="price-grid"></div>
+  </section>
+
+  <!-- Last trade prices — live via WebSocket (getlastprices) -->
+  <section>
+    <h2>Last Trade Prices</h2>
+    <div id="last-prices"></div>
+  </section>
+
+  <!-- Symbol selector — shared by chart, order book, and arbitrage panels -->
+  <div class="sym-bar">
+    <label for="sym-select">Symbol</label>
+    <select id="sym-select"></select>
+  </div>
+
+  <!-- Two-column row: L2 order book + Arbitrage -->
+  <div class="two-col">
+
+    <section>
+      <h2>L2 Order Book <span class="poll-note">(refreshes every 5 s)</span></h2>
+      <div id="order-book"></div>
+    </section>
+
+    <section>
+      <h2>Arbitrage <span class="poll-note">(refreshes every 5 s)</span></h2>
+      <div id="arbitrage"></div>
+    </section>
+
+  </div>
+
+  <!-- OHLC mid-price chart — REST (ohlc) + live WS append -->
+  <section>
+    <h2>Mid Price &mdash; 30 min</h2>
+    <div class="chart-wrap">
+      <canvas id="mid-chart"></canvas>
+    </div>
+  </section>
+
+</main>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

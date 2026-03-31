@@ -1,218 +1,162 @@
 # Getting Started
 
+### Requirements
+
+- kdb+ 4.1 (free 32-bit or licensed)
+- Python 3.11+ with packages listed in `code/processes/feedhandler/requirements.txt`
+- `nc` (netcat) — used by `start_all.sh` to poll discovery readiness
+
 ### Installation
 
-1.  Download and install kdb+ from [Kx Systems](http://kx.com)
+1.  Download and install kdb+ 4.1 from [Kx Systems](http://kx.com)
 
 2.  Download the main TorQ codebase from
-    [here](https://github.com/AquaQAnalytics/TorQ/tree/master)
+    [here](https://github.com/DataIntellectTech/TorQ)
 
 3.  Download TorQ Crypto from
-    [here](https://github.com/AquaQAnalytics/TorQ-Crypto)
+    [here](https://github.com/DataIntellectTech/TorQ-Crypto)
 
 4.  Place the Crypto package over the top of the main TorQ package
 
+###### Example Linux installation:
 
-###### Example Linux Installation:
+    ~/crypto:$ git clone https://github.com/DataIntellectTech/TorQ.git
+    ~/crypto:$ git clone https://github.com/DataIntellectTech/TorQ-Crypto.git
+    ~/crypto:$ mkdir deploy
+    ~/crypto:$ cp -r TorQ/* deploy/
+    ~/crypto:$ cp -r TorQ-Crypto/* deploy/
 
-    ~/crypto:cross@homer$ git clone https://github.com/AquaQAnalytics/TorQ.git
-    ~/crypto:cross@homer$ git clone https://github.com/AquaQAnalytics/TorQ-Crypto.git
-    ~/crypto:cross@homer$ mkdir deploy
-    ~/crypto:cross@homer$ cp -r TorQ/* deploy/
-    ~/crypto:cross@homer$ cp -r TorQ-Crypto/* deploy/
-    ~/crypto:cross@homer$ ls deploy/
-    appconfig  aquaq-torq-brochure.pdf  code  config  database.q  datadog  docs  hdb  html  lib  LICENSE  logs  mkdocs.yml  monit  README.md  setenv.sh  tests  torq.q  torq.sh
+5.  Install Python dependencies:
 
+    cd deploy/code/processes/feedhandler
+    python -m venv ../../../.venv
+    source ../../../.venv/bin/activate
+    pip install -r requirements.txt
 
-### Start-up
+### Python feed configuration
 
-After specifying your sever in config/process.csv and KDB base port
-in setenv.sh. You can set your environment variables and run the start
-script.
+Before starting, edit `setenv.sh` and set the following environment variables:
 
-     ~/crypto/deploy:cross@homer$ . setenv.sh
-     ~/crypto/deploy:cross@homer$ . torq.sh start all
-     ~/crypto/deploy:cross@homer$ . torq.sh summary
-     TIME      |  PROCESS        |  STATUS  |  PID   |  PORT
-     14:27:46  |  discovery1     |  up      |  7187  |  46001
-     14:27:47  |  tickerplant1   |  up      |  7289  |  46000
-     14:27:47  |  rdb1           |  up      |  7388  |  46002
-     14:27:47  |  hdb1           |  up      |  7493  |  46003
-     14:27:47  |  hdb2           |  up      |  7594  |  46004
-     14:27:47  |  wdb1           |  up      |  7704  |  46005
-     14:27:47  |  sort1          |  up      |  7807  |  46006
-     14:27:47  |  gateway1       |  up      |  7909  |  46007
-     14:27:48  |  monitor1       |  up      |  8011  |  46009
-     14:27:48  |  housekeeping1  |  up      |  8112  |  46011
-     14:27:48  |  reporter1      |  up      |  8215  |  46012
-     14:27:48  |  chainedtp1     |  up      |  8321  |  46014
-     14:27:48  |  sortslave1     |  up      |  8420  |  46015
-     14:27:49  |  sortslave2     |  up      |  8523  |  46016
-     14:27:49  |  finexfeed1     |  up      |  8624  |  46017
-     14:27:49  |  okexfeed1      |  up      |  8725  |  46018
-     14:27:49  |  zbfeed1        |  up      |  8827  |  46019
-     14:27:49  |  huobifeed1     |  up      |  8932  |  46020
-     14:27:49  |  bhexfeed1      |  up      |  9035  |  46021
+| Variable | Description |
+|---|---|
+| `COINBASE_API_KEY` | Coinbase Advanced Trade API key (required) |
+| `COINBASE_API_SECRET` | Coinbase Advanced Trade API secret (required) |
+| `BINANCE_SYMBOLS` | Canonical symbols for Binance, e.g. `BTC-USDT,ETH-USDT` |
+| `KRAKEN_SYMBOLS` | Canonical symbols for Kraken, e.g. `BTC-USD,ETH-USD` |
+| `COINBASE_SYMBOLS` | Canonical symbols for Coinbase, e.g. `BTC-USD,ETH-USD` |
 
-The stack can be stopped by running . torq.sh stop all
+Obtain Coinbase credentials from your Coinbase Advanced Trade dashboard.
+**Never commit real credentials to source control.**
+
+### Instrument mapping
+
+BTC-USD (FIAT USD) and BTC-USDT (Tether stablecoin) are **different instruments**
+and must not be conflated.  The canonical symbol scheme used throughout the system is:
+
+- Venues quoting against genuine FIAT USD → canonical uses `-USD` suffix (e.g. `BTC-USD`)
+- Venues quoting against USDT (Tether) → canonical uses `-USDT` suffix (e.g. `BTC-USDT`)
+
+Consequently:
+- Binance `BTCUSDT` → canonical `BTC-USDT`  (Tether)
+- Kraken `XBT/USD` → canonical `BTC-USD`    (FIAT)
+- Coinbase `BTC-USD` → canonical `BTC-USD`  (FIAT)
+
+The consolidated order book keeps `BTC-USD` (Kraken + Coinbase) and `BTC-USDT`
+(Binance) as **separate rows**.
+
+Instruments whose quote currency cannot be reliably determined are passed through
+with `mapping_verified=false`.  The original venue symbol is preserved and displayed
+in the UI in a muted colour with a tooltip.
+
+### Starting the system
+
+The easiest way to start everything is:
+
+    cd deploy
+    bash start_all.sh
+
+This will:
+1. Start the full TorQ kdb+ stack
+2. Wait for the discovery process to be ready (up to 60 s)
+3. Start the Python feed manager in the background
+
+To start the kdb+ stack and Python feeds separately:
+
+    # kdb+ only
+    . setenv.sh && . torq.sh start all
+
+    # Python feeds only (after kdb+ is running)
+    bash start_feeds.sh
+
+### Accessing the UI
+
+Once the system is running, open:
+
+    http://localhost:8888
+
+The UI shows a live price grid (Binance / Kraken / Coinbase per row) and a
+30-minute consolidated mid-price chart.  Data updates every 2 seconds via WebSocket.
+
+### Process list
+
+| Process | Port | Description |
+|---|---|---|
+| discovery1 | KDBBASEPORT+1 | Service discovery |
+| tickerplant1 | KDBBASEPORT | Real-time data bus |
+| rdb1 | KDBBASEPORT+2 | Real-time in-memory database |
+| hdb1, hdb2 | KDBBASEPORT+3,4 | Historical database |
+| wdb1 | KDBBASEPORT+5 | Write-down buffer |
+| sort1 | KDBBASEPORT+6 | EOD sort process |
+| gateway1 | KDBBASEPORT+7 | Query gateway |
+| monitor1 | KDBBASEPORT+9 | Process monitor |
+| housekeeping1 | KDBBASEPORT+10 | Log housekeeping |
+| reporter1 | KDBBASEPORT+11 | Scheduled reports |
+| chainedtp1 | KDBBASEPORT+12 | Chained tickerplant |
+| sortslave1,2 | KDBBASEPORT+13,14 | Sort slaves |
+| **pythonfeed1** | **KDBBASEPORT+15** | **kdb+ receiver for Python feeds** |
+| **cryptoagg1** | **KDBBASEPORT+20** | **Real-time aggregation process** |
 
 ### TorQ Debug Mode
 
-It is straight forward to run processes in debug mode with TorQ 
-as show below. After starting you stack you should see the tables 
-in the RDB beginning to populate:
-
-    ~/crypto/deploy:cross@homer$ . torq.sh stop rdb1
-    ~/crypto/deploy:cross@homer$ . torq.sh debug rdb1
+    . torq.sh stop rdb1
+    . torq.sh debug rdb1
     q)tables[]!count each `. tables[]
-    bhex        | 10
     exchange    | 50
     exchange_top| 50
-    finex       | 10
-    huobi       | 10
-    okex        | 10
-    zb          | 10
+    trade       | 200
 
-We have also included HDB partitions from 2020.03.29 and 2020.03.30
-when the feeds where subscribed to Bitcoin and Ethereum.  
+### File structure
 
-     ~/crypto/deploy:cross@homer$ . torq.sh stop hdb1
-     ~/crypto/deploy:cross@homer$ . torq.sh debug hdb1
-     q)tables[]!count each `. tables[]
-     bhex        | 10722
-     exchange    | 53836
-     exchange_top| 53723
-     finex       | 10054
-     okex        | 11250
-     zb          | 10644
-     q)select count i by date, sym from exchange_top
-     date       sym    | x
-     ------------------| -----
-     2020.03.29 BTCUSDT| 13378
-     2020.03.29 ETHUSDT| 13363
-     2020.03.30 BTCUSDT| 13495
-     2020.03.30 ETHUSDT| 13487
-
-### File Structure:
-
-    |-- LICENSE
-    |-- README.md
-    |-- appconfig
-    |   |-- passwords
-    |   |   |-- accesslist.txt
-    |   |   |-- bhexfeed.txt
-    |   |   |-- finexfeed.txt
-    |   |   |-- huobifeed.txt
-    |   |   |-- okexfeed.txt
-    |   |   `-- zbfeed.txt
-    |   |-- settings
-    |   |   |-- bhexfeed.q
-    |   |   |-- chainedtp.q
-    |   |   |-- compression.q
-    |   |   |-- default.q
-    |   |   |-- finexfeed.q
-    |   |   |-- gateway.q
-    |   |   |-- huobifeed.q
-    |   |   |-- killtick.q
-    |   |   |-- monitor.q
-    |   |   |-- okexfeed.q
-    |   |   |-- rdb.q
-    |   |   |-- sort.q
-    |   |   |-- tickerplant.q
-    |   |   |-- wdb.q
-    |   |   `-- zbfeed.q
-    |   |-- application.txt
-    |   |-- compressionconfig.csv
-    |   |-- dependency.csv
-    |   |-- housekeeping.csv
+    |-- start_all.sh          <- start entire system
+    |-- start_feeds.sh        <- start Python feeds only
+    |-- setenv.sh             <- environment variables (edit before starting)
+    |-- database.q            <- table schema definitions
+    |-- appconfig/
     |   |-- process.csv
-    |   |-- reporter.csv
-    |   |-- symconfig.csv
-    |   `-- symmap.csv
-    |-- code
-    |   |-- cryptofeed
-    |   |   `-- cryptofeed.q
-    |   |-- cryptofunctions
-    |   |   `-- cryptolib.q
-    |   `-- processes
-    |       |-- bhexfeed.q
-    |       |-- finexfeed.q
-    |       |-- huobifeed.q
-    |       |-- okexfeed.q
-    |       `-- zbfeed.q
-    |-- hdb/database             <- example hdb data
-    |   |--2020.03.29
-    |   |--2020.03.30
-    |   `-- sym
-    |-- database.q
-    `-- setenv.sh           <- set environment variables
-    |-- LICENSE
-    |-- README.md
-    |-- appconfig
-    |   |-- passwords
-    |   |   |-- accesslist.txt
-    |   |   |-- bhexfeed.txt
-    |   |   |-- finexfeed.txt
-    |   |   |-- huobifeed.txt
-    |   |   |-- okexfeed.txt
-    |   |   `-- zbfeed.txt
-    |   |-- settings
-    |   |   |-- bhexfeed.q
-    |   |   |-- chainedtp.q
-    |   |   |-- compression.q
-    |   |   |-- default.q
-    |   |   |-- finexfeed.q
-    |   |   |-- gateway.q
-    |   |   |-- huobifeed.q
-    |   |   |-- killtick.q
-    |   |   |-- monitor.q
-    |   |   |-- okexfeed.q
-    |   |   |-- rdb.q
-    |   |   |-- sort.q
-    |   |   |-- tickerplant.q
-    |   |   |-- wdb.q
-    |   |   `-- zbfeed.q
-    |   |-- application.txt
-    |   |-- compressionconfig.csv
+    |   |-- symconfig.csv     <- canonical symbol enable/disable per venue
+    |   |-- symmap.csv        <- canonical <-> venue symbol mapping
     |   |-- dependency.csv
-    |   |-- housekeeping.csv
-    |   |-- process.csv
-    |   |-- reporter.csv
-    |   |-- symconfig.csv
-    |   `-- symmap.csv
-    |-- code
-    |   |-- cryptofeed
-    |   |   `-- cryptofeed.q
-    |   |-- cryptofunctions
-    |   |   `-- cryptolib.q
-    |   `-- processes
-    |       |-- bhexfeed.q
-    |       |-- finexfeed.q
-    |       |-- huobifeed.q
-    |       |-- okexfeed.q
-    |       `-- zbfeed.q
-    |-- hdb/database             <- example hdb data
-    |   |--2020.03.29
-    |   |--2020.03.30
-    |   `-- sym
-    |-- database.q
-
-The package consists of:
-
--   fully configurable cyptocurrency exchange feed handlers
-
--   a slightly modified version of kdb+tick from Kx Systems
-
--   an example set of historic data
-
--   configuration changes for base TorQ
-
--   functions for data analysis to run on the RDB and HDB
-
--   start and stop scripts
-
-Make It Your Own
-----------------
-
-This system is production ready. Users may customize what currencies are 
-subscribed to, the rate of data retrieval and even add new feed handlers!
+    |   `-- settings/
+    |       |-- pythonfeed.q
+    |       |-- cryptoagg.q
+    |       `-- gateway.q
+    |-- code/
+    |   |-- cryptofeed/
+    |   |   `-- cryptofeed.q  <- CSV loader for symbol tables
+    |   |-- cryptofunctions/
+    |   |   `-- cryptolib.q   <- OHLC, orderbook, arbitrage, getconsolidated
+    |   |-- processes/
+    |   |   |-- pythonfeed.q  <- kdb+ receiver process
+    |   |   `-- cryptoagg.q   <- real-time aggregation process
+    |   |-- processes/feedhandler/
+    |   |   |-- feed_manager.py
+    |   |   |-- discovery.py
+    |   |   |-- symmap.py
+    |   |   |-- binance_feed.py
+    |   |   |-- kraken_feed.py
+    |   |   |-- coinbase_feed.py
+    |   |   `-- requirements.txt
+    |   `-- ui/
+    |       |-- server.py
+    |       `-- static/index.html
+    `-- docs/

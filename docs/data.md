@@ -2,38 +2,20 @@
 
 ### Feed Handlers
 
-The feed handler processes collect real time cryptocurrency data though 
-RESTful APIs. We have added 5 feeds which collect data from the following 
-exchanges:
+Three Python WebSocket feed processes collect real-time cryptocurrency data:
 
--    [OKEX](https://www.okex.com/docs/en/) 
--    [DigiFinex](https://docs.digifinex.com/en-ww/v3/) 
--    [Huobi](https://huobiapi.github.io/docs/spot/v1/en/#introduction) 
--    [ZB](https://www.zb.com/api) 
--    [Bluehelix/HBTC](https://github.com/bhexopen/BHEX-OpenApi) 
+- **Binance** — `{sym}@trade` and `{sym}@depth5@100ms` streams
+- **Kraken** — `trade` and `book` (depth 10) subscriptions
+- **Coinbase** — `market_trades` and `level2` subscriptions (requires API credentials)
 
-Each feed collects level 2 order book data for its subscribed symbols at a set 
-frequency and limit which is discussed [here](https://aquaqanalytics.github.io/TorQ-Crypto/configuration/). 
-After converting the JSON response to a KDB table the following standardisation 
-occurs before the data is sent to the ticker plant:
-
--    Conversion of times to KDB timestamps 
--    Quotes arranged in order of best to worst 
--    Duplicated data will not be sent (i.e quotes that have not changed from last publish)
-
-This diagram summarises the data capture:
-
-![Sym Config](graphics/dataflow.PNG)
+All feeds connect via WebSocket, publish normalised rows to kdb+ via IPC (pykx),
+and reconnect with exponential backoff on failure.  Gaps are filled from each
+exchange's REST API on reconnect.
 
 ### Tables
 
-Each feed publishes data to three tables in the RDB - exchange, exchange_top
-and a table specific to its own feed. The exchange table contains a superset
-of L2 data collected from all exchanges with exchange_top containing only top-of-book 
-data. It is these exchange table which are used in the inbuilt functions to compare
-quotes across exchanges and over time. 
+#### exchange (preserved — L2 order book, all exchanges)
 
-    meta exchange
     c           | t f a
     ------------| -----
     time        | p
@@ -45,7 +27,8 @@ quotes across exchanges and over time.
     ask         | F
     askSize     | F
 
-    meta exchange_top
+#### exchange_top (preserved — top-of-book per exchange)
+
     c           | t f a
     ------------| -----
     time        | p
@@ -57,9 +40,79 @@ quotes across exchanges and over time.
     ask         | f
     askSize     | f
 
-##### Additional Information:
+#### trade (new — append-only trade stream, time-partitioned in HDB)
 
-The HTTP requests that the feed processes send do not have a time out and it is 
-possible for these requests to fail on the exchange side for myriad of reasons. In 
-such cases a small gap may be seen in the data, typically this will not be more 
-than a few minutes.
+    c         | t f a
+    ----------| -----
+    time      | p
+    sym       | s   g
+    exchange  | s
+    price     | f
+    size      | f
+    side      | s
+    venue_sym | s
+
+`side` is `buy` or `sell`.  `venue_sym` is the original exchange symbol (e.g. `btcusdt`).
+
+#### symboldiscovery (runtime, in-memory only — not persisted to HDB)
+
+Populated at startup by the Python feed manager discovery process.
+
+    c                | t
+    -----------------| -
+    canonical_symbol | s
+    venue            | s
+    venue_symbol     | s
+    base             | s
+    quote            | s
+    instrument_type  | s
+    tick_size        | f
+    mapping_verified | b
+
+`mapping_verified=false` rows indicate the instrument's quote currency could not
+be reliably determined.  The original venue symbol is used as the canonical symbol
+for these rows and is displayed in the UI with a visual indicator.
+
+#### cryptoagg in-memory tables
+
+The `cryptoagg1` process maintains three keyed in-memory tables that are NOT
+persisted to the HDB.  They are queried via gateway functions.
+
+**lasttrade** — keyed by `sym`, `exchange`
+
+    sym      | s
+    exchange | s
+    time     | p
+    price    | f
+    size     | f
+
+**lastbook** — keyed by `sym`, `exchange`
+
+    sym      | s
+    exchange | s
+    time     | p
+    bid      | f
+    bidSize  | f
+    ask      | f
+    askSize  | f
+
+**consolidated** — keyed by `sym`
+
+    sym                | s
+    update_time        | p
+    consolidated_bid   | f   (max bid across venues)
+    consolidated_ask   | f   (min ask across venues)
+    consolidated_mid   | f   (midpoint of above)
+    venue_count        | j   (number of contributing venues)
+    spread_dispersion  | f   (bps: (max_mid - min_mid) / min_mid * 10000)
+    outlier_flag       | b   (true if spread_dispersion > outlierthreshold)
+    venue_bids         | f   (list, one per contributing venue)
+    venue_asks         | f   (list, one per contributing venue)
+    venue_names        | s   (list, exchange names matching venue_bids/asks)
+
+### Recovery
+
+- **TP log replay**: `cryptoagg1` subscribes with log replay enabled, so it
+  rebuilds in-memory state automatically on restart.
+- **REST backfill**: each Python feed queries kdb+ for the most recent trade
+  timestamp on reconnect and backfills any gap via the exchange REST API.

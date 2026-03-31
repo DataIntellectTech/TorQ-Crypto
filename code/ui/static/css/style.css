@@ -1,0 +1,157 @@
+/* ------------------------------------------------------------------ */
+/* Custom properties                                                    */
+/* ------------------------------------------------------------------ */
+:root {
+  --bg:         #111;
+  --bg2:        #1a1a1a;
+  --bg3:        #212121;
+  --border:     #2a2a2a;
+  --text:       #d0d0d0;
+  --text-muted: #555;
+  --accent:     #4af;
+  --green:      #4c4;
+  --red:        #e44;
+  --yellow:     #fa0;
+  --arb:        rgba(255, 200, 50, 0.08);
+  --flash-bg:   rgba(68, 170, 255, 0.15);
+  --font:       'Courier New', Courier, monospace;
+}
+
+/* ------------------------------------------------------------------ */
+/* Reset                                                                */
+/* ------------------------------------------------------------------ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  min-height: 100vh;
+}
+
+/* ------------------------------------------------------------------ */
+/* Header                                                               */
+/* ------------------------------------------------------------------ */
+header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+header h1 { font-size: 1rem; letter-spacing: 0.05em; color: var(--accent); }
+
+#conn-status {
+  margin-left: auto;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+}
+#conn-status.connected    { color: var(--green); }
+#conn-status.reconnecting { color: var(--yellow); }
+#conn-status.disconnected { color: var(--red); }
+
+/* ------------------------------------------------------------------ */
+/* Layout                                                               */
+/* ------------------------------------------------------------------ */
+main    { padding: 1rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+section { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 0.75rem 1rem; }
+
+h2 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+}
+
+.poll-note { font-size: 0.65rem; text-transform: none; letter-spacing: 0; color: var(--text-muted); }
+
+/* Symbol bar */
+.sym-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+select {
+  background: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.5rem;
+  font-family: var(--font);
+  font-size: 12px;
+  border-radius: 3px;
+}
+
+/* Two-column layout for order book + arbitrage */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 900px) {
+  .two-col { grid-template-columns: 1fr; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Tables                                                               */
+/* ------------------------------------------------------------------ */
+.grid-wrap   { overflow-x: auto; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 400px;
+}
+
+th, td {
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--border);
+  text-align: right;
+  white-space: nowrap;
+}
+
+th { background: var(--bg3); color: var(--text-muted); font-weight: normal; text-align: center; font-size: 0.7rem; }
+
+td:first-child { text-align: left; font-weight: bold; }
+td.dash        { color: var(--text-muted); }
+td.text-muted  { color: var(--text-muted); }
+td.venues-cell { text-align: left; font-size: 0.75rem; }
+
+td.updated {
+  animation: flash 0.4s ease-out;
+}
+@keyframes flash {
+  from { background: var(--flash-bg); }
+  to   { background: transparent; }
+}
+
+/* Price colouring */
+td.bid-price { color: var(--green); }
+td.ask-price { color: var(--red); }
+td.outlier   { color: var(--red); }
+
+/* Arbitrage highlighting */
+tr.arb-row             { background: var(--arb); }
+td.arb-profit          { color: var(--yellow); font-weight: bold; }
+td.arb-flag            { color: var(--yellow); text-align: center; }
+
+/* ------------------------------------------------------------------ */
+/* Chart                                                                */
+/* ------------------------------------------------------------------ */
+.chart-wrap { position: relative; height: 240px; }
+
+/* ------------------------------------------------------------------ */
+/* Utility                                                              */
+/* ------------------------------------------------------------------ */
+p.text-muted { color: var(--text-muted); font-size: 0.8rem; padding: 0.5rem 0; }

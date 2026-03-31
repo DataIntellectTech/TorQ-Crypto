@@ -10,12 +10,23 @@
 \
 
 ohlc:{[dict]
-  allkeys:`date`sym`exchanges`quote`byexchange;
-  typecheck[allkeys!14 11 11 11 1h;01000b;dict];
+  allkeys:`date`sym`exchanges`quote`byexchange`usetrade;
+  typecheck[allkeys!14 11 11 11 1 1h;010000b;dict];
 
   // Set default null dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
   defaultdate:$[`rdb in .proc.proctype; .proc.cd[]; last date];
-  d:setdefaults[allkeys!(defaultdate;`;`;`ask`bid;0b);dict];
+  d:setdefaults[allkeys!(defaultdate;`;`;`ask`bid;0b;0b);dict];
+
+  // usetrade=1b: compute OHLC from the trade table on price column instead of exchange_top
+  if[d`usetrade;
+    c:$[`rdb~.proc.proctype;`time.date;`date];
+    twherecl:`date`sym!((in;c;enlist d`date);(in;`sym;enlist d`sym));
+    twherecl@:where[not all each null d]except `quote`byexchange`usetrade;
+    tbycl:(`date`sym!c,`sym),$[d`byexchange;{x!x}enlist`exchange;()!()];
+    tcoldict:`openPrice`closePrice`highPrice`lowPrice!(
+      (first;`price);(last;`price);(max;`price);(min;`price));
+    :`sym xdesc ?[trade;twherecl;tbycl;tcoldict]
+  ];
 
   // Create sym and exchange lists, bid and ask dicts for functional select
   biddict:`openBid`closeBid`bidHigh`bidLow!((first;`bid);(last;`bid);(max;`bid);(min;`bid));
@@ -28,7 +39,7 @@ ohlc:{[dict]
   coldict:$[any i:`bid`ask in d`quote;(,/)(biddict;askdict) where i;(enlist`)!(enlist())];
   wherecl:`date`sym`exchanges!
     ((in;c;enlist d`date);(in;`sym;enlist d`sym);(in;`exchange;enlist d`exchanges));
-  wherecl@:where[not all each null d]except `quote`byexchange;
+  wherecl@:where[not all each null d]except `quote`byexchange`usetrade;
 
   bycl:(`date`sym!c,`sym),$[d`byexchange;{x!x}enlist`exchange;()!()];
 
@@ -183,6 +194,22 @@ arbitrage:{[d]
   setdefaults[] produces a dictionary where missing values are filled in with defaults
   typecheck[] checks the types of dictionary values that are passed in by the user
 \
+
+// getconsolidated — gateway-callable function to fetch consolidated order book
+// from the cryptoagg process.  Returns simple table (98h).
+// syms: ` for all, single symbol `BTC-USD, or list `BTC-USD`ETH-USD
+// emptyconsolidated — helper producing an empty typed table matching the consolidated schema
+emptyconsolidated:{([]sym:`symbol$();update_time:`timestamp$();consolidated_bid:`float$();consolidated_ask:`float$();consolidated_mid:`float$();venue_count:`long$();spread_dispersion:`float$();outlier_flag:`boolean$();venue_bids:`float$();venue_asks:`float$();venue_names:`symbol$())}
+
+getconsolidated:{[syms]
+  h:.[.servers.gethandlebytype;(`cryptoagg;`any);{.lg.e[`cryptolib;"no cryptoagg handle: ",x];0Ni}];
+  if[null h;
+    .lg.e[`cryptolib;"getconsolidated: cryptoagg unavailable"];
+    :emptyconsolidated[]];
+  @[h;(`.cryptoagg.getconsolidated;syms);{[err] .lg.e[`cryptolib;"getconsolidated failed: ",err]; emptyconsolidated[]}]
+ };
+
+.api.add[`getconsolidated;1b;"Get consolidated order book from cryptoagg for given syms";"` or `BTC-USD";"simple table (98h)"];
 
 errfunc:{.lg.e[x;"Crypto User Error:",y];'y};
 

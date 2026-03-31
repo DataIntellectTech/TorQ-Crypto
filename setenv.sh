@@ -4,11 +4,8 @@
 # some of the kdb+tick processes will change directory, and these will no longer be valid
 
 # get absolute path to setenv.sh directory
-if [ "-bash" = $0 ]; then
-  dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-else
-  dirpath="$(cd "$(dirname "$0")" && pwd)"
-fi
+# BASH_SOURCE[0] is the script path whether sourced (. setenv.sh) or executed (bash setenv.sh)
+dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 export TORQHOME=${dirpath}
 export TORQAPPHOME=${TORQHOME}
@@ -38,6 +35,7 @@ export TORQPROCESSES=${KDBAPPCONFIG}/process.csv
 # e.g. osx:
 # export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$KDBLIB/m[32|64]
 
+mkdir -p ${KDBLOG}
 TORQSSLCERT=${KDBLOG}/torqsslcert.txt
 touch ${TORQSSLCERT}
 if [ -z "${SSL_CA_CERT_FILE}" ]; then
@@ -48,3 +46,38 @@ if [ -z "${SSL_CA_CERT_FILE}" ]; then
 else
   echo "`date`    The SSL security certificate already exists. If https requests fail it may be because of inappropriate certification." </dev/null >>$TORQSSLCERT
 fi
+
+# --------------------------------------------------------------------------
+# Python feed manager configuration
+# --------------------------------------------------------------------------
+
+# kdb+ receiver process (pythonfeed1) — Python feeds connect here
+export KDB_HOST=localhost
+export KDB_PORT=$((KDBBASEPORT+15))
+
+# Coinbase Advanced Trade authentication
+# REQUIRED — obtain credentials from https://www.coinbase.com/settings/api
+# Set these before starting the system; do NOT commit real values to source control
+export COINBASE_API_KEY=""
+export COINBASE_API_SECRET=""
+
+# Canonical symbols each exchange feed subscribes to (comma-separated)
+export BINANCE_SYMBOLS="BTC-USDT,ETH-USDT"
+export KRAKEN_SYMBOLS="BTC-USD,ETH-USD"
+export COINBASE_SYMBOLS="BTC-USD,ETH-USD"
+
+# Reconnect backoff ceiling (seconds)
+export FEED_RECONNECT_MAX=60
+
+# Heartbeat timeout per exchange (seconds) — reconnect if no message within this window
+export BINANCE_HEARTBEAT_TIMEOUT=30
+export KRAKEN_HEARTBEAT_TIMEOUT=30
+export COINBASE_HEARTBEAT_TIMEOUT=30
+
+# UI server
+export KDB_GATEWAY_HOST=localhost
+export KDB_GATEWAY_PORT=$((KDBBASEPORT+7))
+export KDB_USER=ui
+export KDB_PASSWORD=pass
+export UI_SYMBOLS=BTC-USD,BTC-USDT,ETH-USD,ETH-USDT
+export UI_PORT=8888

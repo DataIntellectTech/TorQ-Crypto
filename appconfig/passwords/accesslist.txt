@@ -17,3 +17,6 @@ okexfeed:pass
 zbfeed:pass
 huobifeed:pass
 bhexfeed:pass
+pythonfeed:pass
+cryptoagg:pass
+ui:pass

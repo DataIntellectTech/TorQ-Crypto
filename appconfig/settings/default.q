@@ -1,11 +1,6 @@
 system"c 23 2000"
 
 \d .crypto
-
-//Defaults for frequency of querying API
-deffreq : 0D00:00:30.000
-
-//Defaults for limit of depth of market returned
-deflimit: "10"
-
+deffreq:0D00:00:05   / default feed polling interval — also used as base bucket size in topofbook/orderbook
+deflimit:100         / default REST API page size for old q feeds
 \d .
