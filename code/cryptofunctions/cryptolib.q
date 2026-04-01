@@ -82,7 +82,7 @@ orderbook:{[dict]
     (in;`exchange;enlist d`exchanges));
   wherecl@:(where not all each null d) except `window;
   // Define book builder projected function
-  book:{[wherecl;columns]ungroup columns#0!?[exchange_top;wherecl;{x!x}enlist`exchange;()]}wherecl;
+  book:{[wherecl;columns]ungroup 0!?[exchange_top;wherecl;{x!x}enlist`exchange;{x!x}columns except`exchange]}wherecl;
 
   // Create bid and ask books and join to create order book
   bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`exchange`bid`bidSize];
