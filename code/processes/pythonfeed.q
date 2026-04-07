@@ -63,7 +63,7 @@ logcounts:{[]
   active:rowcounts where rowcounts>0;
   if[count active;
     .lg.o[`pythonfeed;"row counts (last 60s): ",.Q.s1 active]];
-  rowcounts::.pythonfeed.rowcounts!0*rowcounts
+  `.pythonfeed.rowcounts set 0*rowcounts
   }
 
 // ---------------------------------------------------------------------------
@@ -79,7 +79,15 @@ logcounts:{[]
 .dotz.set[`.z.pc;{[h]
   .lg.o[`pythonfeed;"feed handler disconnected: handle ",string h]}]
 
+// ---------------------------------------------------------------------------
+// Connection management — connect to tickerplant on startup
+// ---------------------------------------------------------------------------
+
+.servers.CONNECTIONS:distinct .servers.CONNECTIONS,enlist tptypes
+
 \d .
+
+.servers.startup[]
 
 // ---------------------------------------------------------------------------
 // .pythonfeed.maxtime — exposed query function for Python backfill

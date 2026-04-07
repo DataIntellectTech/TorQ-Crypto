@@ -1,3 +1,5 @@
 aiohttp
+numpy
+pandas
 pykx
 websockets

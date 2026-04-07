@@ -4,11 +4,9 @@
 # some of the kdb+tick processes will change directory, and these will no longer be valid
 
 # get absolute path to setenv.sh directory
-if [ "-bash" = $0 ]; then
-  dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-else
-  dirpath="$(cd "$(dirname "$0")" && pwd)"
-fi
+# BASH_SOURCE[0] is always the sourced file itself, even when called from
+# another script -- unlike $0 which refers to the calling script.
+dirpath="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 
 export TORQHOME=${dirpath}
 export TORQAPPHOME=${TORQHOME}

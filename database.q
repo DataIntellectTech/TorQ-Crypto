@@ -1,6 +1,4 @@
-finex:([]time:`timestamp$(); sym:`g#`symbol$();exchangeTime:`timestamp$();bid:(); bidSize:(); ask:();askSize:())
-bhex:huobi:okex:zb:finex
-exchange:([]time:`timestamp$(); sym:`g#`symbol$(); exchangeTime:`timestamp$(); exchange:`symbol$();bid:(); bidSize:(); ask:();askSize:())
-exchange_top:exchange
+trade:([]time:`timestamp$();sym:`g#`symbol$();venue:`symbol$();price:`float$();size:`float$();side:`symbol$();venue_sym:`symbol$();seq:`long$())
+quote:([]time:`timestamp$();sym:`g#`symbol$();venue:`symbol$();bid:`float$();ask:`float$();bsize:`float$();asize:`float$();venue_sym:`symbol$())
 
 

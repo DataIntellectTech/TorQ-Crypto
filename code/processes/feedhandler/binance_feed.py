@@ -31,7 +31,7 @@ import time
 from typing import Any, Optional
 
 import aiohttp
-import numpy as np
+import pandas as pd
 import pykx as kx
 import websockets
 
@@ -151,9 +151,8 @@ def _parse_depth(msg: dict[str, Any]) -> Optional[dict[str, Any]]:
 
 def _trade_cols(rows: list[dict[str, Any]]) -> list:
     """Convert trade row dicts to a kdb+ column-vector list for upd["trade"; ...]."""
-    times_ns = np.array([r["time"] for r in rows], dtype="int64").view("datetime64[ns]")
     return [
-        kx.toq(times_ns),
+        kx.toq(pd.to_datetime([r["time"] for r in rows], unit="ns")),
         kx.SymbolVector([r["sym"] for r in rows]),
         kx.SymbolVector([r["venue"] for r in rows]),
         kx.FloatVector([r["price"] for r in rows]),
@@ -166,9 +165,8 @@ def _trade_cols(rows: list[dict[str, Any]]) -> list:
 
 def _quote_cols(rows: list[dict[str, Any]]) -> list:
     """Convert quote row dicts to a kdb+ column-vector list for upd["quote"; ...]."""
-    times_ns = np.array([r["time"] for r in rows], dtype="int64").view("datetime64[ns]")
     return [
-        kx.toq(times_ns),
+        kx.toq(pd.to_datetime([r["time"] for r in rows], unit="ns")),
         kx.SymbolVector([r["sym"] for r in rows]),
         kx.SymbolVector([r["venue"] for r in rows]),
         kx.FloatVector([r["bid"] for r in rows]),

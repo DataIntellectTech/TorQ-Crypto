@@ -3,6 +3,7 @@ site_favicon: graphics/favicon.ico
 pages:
     - Home: index.md
     - Getting Started: gettingstarted.md
+    - Deployment & Operations: deployment.md
     - Data Capture: data.md
     - Configuration: configuration.md
     - Functions: functions.md
