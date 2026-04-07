@@ -30,22 +30,26 @@ run_q_test() {
 run_q_test "test_schemas" "tests/test_schemas.q"
 
 # ---------------------------------------------------------------------------
-# Python unit tests (uncomment as each phase is completed)
+# Python unit tests
 # ---------------------------------------------------------------------------
-# run_pytest() {
-#   local name="$1"
-#   local file="$2"
-#   if python -m pytest "${REPO_ROOT}/${file}" -q 2>/dev/null; then
-#     echo "PASS: ${name}"
-#     ((PASS+=1)) || true
-#   else
-#     echo "FAIL: ${name}"
-#     ((FAIL+=1)) || true
-#   fi
-# }
-# run_pytest "test_symmap"        "tests/test_symmap.py"
-# run_pytest "test_binance_feed"  "tests/test_binance_feed.py"
-# run_pytest "test_kraken_feed"   "tests/test_kraken_feed.py"
+PYTHON="${REPO_ROOT}/.venv/bin/python"
+
+run_pytest() {
+  local name="$1"
+  local file="$2"
+  if "${PYTHON}" -m pytest "${REPO_ROOT}/${file}" -q 2>/dev/null; then
+    echo "PASS: ${name}"
+    ((PASS+=1)) || true
+  else
+    echo "FAIL: ${name}"
+    ((FAIL+=1)) || true
+  fi
+}
+
+run_pytest "test_symmap"       "tests/test_symmap.py"
+run_pytest "test_binance_feed" "tests/test_binance_feed.py"
+run_pytest "test_kraken_feed"  "tests/test_kraken_feed.py"
+run_pytest "test_okx_feed"     "tests/test_okx_feed.py"
 # run_pytest "test_okx_feed"      "tests/test_okx_feed.py"
 # run_pytest "test_ui_server"     "tests/test_ui_server.py"
 # run_pytest "test_replay"        "tests/test_replay.py"
