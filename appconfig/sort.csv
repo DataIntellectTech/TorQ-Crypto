@@ -1,0 +1,5 @@
+tabname,att,column,sort
+trade,p,sym,1
+trade,,time,1
+quote,p,sym,1
+quote,,time,1
