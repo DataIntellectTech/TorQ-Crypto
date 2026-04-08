@@ -27,7 +27,9 @@ run_q_test() {
 # ---------------------------------------------------------------------------
 # q unit tests
 # ---------------------------------------------------------------------------
-run_q_test "test_schemas" "tests/test_schemas.q"
+run_q_test "test_schemas"   "tests/test_schemas.q"
+run_q_test "test_cryptoagg" "tests/test_cryptoagg.q"
+run_q_test "test_eod"       "tests/test_eod.q"
 
 # ---------------------------------------------------------------------------
 # Python unit tests
@@ -56,8 +58,6 @@ run_pytest "test_okx_feed"     "tests/test_okx_feed.py"
 
 # q integration tests (manual — require running stack)
 # q tests/test_pythonfeed.q
-# q tests/test_cryptoagg.q       (unit — uncomment when cryptoagg.q exists)
-# q tests/test_eod.q             (unit — uncomment when eod config is complete)
 
 # ---------------------------------------------------------------------------
 # Result

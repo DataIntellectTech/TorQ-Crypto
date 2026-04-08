@@ -14,4 +14,4 @@ localhost,{KDBBASEPORT}+12,chainedtp,chainedtp1,${TORQAPPHOME}/appconfig/passwor
 localhost,{KDBBASEPORT}+13,sortslave,sortslave1,,1,1,,,${KDBCODE}/processes/wdb.q,1,,q
 localhost,{KDBBASEPORT}+14,sortslave,sortslave2,,1,1,,,${KDBCODE}/processes/wdb.q,1,,q
 localhost,{KDBBASEPORT}+20,pythonfeed,pythonfeed1,,1,0,,,${KDBAPPCODE}/processes/pythonfeed.q,1,,q
-localhost,{KDBBASEPORT}+21,cryptoagg,cryptoagg1,,1,0,,,,,0,,q
+localhost,{KDBBASEPORT}+21,cryptoagg,cryptoagg1,,1,0,,,${KDBAPPCODE}/processes/cryptoagg.q,1,,q

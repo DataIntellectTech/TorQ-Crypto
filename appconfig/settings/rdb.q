@@ -6,6 +6,7 @@ reloadenabled:1b                // if true, the RDB will not save when .u.end is
                                 // will clear it's data using reload function (called by the WDB)
 tickerplanttypes:`tickerplant   // connect to a standard tickerplant (not segemented)
 hdbtypes:()                     // connection to HDB not needed
+ignorelist:`heartbeat`logmsg`lastprice`consolidatedmid  // intraday-only tables: do not save or reload
 
 \d .servers
 CONNECTIONS:enlist `tickerplant // connect to tickerplant only
