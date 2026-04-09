@@ -29,6 +29,7 @@ import json
 import logging
 import math
 import mimetypes
+import pandas as _pd
 import os
 import pathlib
 import re
@@ -241,35 +242,48 @@ _ERR_N   = json.dumps({"error": "invalid n"}).encode()
 _JSON_CT = [("Content-Type", "application/json")]
 
 
-def _nan_to_none(v):
-    """Return None if v is a float NaN (kdb+ null 0n), otherwise v unchanged."""
+def _safe_scalar(v):
+    """Convert a value to a JSON-safe Python scalar.
+
+    Handles:
+      - pandas NaT / None / NaN / pd.NA  → None
+      - numpy scalars                     → .item(), then NaN/Inf → None
+      - timestamps with .isoformat()      → ISO string (guarded against NaT)
+      - anything else                     → float or str fallback
+    """
+    # NaT, None, NaN, pd.NA — must come first because NaT has .isoformat
     try:
-        return None if math.isnan(v) else v
-    except TypeError:
-        return v
+        if _pd.isna(v):
+            return None
+    except (TypeError, ValueError):
+        pass
+
+    if hasattr(v, "isoformat"):
+        return v.isoformat()
+
+    if hasattr(v, "item"):          # numpy scalar (bool, int, float, …)
+        w = v.item()
+        if isinstance(w, float) and (math.isnan(w) or math.isinf(w)):
+            return None
+        return w
+
+    try:
+        f = float(v)
+        return None if (math.isnan(f) or math.isinf(f)) else f
+    except (TypeError, ValueError):
+        return str(v)
 
 
 def _df_to_json(df) -> list[dict]:
-    """Convert a pandas DataFrame returned by pykx to a JSON-serialisable list.
-
-    kdb+ null floats (0n) arrive as numpy NaN.  Python's json module emits the
-    bare token NaN for those, which is not valid JSON and causes JSON.parse to
-    throw in the browser.  We convert every NaN to None (→ JSON null) instead.
-    """
+    """Convert a pykx pandas DataFrame to a JSON-serialisable list of dicts."""
     rows = []
     for _, row in df.iterrows():
         d: dict = {}
         for col in df.columns:
-            v = row[col]
-            if hasattr(v, "isoformat"):
-                d[col] = v.isoformat()
-            elif hasattr(v, "item"):       # numpy scalar (bool, int, float, …)
-                d[col] = _nan_to_none(v.item())
-            else:
-                try:
-                    d[col] = _nan_to_none(float(v))
-                except (TypeError, ValueError):
-                    d[col] = str(v)
+            try:
+                d[col] = _safe_scalar(row[col])
+            except Exception:
+                d[col] = None
         rows.append(d)
     return rows
 
