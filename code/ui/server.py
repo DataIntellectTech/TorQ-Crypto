@@ -27,6 +27,7 @@ import base64
 import hashlib
 import json
 import logging
+import math
 import mimetypes
 import os
 import pathlib
@@ -240,8 +241,21 @@ _ERR_N   = json.dumps({"error": "invalid n"}).encode()
 _JSON_CT = [("Content-Type", "application/json")]
 
 
+def _nan_to_none(v):
+    """Return None if v is a float NaN (kdb+ null 0n), otherwise v unchanged."""
+    try:
+        return None if math.isnan(v) else v
+    except TypeError:
+        return v
+
+
 def _df_to_json(df) -> list[dict]:
-    """Convert a pandas DataFrame returned by pykx to a JSON-serialisable list."""
+    """Convert a pandas DataFrame returned by pykx to a JSON-serialisable list.
+
+    kdb+ null floats (0n) arrive as numpy NaN.  Python's json module emits the
+    bare token NaN for those, which is not valid JSON and causes JSON.parse to
+    throw in the browser.  We convert every NaN to None (→ JSON null) instead.
+    """
     rows = []
     for _, row in df.iterrows():
         d: dict = {}
@@ -250,10 +264,10 @@ def _df_to_json(df) -> list[dict]:
             if hasattr(v, "isoformat"):
                 d[col] = v.isoformat()
             elif hasattr(v, "item"):       # numpy scalar (bool, int, float, …)
-                d[col] = v.item()
+                d[col] = _nan_to_none(v.item())
             else:
                 try:
-                    d[col] = float(v)
+                    d[col] = _nan_to_none(float(v))
                 except (TypeError, ValueError):
                     d[col] = str(v)
         rows.append(d)
