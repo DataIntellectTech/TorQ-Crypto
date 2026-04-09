@@ -139,7 +139,7 @@ topofbook:{[dict]
   exchangebook:{[vn;data;bkt]
     (`time,`$string[vn],/:("Bid";"Ask";"BidSize";"AskSize")) xcol
       select bid:last bid, ask:last ask, bidSize:last bsize, askSize:last asize
-        by time:(`date$time)+bkt+bkt xbar time.second
+        by time:bkt xbar time
         from data where venue=vn
     }[;t;d`bucket] each venues;
 
