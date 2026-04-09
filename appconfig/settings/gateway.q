@@ -70,4 +70,11 @@ arbitrage:{[d]
   h(`.crypto.arbitrage;d)
   };
 
+// Last N trades for a given sym (time, venue, price, size, side).
+gettrades:{[sym;n]
+  h:.servers.gethandlebytype[`rdb;`any];
+  if[null h; '"no rdb available"];
+  h({[s;n] select[-n] time,venue,price,size,side from trade where sym=s};sym;n)
+  };
+
 \d .

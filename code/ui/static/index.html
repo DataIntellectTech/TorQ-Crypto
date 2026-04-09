@@ -17,40 +17,59 @@
 
   .section { background: #161b22; border: 1px solid #30363d; margin-bottom: 16px; }
   .section-header { background: #1c2128; padding: 6px 12px; font-weight: bold; font-size: 12px; border-bottom: 1px solid #30363d; display: flex; align-items: center; justify-content: space-between; color: #e6edf3; }
-  .section-header .refresh-note { font-weight: normal; font-size: 10px; color: #484f58; }
+  .refresh-note { font-weight: normal; font-size: 10px; color: #484f58; }
 
   table { border-collapse: collapse; width: 100%; }
   th { background: #1c2128; padding: 6px 10px; text-align: right; border: 1px solid #30363d; font-size: 11px; white-space: nowrap; color: #8b949e; }
-  th.sym-col { text-align: left; }
   th.left { text-align: left; }
-  td { padding: 6px 10px; text-align: right; border: 1px solid #21262d; white-space: nowrap; font-size: 12px; color: #c9d1d9; }
+  td { padding: 5px 10px; text-align: right; border: 1px solid #21262d; white-space: nowrap; font-size: 12px; color: #c9d1d9; }
   td.sym-cell { text-align: left; font-weight: bold; background: #1c2128; color: #e6edf3; }
   td.mid-cell { font-weight: bold; background: #1c2128; color: #e6edf3; }
   td.left { text-align: left; }
   td.up { background: #0d2e0d; color: #3fb950; }
   td.dn { background: #2e0d0d; color: #f85149; }
   td.blank { color: #484f58; }
-  tr.arb-row td { background: #1e2010; }
-  tr.arb-row td.profit-pos { background: #0d2e0d; color: #3fb950; font-weight: bold; }
   td.best-bid { background: #0d2e0d; color: #3fb950; font-weight: bold; }
   td.best-ask { background: #2e0d0d; color: #f85149; font-weight: bold; }
-  td.spread-cell { color: #8b949e; }
+  td.muted { color: #8b949e; }
+  td.buy  { color: #3fb950; font-weight: bold; }
+  td.sell { color: #f85149; font-weight: bold; }
+  tr.arb-row td { background: #1e2010; }
+  tr.arb-row td.profit-pos { background: #0d2e0d; color: #3fb950; font-weight: bold; }
 
   /* OHLC stats bar */
-  .ohlc-bar { display: flex; flex-wrap: wrap; gap: 0; padding: 10px 12px; }
-  .ohlc-stat { flex: 1 1 80px; min-width: 80px; padding: 6px 12px; border-right: 1px solid #21262d; }
+  .ohlc-bar { display: flex; flex-wrap: wrap; }
+  .ohlc-stat { flex: 1 1 80px; min-width: 80px; padding: 10px 14px; border-right: 1px solid #21262d; }
   .ohlc-stat:last-child { border-right: none; }
-  .ohlc-label { font-size: 10px; color: #484f58; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .ohlc-label { font-size: 10px; color: #484f58; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
   .ohlc-value { font-size: 14px; font-weight: bold; color: #e6edf3; }
-  .ohlc-empty { padding: 14px 12px; color: #484f58; font-size: 12px; }
+  .empty-msg { padding: 14px 12px; color: #484f58; font-size: 12px; }
 
+  /* Volume by venue */
+  .vol-bars { padding: 10px 14px; }
+  .vol-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .vol-row:last-child { margin-bottom: 0; }
+  .vol-venue { width: 72px; color: #8b949e; text-align: right; font-size: 11px; flex-shrink: 0; }
+  .vol-bar-bg { flex: 1; background: #21262d; height: 12px; border-radius: 2px; overflow: hidden; }
+  .vol-bar { height: 100%; border-radius: 2px; }
+  .vol-val { width: 72px; color: #c9d1d9; font-size: 11px; flex-shrink: 0; }
+
+  /* Trades scroll */
+  .trades-scroll { max-height: 200px; overflow-y: auto; }
+
+  /* Charts */
   .chart-wrap { padding: 12px; }
-  svg.chart { display: block; width: 100%; height: 180px; }
+  svg.chart { display: block; width: 100%; }
   .chart-label { font-size: 10px; fill: #484f58; }
   .chart-axis { stroke: #30363d; stroke-width: 1; }
   .chart-grid { stroke: #21262d; stroke-width: 1; }
   .chart-line { fill: none; stroke: #58a6ff; stroke-width: 1.5; stroke-linejoin: round; }
   .no-data { text-anchor: middle; font-size: 12px; fill: #484f58; }
+
+  /* Sparkline cells */
+  td.spark-cell { padding: 3px 8px; }
+  svg.sparkline { display: block; }
+  .spark-line { fill: none; stroke-width: 1.2; stroke-linejoin: round; }
 </style>
 </head>
 <body>
@@ -61,62 +80,85 @@
   <label>Instrument:&nbsp;<select id="sym-select"><option value="">—</option></select></label>
 </div>
 
+<!-- Live Prices -->
 <div class="section">
-  <div class="section-header">Live Prices</div>
+  <div class="section-header"><span>Live Prices</span><span class="refresh-note">live</span></div>
   <div style="overflow-x:auto">
     <table>
-      <thead><tr id="grid-head"><th class="sym-col">Instrument</th></tr></thead>
+      <thead><tr id="grid-head"><th class="left">Instrument</th></tr></thead>
       <tbody id="grid-body"></tbody>
     </table>
   </div>
 </div>
 
+<!-- Order Book -->
 <div class="section">
-  <div class="section-header">
-    <span>Order Book — <span id="ob-title">—</span></span>
-    <span class="refresh-note">live</span>
-  </div>
+  <div class="section-header"><span>Order Book — <span id="ob-title">—</span></span><span class="refresh-note">live</span></div>
   <div style="overflow-x:auto">
-    <table id="ob-table">
-      <thead><tr>
-        <th class="left">Venue</th>
-        <th>Bid</th>
-        <th>Ask</th>
-        <th>Spread</th>
-        <th>Mid</th>
-      </tr></thead>
-      <tbody id="ob-body"><tr><td colspan="5" class="ohlc-empty">Select an instrument</td></tr></tbody>
+    <table>
+      <thead><tr><th class="left">Venue</th><th>Bid</th><th>Ask</th><th>Spread</th><th>Mid</th></tr></thead>
+      <tbody id="ob-body"><tr><td colspan="5" class="empty-msg">Select an instrument</td></tr></tbody>
     </table>
   </div>
 </div>
 
+<!-- Recent Trades -->
+<div class="section">
+  <div class="section-header"><span>Recent Trades — <span id="trades-title">—</span></span><span class="refresh-note">auto-refresh 5s</span></div>
+  <div class="trades-scroll">
+    <table>
+      <thead><tr>
+        <th class="left">Time</th><th class="left">Venue</th><th>Price</th><th>Size</th><th>Side</th>
+      </tr></thead>
+      <tbody id="trades-body"><tr><td colspan="5" class="empty-msg">Select an instrument</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Consolidated Mid chart -->
 <div class="section">
   <div class="section-header">
     <span>Consolidated Mid — <span id="chart-title">—</span> (last 30 min)</span>
     <span class="refresh-note">auto-refresh 5s</span>
   </div>
   <div class="chart-wrap">
-    <svg id="chart" class="chart" viewBox="0 0 800 160" preserveAspectRatio="xMidYMid meet">
+    <svg id="chart" class="chart" viewBox="0 0 800 160" style="height:180px" preserveAspectRatio="xMidYMid meet">
       <text x="400" y="80" class="no-data">Select an instrument</text>
     </svg>
   </div>
 </div>
 
+<!-- Session OHLC -->
 <div class="section">
   <div class="section-header">
     <span>Session OHLC — <span id="ohlc-title">—</span></span>
     <span class="refresh-note">auto-refresh 60s</span>
   </div>
-  <div id="ohlc-body"><div class="ohlc-empty">Select an instrument</div></div>
+  <div id="ohlc-body"><div class="empty-msg">Select an instrument</div></div>
 </div>
 
+<!-- Volume by Venue -->
 <div class="section">
   <div class="section-header">
-    <span>Arbitrage — <span id="arb-title">—</span> (last 30 min, 5s buckets)</span>
+    <span>Volume by Venue — <span id="vol-title">—</span></span>
+    <span class="refresh-note">auto-refresh 60s</span>
+  </div>
+  <div id="vol-body"><div class="empty-msg">Select an instrument</div></div>
+</div>
+
+<!-- Spread Over Time + Arbitrage combined -->
+<div class="section">
+  <div class="section-header">
+    <span>Spread &amp; Arbitrage — <span id="arb-title">—</span> (last 30 min, 5s buckets)</span>
     <span class="refresh-note">auto-refresh 10s</span>
   </div>
+  <div class="chart-wrap">
+    <svg id="spread-chart" class="chart" viewBox="0 0 800 130" style="height:140px" preserveAspectRatio="xMidYMid meet">
+      <text x="400" y="65" class="no-data">Select an instrument</text>
+    </svg>
+  </div>
   <div style="overflow-x:auto">
-    <div id="arb-body"><div class="ohlc-empty">Select an instrument</div></div>
+    <div id="arb-body"><div class="empty-msg">Select an instrument</div></div>
   </div>
 </div>
 
@@ -124,13 +166,27 @@
 "use strict";
 
 // ---------------------------------------------------------------------------
+// Venue colour palette — consistent across all charts
+// ---------------------------------------------------------------------------
+var _PALETTE = ["#58a6ff","#3fb950","#f0883e","#a371f7","#ff7b72","#ffa657","#79c0ff","#56d364"];
+var _venueColors = {};
+function venueColor(v) {
+  if (!_venueColors[v]) {
+    var idx = Object.keys(_venueColors).length % _PALETTE.length;
+    _venueColors[v] = _PALETTE[idx];
+  }
+  return _venueColors[v];
+}
+
+// ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
 var state = {
   venues: [],
   syms: [],
-  data: {},
-  prevPrice: {},
+  data: {},          // { sym: { venue: rowObj } }
+  prevPrice: {},     // { "sym|venue": float }
+  midHistory: {},    // { sym: [float, ...] } — rolling 60 consolidated mids
   selectedSym: null
 };
 
@@ -143,47 +199,43 @@ var wsTimer = null;
 function wsConnect() {
   var proto = location.protocol === "https:" ? "wss:" : "ws:";
   ws = new WebSocket(proto + "//" + location.host + "/ws");
-
   ws.onopen = function() {
     document.getElementById("status").textContent = "Live";
     document.getElementById("status").className = "status-pill status-live";
     if (wsTimer) { clearTimeout(wsTimer); wsTimer = null; }
   };
-
   ws.onmessage = function(evt) {
     var msg;
     try { msg = JSON.parse(evt.data); } catch(e) { return; }
     if (msg.type === "consolidated") onConsolidated(msg.data);
   };
-
   ws.onclose = function() {
     document.getElementById("status").textContent = "Reconnecting";
     document.getElementById("status").className = "status-pill status-reconnecting";
     wsTimer = setTimeout(wsConnect, 3000);
   };
-
   ws.onerror = function() { ws.close(); };
 }
 
 // ---------------------------------------------------------------------------
-// Live prices — WebSocket data
+// Live price update from WebSocket
 // ---------------------------------------------------------------------------
 function onConsolidated(rows) {
   var newVenues = new Set(state.venues);
   var newSyms   = new Set(state.syms);
+  var touchedSyms = new Set();
 
   rows.forEach(function(r) {
-    var sym   = String(r.sym);
-    var venue = String(r.venue);
+    var sym = String(r.sym), venue = String(r.venue);
     newVenues.add(venue);
     newSyms.add(sym);
+    touchedSyms.add(sym);
     if (!state.data[sym]) state.data[sym] = {};
     state.data[sym][venue] = r;
   });
 
   var sortedVenues = Array.from(newVenues).sort();
   var sortedSyms   = Array.from(newSyms).sort();
-
   var structChanged =
     sortedVenues.join("|") !== state.venues.join("|") ||
     sortedSyms.join("|")   !== state.syms.join("|");
@@ -196,6 +248,18 @@ function onConsolidated(rows) {
   } else {
     updateCells(rows);
   }
+
+  // Accumulate mid history for sparklines
+  touchedSyms.forEach(function(sym) {
+    var m = calcMidNum(sym);
+    if (!isNaN(m)) {
+      if (!state.midHistory[sym]) state.midHistory[sym] = [];
+      state.midHistory[sym].push(m);
+      if (state.midHistory[sym].length > 120) state.midHistory[sym].shift();
+      drawSparkline(sym);
+    }
+  });
+
   renderOrderBook();
 }
 
@@ -203,10 +267,10 @@ function onConsolidated(rows) {
 // Grid build / update
 // ---------------------------------------------------------------------------
 function rebuildGrid() {
-  var thead = document.querySelector("#grid-head");
-  thead.innerHTML = "<th class='sym-col'>Instrument</th>"
+  var thead = document.getElementById("grid-head");
+  thead.innerHTML = "<th class='left'>Instrument</th>"
     + state.venues.map(function(v){ return "<th>" + esc(v) + "</th>"; }).join("")
-    + "<th>Consolidated Mid</th>";
+    + "<th>Consolidated Mid</th><th>Trend</th>";
 
   var tbody = document.getElementById("grid-body");
   tbody.innerHTML = "";
@@ -216,13 +280,14 @@ function rebuildGrid() {
     state.venues.forEach(function(venue) {
       var row = state.data[sym] && state.data[sym][venue];
       var price = row ? fmtPrice(row.price) : "—";
-      var blank = row ? "" : " blank";
-      html += "<td id='c-" + esc(sym) + "-" + esc(venue) + "' class='" + blank + "'>" + price + "</td>";
+      html += "<td id='c-" + esc(sym) + "-" + esc(venue) + "'" + (row ? "" : " class='blank'") + ">" + price + "</td>";
     });
     html += "<td class='mid-cell' id='m-" + esc(sym) + "'>" + calcMid(sym) + "</td>";
+    html += "<td class='spark-cell' id='sp-" + esc(sym) + "'></td>";
     tr.innerHTML = html;
     tbody.appendChild(tr);
   });
+  state.syms.forEach(drawSparkline);
 }
 
 function updateCells(rows) {
@@ -231,11 +296,9 @@ function updateCells(rows) {
     var venue = String(r.venue);
     var cell  = document.getElementById("c-" + sym + "-" + venue);
     if (!cell) return;
-
-    var key  = sym + "|" + venue;
-    var prev = state.prevPrice[key];
+    var key   = sym + "|" + venue;
+    var prev  = state.prevPrice[key];
     var price = Number(r.price);
-
     cell.textContent = fmtPrice(price);
     cell.className   = "";
     if (prev != null) {
@@ -244,20 +307,32 @@ function updateCells(rows) {
       setTimeout(function() { if (cell) cell.className = ""; }, 1200);
     }
     state.prevPrice[key] = price;
-
     var midCell = document.getElementById("m-" + sym);
     if (midCell) midCell.textContent = calcMid(sym);
   });
 }
 
-function calcMid(sym) {
-  var mids = state.venues
-    .map(function(v) { return state.data[sym] && state.data[sym][v] && state.data[sym][v].mid; })
-    .filter(function(m) { return m != null && !isNaN(Number(m)); })
-    .map(Number);
-  if (!mids.length) return "—";
-  var avg = mids.reduce(function(a,b){return a+b;}, 0) / mids.length;
-  return avg.toFixed(4);
+// ---------------------------------------------------------------------------
+// Sparklines
+// ---------------------------------------------------------------------------
+function drawSparkline(sym) {
+  var el = document.getElementById("sp-" + sym);
+  if (!el) return;
+  var hist = state.midHistory[sym];
+  if (!hist || hist.length < 3) { el.innerHTML = ""; return; }
+  var mn = Math.min.apply(null, hist), mx = Math.max.apply(null, hist);
+  var range = mx - mn || 0.0001;
+  var n = hist.length;
+  var pts = hist.map(function(v, i) {
+    var x = (3 + i / (n - 1) * 74).toFixed(1);
+    var y = (17 - (v - mn) / range * 14).toFixed(1);
+    return x + "," + y;
+  }).join(" ");
+  var color = hist[n-1] >= hist[0] ? "#3fb950" : "#f85149";
+  el.innerHTML =
+    "<svg class='sparkline' width='80' height='20' viewBox='0 0 80 20'>" +
+    "<polyline class='spark-line' stroke='" + color + "' points='" + pts + "'/>" +
+    "</svg>";
 }
 
 // ---------------------------------------------------------------------------
@@ -269,19 +344,16 @@ function rebuildSymSelect() {
   sel.innerHTML = "";
   state.syms.forEach(function(sym) {
     var opt = document.createElement("option");
-    opt.value = sym;
-    opt.textContent = sym;
+    opt.value = sym; opt.textContent = sym;
     if (sym === prev || (!prev && sym === state.syms[0])) opt.selected = true;
     sel.appendChild(opt);
   });
   var selected = sel.value;
   if (selected && selected !== state.selectedSym) {
-    state.selectedSym = selected;
-    onSymChange();
+    state.selectedSym = selected; onSymChange();
   } else if (!state.selectedSym && state.syms.length) {
     state.selectedSym = state.syms[0];
-    sel.value = state.selectedSym;
-    onSymChange();
+    sel.value = state.selectedSym; onSymChange();
   }
 }
 
@@ -292,22 +364,89 @@ document.getElementById("sym-select").addEventListener("change", function() {
 
 function onSymChange() {
   var sym = state.selectedSym || "—";
-  document.getElementById("chart-title").textContent = sym;
-  document.getElementById("ob-title").textContent    = sym;
-  document.getElementById("ohlc-title").textContent  = sym;
-  document.getElementById("arb-title").textContent   = sym;
+  document.getElementById("chart-title").textContent  = sym;
+  document.getElementById("ob-title").textContent     = sym;
+  document.getElementById("trades-title").textContent = sym;
+  document.getElementById("ohlc-title").textContent   = sym;
+  document.getElementById("vol-title").textContent    = sym;
+  document.getElementById("arb-title").textContent    = sym;
   renderOrderBook();
   if (state.selectedSym) {
     loadChart();
+    loadTrades();
     loadOhlc();
     loadArbitrage();
   }
 }
 
 // ---------------------------------------------------------------------------
-// Chart (SVG polyline) — /api/history
+// Order book — live WebSocket data
 // ---------------------------------------------------------------------------
-var chartData = [];
+function renderOrderBook() {
+  var tbody = document.getElementById("ob-body");
+  var sym = state.selectedSym;
+  if (!sym || !state.data[sym]) {
+    tbody.innerHTML = "<tr><td colspan='5' class='empty-msg'>No data</td></tr>"; return;
+  }
+  var rows = state.venues
+    .map(function(v) { return state.data[sym] && state.data[sym][v]; })
+    .filter(Boolean);
+  if (!rows.length) {
+    tbody.innerHTML = "<tr><td colspan='5' class='empty-msg'>No data</td></tr>"; return;
+  }
+  var bestBid = Math.max.apply(null, rows.map(function(r){ return Number(r.bid); }));
+  var bestAsk = Math.min.apply(null, rows.map(function(r){ return Number(r.ask); }));
+  tbody.innerHTML = rows.map(function(r) {
+    var bid = Number(r.bid), ask = Number(r.ask);
+    var spread = ask - bid;
+    return "<tr>" +
+      "<td class='left sym-cell'>" + esc(String(r.venue)) + "</td>" +
+      "<td" + (bid === bestBid ? " class='best-bid'" : "") + ">" + fmtPrice(bid) + "</td>" +
+      "<td" + (ask === bestAsk ? " class='best-ask'" : "") + ">" + fmtPrice(ask) + "</td>" +
+      "<td class='muted'>" + fmtPrice(spread) + "</td>" +
+      "<td>" + fmtPrice(Number(r.mid)) + "</td>" +
+      "</tr>";
+  }).join("");
+}
+
+// ---------------------------------------------------------------------------
+// Recent trades — /api/trades
+// ---------------------------------------------------------------------------
+var tradesRefreshTimer = null;
+
+async function loadTrades() {
+  var sym = state.selectedSym;
+  if (!sym) return;
+  var el = document.getElementById("trades-body");
+  try {
+    var resp = await fetch("/api/trades?sym=" + encodeURIComponent(sym) + "&n=50");
+    if (!resp.ok) { el.innerHTML = "<tr><td colspan='5' class='empty-msg'>Unavailable</td></tr>"; return; }
+    var rows = await resp.json();
+    if (!rows || !rows.length) { el.innerHTML = "<tr><td colspan='5' class='empty-msg'>No trades</td></tr>"; return; }
+    el.innerHTML = rows.slice().reverse().map(function(r) {
+      var side = String(r.side || "").toLowerCase();
+      var sideClass = side.indexOf("buy") >= 0 || side === "b" ? "buy" : side.indexOf("sell") >= 0 || side === "s" ? "sell" : "";
+      return "<tr>" +
+        "<td class='left'>" + fmtTime(r.time) + "</td>" +
+        "<td class='left'>" + esc(String(r.venue || "")) + "</td>" +
+        "<td>" + fmtPrice(r.price) + "</td>" +
+        "<td>" + fmtVol(r.size) + "</td>" +
+        "<td class='" + sideClass + "'>" + esc(String(r.side || "")) + "</td>" +
+        "</tr>";
+    }).join("");
+  } catch(e) {
+    el.innerHTML = "<tr><td colspan='5' class='empty-msg'>Error loading data</td></tr>";
+  }
+}
+
+function scheduleTradesRefresh() {
+  if (tradesRefreshTimer) clearInterval(tradesRefreshTimer);
+  tradesRefreshTimer = setInterval(loadTrades, 5000);
+}
+
+// ---------------------------------------------------------------------------
+// Consolidated mid chart — /api/history
+// ---------------------------------------------------------------------------
 var chartRefreshTimer = null;
 
 async function loadChart() {
@@ -315,22 +454,29 @@ async function loadChart() {
   if (!sym) return;
   try {
     var resp = await fetch("/api/history?sym=" + encodeURIComponent(sym) + "&mins=30");
-    if (!resp.ok) { drawChart([]); return; }
+    if (!resp.ok) { drawLineChart(document.getElementById("chart"), [], 800, 160); return; }
     var rows = await resp.json();
-    chartData = rows
-      .map(function(r) { return { t: new Date(r.time).getTime(), mid: Number(r.mid) }; })
-      .filter(function(r) { return !isNaN(r.t) && !isNaN(r.mid); })
+    var data = rows
+      .map(function(r) { return { t: new Date(r.time).getTime(), v: Number(r.mid) }; })
+      .filter(function(r) { return !isNaN(r.t) && !isNaN(r.v); })
       .sort(function(a, b) { return a.t - b.t; });
-    drawChart(chartData);
+    drawLineChart(document.getElementById("chart"), data, 800, 160, "#58a6ff");
   } catch(e) {
-    drawChart([]);
+    drawLineChart(document.getElementById("chart"), [], 800, 160);
   }
 }
 
-function drawChart(data) {
-  var svg = document.getElementById("chart");
-  var VW = 800, VH = 160;
-  var pad = { top: 10, right: 20, bottom: 24, left: 58 };
+function scheduleChartRefresh() {
+  if (chartRefreshTimer) clearInterval(chartRefreshTimer);
+  chartRefreshTimer = setInterval(loadChart, 5000);
+}
+
+// ---------------------------------------------------------------------------
+// Generic single-line SVG chart
+// ---------------------------------------------------------------------------
+function drawLineChart(svg, data, VW, VH, color) {
+  color = color || "#58a6ff";
+  var pad = { top: 10, right: 20, bottom: 24, left: 62 };
   var iW = VW - pad.left - pad.right;
   var iH = VH - pad.top - pad.bottom;
 
@@ -338,88 +484,34 @@ function drawChart(data) {
     svg.innerHTML = "<text x='" + (VW/2) + "' y='" + (VH/2) + "' class='no-data'>No data</text>";
     return;
   }
-
-  var ts   = data.map(function(d){return d.t;});
-  var mids = data.map(function(d){return d.mid;});
-  var tMin = Math.min.apply(null, ts),   tMax = Math.max.apply(null, ts);
-  var yMin = Math.min.apply(null, mids), yMax = Math.max.apply(null, mids);
+  var ts   = data.map(function(d){ return d.t; });
+  var vals = data.map(function(d){ return d.v; });
+  var tMin = Math.min.apply(null, ts), tMax = Math.max.apply(null, ts);
+  var yMin = Math.min.apply(null, vals), yMax = Math.max.apply(null, vals);
   var yPad = (yMax - yMin) * 0.05 || 1;
   yMin -= yPad; yMax += yPad;
 
-  function tx(t)   { return pad.left + (tMax === tMin ? iW/2 : (t - tMin) / (tMax - tMin) * iW); }
-  function ty(m)   { return pad.top  + iH - (m - yMin) / (yMax - yMin) * iH; }
-  function fmtT(t) {
-    var d = new Date(t);
-    return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
-  }
+  function tx(t){ return pad.left + (tMax===tMin ? iW/2 : (t-tMin)/(tMax-tMin)*iW); }
+  function ty(v){ return pad.top + iH - (v-yMin)/(yMax-yMin)*iH; }
+  function fmtT(t){ var d=new Date(t); return pad2(d.getHours())+":"+pad2(d.getMinutes()); }
 
-  var gridLines = "";
-  var yLevels = [yMin + yPad, (yMin + yMax) / 2, yMax - yPad];
-  yLevels.forEach(function(v) {
+  var html = "";
+  [yMin+yPad, (yMin+yMax)/2, yMax-yPad].forEach(function(v) {
     var y = ty(v);
-    gridLines +=
-      "<line class='chart-grid' x1='" + pad.left + "' y1='" + y + "' x2='" + (VW - pad.right) + "' y2='" + y + "'/>" +
-      "<text class='chart-label' x='" + (pad.left - 4) + "' y='" + (y + 4) + "' text-anchor='end'>" + v.toFixed(2) + "</text>";
+    html += "<line class='chart-grid' x1='"+pad.left+"' y1='"+y+"' x2='"+(VW-pad.right)+"' y2='"+y+"'/>";
+    html += "<text class='chart-label' x='"+(pad.left-4)+"' y='"+(y+4)+"' text-anchor='end'>"+v.toFixed(2)+"</text>";
   });
-
-  var xLabels =
-    "<text class='chart-label' x='" + pad.left + "' y='" + (VH - 4) + "' text-anchor='middle'>" + fmtT(tMin) + "</text>" +
-    "<text class='chart-label' x='" + (VW - pad.right) + "' y='" + (VH - 4) + "' text-anchor='middle'>" + fmtT(tMax) + "</text>";
-
-  var pts = data.map(function(d){ return tx(d.t).toFixed(1) + "," + ty(d.mid).toFixed(1); }).join(" ");
-
-  svg.innerHTML =
-    gridLines +
-    "<line class='chart-axis' x1='" + pad.left + "' y1='" + pad.top + "' x2='" + pad.left + "' y2='" + (pad.top + iH) + "'/>" +
-    "<line class='chart-axis' x1='" + pad.left + "' y1='" + (pad.top + iH) + "' x2='" + (VW - pad.right) + "' y2='" + (pad.top + iH) + "'/>" +
-    "<polyline class='chart-line' points='" + pts + "'/>" +
-    xLabels;
+  html += "<line class='chart-axis' x1='"+pad.left+"' y1='"+pad.top+"' x2='"+pad.left+"' y2='"+(pad.top+iH)+"'/>";
+  html += "<line class='chart-axis' x1='"+pad.left+"' y1='"+(pad.top+iH)+"' x2='"+(VW-pad.right)+"' y2='"+(pad.top+iH)+"'/>";
+  var pts = data.map(function(d){ return tx(d.t).toFixed(1)+","+ty(d.v).toFixed(1); }).join(" ");
+  html += "<polyline fill='none' stroke='"+color+"' stroke-width='1.5' stroke-linejoin='round' points='"+pts+"'/>";
+  html += "<text class='chart-label' x='"+pad.left+"' y='"+(VH-4)+"' text-anchor='middle'>"+fmtT(tMin)+"</text>";
+  html += "<text class='chart-label' x='"+(VW-pad.right)+"' y='"+(VH-4)+"' text-anchor='middle'>"+fmtT(tMax)+"</text>";
+  svg.innerHTML = html;
 }
 
 // ---------------------------------------------------------------------------
-// Order book — driven by live WebSocket data
-// ---------------------------------------------------------------------------
-function renderOrderBook() {
-  var tbody = document.getElementById("ob-body");
-  var sym = state.selectedSym;
-  if (!sym || !state.data[sym]) {
-    tbody.innerHTML = "<tr><td colspan='5' class='ohlc-empty'>No data</td></tr>";
-    return;
-  }
-
-  var venueData = state.venues
-    .map(function(v) { return state.data[sym] && state.data[sym][v]; })
-    .filter(Boolean);
-
-  if (!venueData.length) {
-    tbody.innerHTML = "<tr><td colspan='5' class='ohlc-empty'>No data</td></tr>";
-    return;
-  }
-
-  var bids = venueData.map(function(r) { return Number(r.bid); });
-  var asks = venueData.map(function(r) { return Number(r.ask); });
-  var bestBid = Math.max.apply(null, bids);
-  var bestAsk = Math.min.apply(null, asks);
-
-  tbody.innerHTML = venueData.map(function(r) {
-    var bid    = Number(r.bid);
-    var ask    = Number(r.ask);
-    var mid    = Number(r.mid);
-    var spread = ask - bid;
-    var bidClass = (bid === bestBid) ? " class='best-bid'" : "";
-    var askClass = (ask === bestAsk) ? " class='best-ask'" : "";
-    return "<tr>" +
-      "<td class='left sym-cell'>" + esc(String(r.venue)) + "</td>" +
-      "<td" + bidClass + ">" + fmtPrice(bid) + "</td>" +
-      "<td" + askClass + ">" + fmtPrice(ask) + "</td>" +
-      "<td class='spread-cell'>" + fmtPrice(spread) + "</td>" +
-      "<td>" + fmtPrice(mid) + "</td>" +
-      "</tr>";
-  }).join("");
-}
-
-// ---------------------------------------------------------------------------
-// OHLC session stats — /api/ohlc
+// Session OHLC — /api/ohlc
 // ---------------------------------------------------------------------------
 var ohlcRefreshTimer = null;
 
@@ -429,34 +521,65 @@ async function loadOhlc() {
   var el = document.getElementById("ohlc-body");
   try {
     var resp = await fetch("/api/ohlc?sym=" + encodeURIComponent(sym));
-    if (!resp.ok) { el.innerHTML = "<div class='ohlc-empty'>Unavailable</div>"; return; }
+    if (!resp.ok) { el.innerHTML = "<div class='empty-msg'>Unavailable</div>"; return; }
     var rows = await resp.json();
-    if (!rows || !rows.length) { el.innerHTML = "<div class='ohlc-empty'>No data</div>"; return; }
-    renderOhlc(el, rows[rows.length - 1]);
+    if (!rows || !rows.length) { el.innerHTML = "<div class='empty-msg'>No data</div>"; return; }
+    var r = rows[rows.length - 1];
+    var stats = [
+      {label:"Open",  value:fmtPrice(r.open)},
+      {label:"High",  value:fmtPrice(r.high)},
+      {label:"Low",   value:fmtPrice(r.low)},
+      {label:"Close", value:fmtPrice(r.close)},
+      {label:"VWAP",  value:fmtPrice(r.vwap)},
+      {label:"Volume",value:fmtVol(r.volume)}
+    ];
+    el.innerHTML = "<div class='ohlc-bar'>" + stats.map(function(s) {
+      return "<div class='ohlc-stat'><div class='ohlc-label'>"+esc(s.label)+"</div><div class='ohlc-value'>"+esc(s.value)+"</div></div>";
+    }).join("") + "</div>";
   } catch(e) {
-    el.innerHTML = "<div class='ohlc-empty'>Error loading data</div>";
+    el.innerHTML = "<div class='empty-msg'>Error loading data</div>";
   }
+  loadVolumeByVenue();
 }
 
-function renderOhlc(el, row) {
-  var stats = [
-    { label: "Open",   value: fmtPrice(row.open)   },
-    { label: "High",   value: fmtPrice(row.high)   },
-    { label: "Low",    value: fmtPrice(row.low)    },
-    { label: "Close",  value: fmtPrice(row.close)  },
-    { label: "VWAP",   value: fmtPrice(row.vwap)   },
-    { label: "Volume", value: fmtVol(row.volume)   }
-  ];
-  el.innerHTML = "<div class='ohlc-bar'>" +
-    stats.map(function(s) {
-      return "<div class='ohlc-stat'><div class='ohlc-label'>" + esc(s.label) +
-             "</div><div class='ohlc-value'>" + esc(s.value) + "</div></div>";
-    }).join("") +
-    "</div>";
+function scheduleOhlcRefresh() {
+  if (ohlcRefreshTimer) clearInterval(ohlcRefreshTimer);
+  ohlcRefreshTimer = setInterval(function(){ loadOhlc(); }, 60000);
 }
 
 // ---------------------------------------------------------------------------
-// Arbitrage table — /api/arbitrage
+// Volume by venue — /api/ohlc?byvenue=1
+// ---------------------------------------------------------------------------
+async function loadVolumeByVenue() {
+  var sym = state.selectedSym;
+  if (!sym) return;
+  var el = document.getElementById("vol-body");
+  try {
+    var resp = await fetch("/api/ohlc?sym=" + encodeURIComponent(sym) + "&byvenue=1");
+    if (!resp.ok) { el.innerHTML = "<div class='empty-msg'>Unavailable</div>"; return; }
+    var rows = await resp.json();
+    if (!rows || !rows.length) { el.innerHTML = "<div class='empty-msg'>No data</div>"; return; }
+    var vols = rows.map(function(r) { return { venue: String(r.venue), vol: Number(r.volume) }; })
+      .filter(function(r) { return !isNaN(r.vol); })
+      .sort(function(a, b) { return b.vol - a.vol; });
+    if (!vols.length) { el.innerHTML = "<div class='empty-msg'>No data</div>"; return; }
+    var maxVol = vols[0].vol;
+    el.innerHTML = "<div class='vol-bars'>" + vols.map(function(r) {
+      var pct = maxVol > 0 ? (r.vol / maxVol * 100).toFixed(1) : 0;
+      var color = venueColor(r.venue);
+      return "<div class='vol-row'>" +
+        "<div class='vol-venue'>" + esc(r.venue) + "</div>" +
+        "<div class='vol-bar-bg'><div class='vol-bar' style='width:"+pct+"%;background:"+color+"'></div></div>" +
+        "<div class='vol-val'>" + fmtVol(r.vol) + "</div>" +
+        "</div>";
+    }).join("") + "</div>";
+  } catch(e) {
+    el.innerHTML = "<div class='empty-msg'>Error loading data</div>";
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Arbitrage + Spread Over Time — /api/arbitrage
 // ---------------------------------------------------------------------------
 var arbRefreshTimer = null;
 
@@ -464,65 +587,115 @@ async function loadArbitrage() {
   var sym = state.selectedSym;
   if (!sym) return;
   var el = document.getElementById("arb-body");
+  var svgEl = document.getElementById("spread-chart");
   try {
     var resp = await fetch("/api/arbitrage?sym=" + encodeURIComponent(sym) + "&mins=30");
-    if (!resp.ok) { el.innerHTML = "<div class='ohlc-empty'>Unavailable</div>"; return; }
+    if (!resp.ok) {
+      el.innerHTML = "<div class='empty-msg'>Unavailable</div>";
+      svgEl.innerHTML = "<text x='400' y='65' class='no-data'>No data</text>";
+      return;
+    }
     var rows = await resp.json();
-    if (!rows || !rows.length) { el.innerHTML = "<div class='ohlc-empty'>No data for this period</div>"; return; }
-    renderArbitrage(el, rows);
+    if (!rows || !rows.length) {
+      el.innerHTML = "<div class='empty-msg'>No data for this period</div>";
+      svgEl.innerHTML = "<text x='400' y='65' class='no-data'>No data</text>";
+      return;
+    }
+
+    // Detect venues from column names matching /^(.+)Bid$/ (not BidSize)
+    var allCols = Object.keys(rows[0] || {});
+    var venues = allCols
+      .filter(function(c) { return /Bid$/.test(c) && !/BidSize$/.test(c); })
+      .map(function(c) { return c.replace(/Bid$/, ""); })
+      .sort();
+
+    drawSpreadChart(svgEl, rows, venues);
+    renderArbTable(el, rows, venues);
   } catch(e) {
-    el.innerHTML = "<div class='ohlc-empty'>Error loading data</div>";
+    el.innerHTML = "<div class='empty-msg'>Error loading data</div>";
   }
 }
 
-function renderArbitrage(el, rows) {
-  // Detect venue names from column names matching /^(.+)Bid$/
-  var allCols = Object.keys(rows[0] || {});
-  var venues = allCols
-    .filter(function(c) { return /Bid$/.test(c) && !/BidSize$/.test(c); })
-    .map(function(c) { return c.replace(/Bid$/, ""); })
-    .sort();
+function drawSpreadChart(svg, rows, venues) {
+  var VW = 800, VH = 130;
+  var pad = { top: 10, right: 100, bottom: 24, left: 62 };
+  var iW = VW - pad.left - pad.right;
+  var iH = VH - pad.top - pad.bottom;
 
-  // Table header
+  var seriesData = venues.map(function(v) {
+    return rows.map(function(r) {
+      var bid = Number(r[v + "Bid"]), ask = Number(r[v + "Ask"]);
+      return { t: new Date(r.time).getTime(), spread: ask - bid };
+    }).filter(function(d) { return !isNaN(d.t) && !isNaN(d.spread) && d.spread >= 0; });
+  });
+
+  var allT = [], allS = [];
+  seriesData.forEach(function(s) {
+    s.forEach(function(d) { allT.push(d.t); allS.push(d.spread); });
+  });
+
+  if (!allT.length || venues.length === 0) {
+    svg.innerHTML = "<text x='"+(VW/2)+"' y='"+(VH/2)+"' class='no-data'>No data</text>"; return;
+  }
+
+  var tMin = Math.min.apply(null, allT), tMax = Math.max.apply(null, allT);
+  var yMin = Math.min.apply(null, allS), yMax = Math.max.apply(null, allS);
+  var yPad = (yMax - yMin) * 0.1 || 0.0001;
+  yMin -= yPad; yMax += yPad;
+
+  function tx(t){ return pad.left + (tMax===tMin ? iW/2 : (t-tMin)/(tMax-tMin)*iW); }
+  function ty(v){ return pad.top + iH - (v-yMin)/(yMax-yMin)*iH; }
+
+  var html = "";
+  [yMin+yPad, (yMin+yMax)/2, yMax-yPad].forEach(function(v) {
+    var y = ty(v);
+    html += "<line class='chart-grid' x1='"+pad.left+"' y1='"+y+"' x2='"+(VW-pad.right)+"' y2='"+y+"'/>";
+    html += "<text class='chart-label' x='"+(pad.left-4)+"' y='"+(y+4)+"' text-anchor='end'>"+v.toFixed(4)+"</text>";
+  });
+  html += "<line class='chart-axis' x1='"+pad.left+"' y1='"+pad.top+"' x2='"+pad.left+"' y2='"+(pad.top+iH)+"'/>";
+  html += "<line class='chart-axis' x1='"+pad.left+"' y1='"+(pad.top+iH)+"' x2='"+(VW-pad.right)+"' y2='"+(pad.top+iH)+"'/>";
+
+  venues.forEach(function(v, i) {
+    var series = seriesData[i];
+    if (series.length < 2) return;
+    var color = venueColor(v);
+    var pts = series.map(function(d){ return tx(d.t).toFixed(1)+","+ty(d.spread).toFixed(1); }).join(" ");
+    html += "<polyline fill='none' stroke='"+color+"' stroke-width='1.5' stroke-linejoin='round' points='"+pts+"'/>";
+    // legend
+    var ly = pad.top + i * 18;
+    html += "<rect x='"+(VW-pad.right+8)+"' y='"+(ly+4)+"' width='12' height='2' fill='"+color+"'/>";
+    html += "<text class='chart-label' x='"+(VW-pad.right+24)+"' y='"+(ly+8)+"'>"+esc(v)+"</text>";
+  });
+
+  var fmtT = function(t){ var d=new Date(t); return pad2(d.getHours())+":"+pad2(d.getMinutes()); };
+  html += "<text class='chart-label' x='"+pad.left+"' y='"+(VH-4)+"' text-anchor='middle'>"+fmtT(tMin)+"</text>";
+  html += "<text class='chart-label' x='"+(VW-pad.right)+"' y='"+(VH-4)+"' text-anchor='middle'>"+fmtT(tMax)+"</text>";
+  svg.innerHTML = html;
+}
+
+function renderArbTable(el, rows, venues) {
   var headCells = "<th class='left'>Time</th>";
   venues.forEach(function(v) {
-    headCells += "<th>" + esc(v) + " Bid</th><th>" + esc(v) + " Ask</th><th>" + esc(v) + " BidSz</th><th>" + esc(v) + " AskSz</th>";
+    headCells += "<th>"+esc(v)+" Bid</th><th>"+esc(v)+" Ask</th><th>"+esc(v)+" BidSz</th><th>"+esc(v)+" AskSz</th>";
   });
   headCells += "<th>Profit</th><th>Arb</th>";
 
-  // Table rows (newest first)
   var bodyRows = rows.slice().reverse().map(function(r) {
     var isArb = r.arbitrage === true || r.arbitrage === 1;
-    var trClass = isArb ? " class='arb-row'" : "";
     var cells = "<td class='left'>" + fmtTime(r.time) + "</td>";
     venues.forEach(function(v) {
-      cells += "<td>" + fmtPrice(r[v + "Bid"])     + "</td>";
-      cells += "<td>" + fmtPrice(r[v + "Ask"])     + "</td>";
-      cells += "<td>" + fmtVol(r[v + "BidSize"])   + "</td>";
-      cells += "<td>" + fmtVol(r[v + "AskSize"])   + "</td>";
+      cells += "<td>"+fmtPrice(r[v+"Bid"])+"</td>";
+      cells += "<td>"+fmtPrice(r[v+"Ask"])+"</td>";
+      cells += "<td>"+fmtVol(r[v+"BidSize"])+"</td>";
+      cells += "<td>"+fmtVol(r[v+"AskSize"])+"</td>";
     });
-    var profitVal = Number(r.profit);
-    var profitClass = (isArb && profitVal > 0) ? " class='profit-pos'" : "";
-    cells += "<td" + profitClass + ">" + (isNaN(profitVal) ? "—" : profitVal.toFixed(4)) + "</td>";
-    cells += "<td>" + (isArb ? "YES" : "—") + "</td>";
-    return "<tr" + trClass + ">" + cells + "</tr>";
+    var profit = Number(r.profit);
+    cells += "<td"+(isArb && profit>0 ? " class='profit-pos'" : "")+">"+(isNaN(profit)?"—":profit.toFixed(4))+"</td>";
+    cells += "<td>"+(isArb?"YES":"—")+"</td>";
+    return "<tr"+(isArb?" class='arb-row'":"")+">"+cells+"</tr>";
   }).join("");
 
-  el.innerHTML =
-    "<table><thead><tr>" + headCells + "</tr></thead><tbody>" + bodyRows + "</tbody></table>";
-}
-
-// ---------------------------------------------------------------------------
-// Auto-refresh schedulers
-// ---------------------------------------------------------------------------
-function scheduleChartRefresh() {
-  if (chartRefreshTimer) clearInterval(chartRefreshTimer);
-  chartRefreshTimer = setInterval(loadChart, 5000);
-}
-
-function scheduleOhlcRefresh() {
-  if (ohlcRefreshTimer) clearInterval(ohlcRefreshTimer);
-  ohlcRefreshTimer = setInterval(loadOhlc, 60000);
+  el.innerHTML = "<table><thead><tr>"+headCells+"</tr></thead><tbody>"+bodyRows+"</tbody></table>";
 }
 
 function scheduleArbRefresh() {
@@ -530,13 +703,31 @@ function scheduleArbRefresh() {
   arbRefreshTimer = setInterval(loadArbitrage, 10000);
 }
 
+// ---------------------------------------------------------------------------
+// Start auto-refresh timers
+// ---------------------------------------------------------------------------
 scheduleChartRefresh();
 scheduleOhlcRefresh();
 scheduleArbRefresh();
+scheduleTradesRefresh();
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+function calcMidNum(sym) {
+  var mids = state.venues
+    .map(function(v) { return state.data[sym] && state.data[sym][v] && state.data[sym][v].mid; })
+    .filter(function(m) { return m != null && !isNaN(Number(m)); })
+    .map(Number);
+  if (!mids.length) return NaN;
+  return mids.reduce(function(a,b){return a+b;},0) / mids.length;
+}
+
+function calcMid(sym) {
+  var n = calcMidNum(sym);
+  return isNaN(n) ? "—" : n.toFixed(4);
+}
+
 function fmtPrice(v) {
   var n = Number(v);
   if (isNaN(n) || v == null) return "—";
@@ -546,8 +737,8 @@ function fmtPrice(v) {
 function fmtVol(v) {
   var n = Number(v);
   if (isNaN(n) || v == null) return "—";
-  if (n >= 1e6)  return (n / 1e6).toFixed(2) + "M";
-  if (n >= 1000) return (n / 1000).toFixed(2) + "K";
+  if (n >= 1e6)  return (n/1e6).toFixed(2)+"M";
+  if (n >= 1000) return (n/1000).toFixed(2)+"K";
   return n.toFixed(4);
 }
 
@@ -555,17 +746,14 @@ function fmtTime(v) {
   if (!v) return "—";
   var d = new Date(v);
   if (isNaN(d.getTime())) return String(v);
-  return String(d.getHours()).padStart(2,"0") + ":" +
-         String(d.getMinutes()).padStart(2,"0") + ":" +
-         String(d.getSeconds()).padStart(2,"0");
+  return pad2(d.getHours())+":"+pad2(d.getMinutes())+":"+pad2(d.getSeconds());
 }
 
+function pad2(n) { return String(n).padStart(2,"0"); }
+
 function esc(s) {
-  return String(s == null ? "" : s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  return String(s==null?"":s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 
 // ---------------------------------------------------------------------------

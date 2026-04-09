@@ -236,6 +236,7 @@ _STATUS_TEXT = {
 _ERR_GW  = json.dumps({"error": "gateway unavailable"}).encode()
 _ERR_SYM = json.dumps({"error": "invalid sym"}).encode()
 _ERR_MIN = json.dumps({"error": "invalid mins"}).encode()
+_ERR_N   = json.dumps({"error": "invalid n"}).encode()
 _JSON_CT = [("Content-Type", "application/json")]
 
 
@@ -309,8 +310,11 @@ async def _ohlc(params: dict) -> tuple[int, list[tuple], bytes]:
     if not _SYM_RE.match(sym):
         return 400, _JSON_CT, _ERR_SYM
 
-    # Pass sym as a symbol list (type 11h) — date defaults to today on rdb
-    q = f'.crypto.ohlc[(enlist`sym)!enlist `$"{sym}"]'
+    byvenue = params.get("byvenue", ["0"])[0] == "1"
+    if byvenue:
+        q = f'.crypto.ohlc[`sym`byvenue!(enlist `$"{sym}";1b)]'
+    else:
+        q = f'.crypto.ohlc[(enlist`sym)!enlist `$"{sym}"]'
     try:
         gw = await get_gw()
         result = await gw(q)
@@ -351,6 +355,32 @@ async def _arbitrage(params: dict) -> tuple[int, list[tuple], bytes]:
         return _gw_error("arbitrage connection", exc)
     except Exception as exc:
         return _gw_error("arbitrage query", exc)
+
+
+async def _trades(params: dict) -> tuple[int, list[tuple], bytes]:
+    sym = params.get("sym", ["BTC-USD"])[0]
+    if not _SYM_RE.match(sym):
+        return 400, _JSON_CT, _ERR_SYM
+
+    n_raw = params.get("n", ["50"])[0]
+    try:
+        n = int(n_raw)
+        if n <= 0 or n > 500:
+            raise ValueError
+    except ValueError:
+        return 400, _JSON_CT, _ERR_N
+
+    q = f'.crypto.gettrades[`$"{sym}";{n}j]'
+    try:
+        gw = await get_gw()
+        result = await gw(q)
+        return _json_ok(_df_to_json(result.pd()))
+    except (ConnectionError, OSError, BrokenPipeError) as exc:
+        await reset_gw()
+        return _gw_error("trades connection", exc)
+    except Exception as exc:
+        await reset_gw()
+        return _gw_error("trades query", exc)
 
 
 async def _static(path: str) -> tuple[int, list[tuple], bytes]:
@@ -434,6 +464,8 @@ async def handle_client(reader: asyncio.StreamReader,
         status, hdrs, body = await _ohlc(params)
     elif path == "/api/arbitrage":
         status, hdrs, body = await _arbitrage(params)
+    elif path == "/api/trades":
+        status, hdrs, body = await _trades(params)
     else:
         status, hdrs, body = await _static(path)
 
