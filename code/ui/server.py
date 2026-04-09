@@ -285,7 +285,7 @@ async def _history(params: dict) -> tuple[int, list[tuple], bytes]:
     except ValueError:
         return 400, _JSON_CT, _ERR_MIN
 
-    q = f".crypto.gethistory[`{sym};{mins}j]"
+    q = f'.crypto.gethistory[`$"{sym}";{mins}j]'
     try:
         gw = await get_gw()
         result = await gw(q)
@@ -310,7 +310,7 @@ async def _ohlc(params: dict) -> tuple[int, list[tuple], bytes]:
         return 400, _JSON_CT, _ERR_SYM
 
     # Pass sym as a symbol list (type 11h) — date defaults to today on rdb
-    q = f".crypto.ohlc[(enlist`sym)!enlist enlist `{sym}]"
+    q = f'.crypto.ohlc[(enlist`sym)!enlist `$"{sym}"]'
     try:
         gw = await get_gw()
         result = await gw(q)
@@ -338,7 +338,7 @@ async def _arbitrage(params: dict) -> tuple[int, list[tuple], bytes]:
     # sym → type 11h, starttime/endtime → type 12h (enlist of timestamp atom)
     q = (
         f".crypto.arbitrage[`sym`starttime`endtime!"
-        f"(enlist `{sym};"
+        f'(enlist `$"{sym}";'
         f"enlist .z.p-{mins}*0D00:01;"
         f"enlist .z.p)]"
     )
