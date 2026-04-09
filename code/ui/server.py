@@ -338,9 +338,9 @@ async def _arbitrage(params: dict) -> tuple[int, list[tuple], bytes]:
     # sym → type 11h, starttime/endtime → type 12h (enlist of timestamp atom)
     q = (
         f".crypto.arbitrage[`sym`starttime`endtime!"
-        f"(enlist enlist `{sym};"
-        f"enlist enlist .z.p-{mins}*0D00:01;"
-        f"enlist enlist .z.p)]"
+        f"(enlist `{sym};"
+        f"enlist .z.p-{mins}*0D00:01;"
+        f"enlist .z.p)]"
     )
     try:
         gw = await get_gw()
