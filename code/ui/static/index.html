@@ -6,49 +6,48 @@
 <title>TorQ-Crypto Dashboard</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Courier New', monospace; font-size: 13px; background: #f0f0f0; padding: 16px; }
+  body { font-family: 'Courier New', monospace; font-size: 13px; background: #0d1117; color: #c9d1d9; padding: 16px; }
   .topbar { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
-  h1 { font-size: 16px; font-weight: bold; }
+  h1 { font-size: 16px; font-weight: bold; color: #e6edf3; }
   .status-pill { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-  .status-live { background: #c6f0c2; color: #1a6b14; border: 1px solid #a8dba4; }
-  .status-reconnecting { background: #fde8e8; color: #8c1a1a; border: 1px solid #f5b7b7; }
-  label { font-size: 12px; }
-  select { font-family: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; background: white; }
+  .status-live { background: #0d2e0d; color: #3fb950; border: 1px solid #238636; }
+  .status-reconnecting { background: #2e0d0d; color: #f85149; border: 1px solid #6e2a2a; }
+  label { font-size: 12px; color: #8b949e; }
+  select { font-family: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid #30363d; background: #161b22; color: #c9d1d9; }
 
-  .section { background: white; border: 1px solid #ddd; margin-bottom: 16px; }
-  .section-header { background: #e8e8e8; padding: 6px 12px; font-weight: bold; font-size: 12px; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; }
-  .section-header .refresh-note { font-weight: normal; font-size: 10px; color: #888; }
+  .section { background: #161b22; border: 1px solid #30363d; margin-bottom: 16px; }
+  .section-header { background: #1c2128; padding: 6px 12px; font-weight: bold; font-size: 12px; border-bottom: 1px solid #30363d; display: flex; align-items: center; justify-content: space-between; color: #e6edf3; }
+  .section-header .refresh-note { font-weight: normal; font-size: 10px; color: #484f58; }
 
   table { border-collapse: collapse; width: 100%; }
-  th { background: #f0f0f0; padding: 6px 10px; text-align: right; border: 1px solid #ddd; font-size: 11px; white-space: nowrap; }
+  th { background: #1c2128; padding: 6px 10px; text-align: right; border: 1px solid #30363d; font-size: 11px; white-space: nowrap; color: #8b949e; }
   th.sym-col { text-align: left; }
   th.left { text-align: left; }
-  td { padding: 6px 10px; text-align: right; border: 1px solid #e0e0e0; white-space: nowrap; font-size: 12px; }
-  td.sym-cell { text-align: left; font-weight: bold; background: #f8f8f8; }
-  td.mid-cell { font-weight: bold; background: #f5f5f5; }
+  td { padding: 6px 10px; text-align: right; border: 1px solid #21262d; white-space: nowrap; font-size: 12px; color: #c9d1d9; }
+  td.sym-cell { text-align: left; font-weight: bold; background: #1c2128; color: #e6edf3; }
+  td.mid-cell { font-weight: bold; background: #1c2128; color: #e6edf3; }
   td.left { text-align: left; }
-  td.up { background: #d4f0d4; }
-  td.dn { background: #f0d4d4; }
-  td.blank { color: #bbb; }
-  tr.arb-row { background: #fffbe6; }
-  tr.arb-row td { background: #fffbe6; }
-  tr.arb-row td.profit-pos { background: #d4f0d4; font-weight: bold; }
+  td.up { background: #0d2e0d; color: #3fb950; }
+  td.dn { background: #2e0d0d; color: #f85149; }
+  td.blank { color: #484f58; }
+  tr.arb-row td { background: #1e2010; }
+  tr.arb-row td.profit-pos { background: #0d2e0d; color: #3fb950; font-weight: bold; }
 
   /* OHLC stats bar */
   .ohlc-bar { display: flex; flex-wrap: wrap; gap: 0; padding: 10px 12px; }
-  .ohlc-stat { flex: 1 1 80px; min-width: 80px; padding: 6px 12px; border-right: 1px solid #eee; }
+  .ohlc-stat { flex: 1 1 80px; min-width: 80px; padding: 6px 12px; border-right: 1px solid #21262d; }
   .ohlc-stat:last-child { border-right: none; }
-  .ohlc-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
-  .ohlc-value { font-size: 14px; font-weight: bold; color: #222; }
-  .ohlc-empty { padding: 14px 12px; color: #aaa; font-size: 12px; }
+  .ohlc-label { font-size: 10px; color: #484f58; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .ohlc-value { font-size: 14px; font-weight: bold; color: #e6edf3; }
+  .ohlc-empty { padding: 14px 12px; color: #484f58; font-size: 12px; }
 
   .chart-wrap { padding: 12px; }
   svg.chart { display: block; width: 100%; height: 180px; }
-  .chart-label { font-size: 10px; fill: #666; }
-  .chart-axis { stroke: #ccc; stroke-width: 1; }
-  .chart-grid { stroke: #eee; stroke-width: 1; }
-  .chart-line { fill: none; stroke: #1a56d9; stroke-width: 1.5; stroke-linejoin: round; }
-  .no-data { text-anchor: middle; font-size: 12px; fill: #aaa; }
+  .chart-label { font-size: 10px; fill: #484f58; }
+  .chart-axis { stroke: #30363d; stroke-width: 1; }
+  .chart-grid { stroke: #21262d; stroke-width: 1; }
+  .chart-line { fill: none; stroke: #58a6ff; stroke-width: 1.5; stroke-linejoin: round; }
+  .no-data { text-anchor: middle; font-size: 12px; fill: #484f58; }
 </style>
 </head>
 <body>
