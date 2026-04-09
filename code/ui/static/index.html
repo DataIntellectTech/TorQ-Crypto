@@ -6,160 +6,243 @@
 <title>TorQ-Crypto Dashboard</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Courier New', monospace; font-size: 13px; background: #0d1117; color: #c9d1d9; padding: 16px; }
-  .topbar { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
-  h1 { font-size: 16px; font-weight: bold; color: #e6edf3; }
-  .status-pill { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-  .status-live { background: #0d2e0d; color: #3fb950; border: 1px solid #238636; }
-  .status-reconnecting { background: #2e0d0d; color: #f85149; border: 1px solid #6e2a2a; }
-  label { font-size: 12px; color: #8b949e; }
-  select { font-family: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid #30363d; background: #161b22; color: #c9d1d9; }
 
-  .section { background: #161b22; border: 1px solid #30363d; margin-bottom: 16px; }
-  .section-header { background: #1c2128; padding: 6px 12px; font-weight: bold; font-size: 12px; border-bottom: 1px solid #30363d; display: flex; align-items: center; justify-content: space-between; color: #e6edf3; }
+  body {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    background: #0d1117;
+    color: #c9d1d9;
+    padding: 16px;
+    min-width: 800px;
+  }
+
+  /* ── Top bar ─────────────────────────────────────────────── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #30363d;
+    flex-wrap: wrap;
+  }
+  h1 { font-size: 15px; font-weight: bold; color: #e6edf3; letter-spacing: 0.04em; }
+  .status-pill { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+  .status-live          { background: #0d2e0d; color: #3fb950; border: 1px solid #238636; }
+  .status-reconnecting  { background: #2e0d0d; color: #f85149; border: 1px solid #6e2a2a; }
+  label  { font-size: 12px; color: #8b949e; }
+  select { font-family: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid #30363d; background: #161b22; color: #c9d1d9; border-radius: 3px; }
+
+  /* ── Grid ────────────────────────────────────────────────── */
+  /* Row 1: full-width live prices                              */
+  /* Row 2: order book (5) | trades (7)                        */
+  /* Row 3: mid chart (7)  | right-col: ohlc + vol (5)         */
+  /* Row 4: full-width spread + arb                            */
+
+  .grid {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    grid-template-rows: auto;
+    gap: 12px;
+  }
+  .full  { grid-column: 1 / -1; }
+  .right-col { display: flex; flex-direction: column; gap: 12px; }
+
+  /* ── Section card ────────────────────────────────────────── */
+  .section {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .section-header {
+    background: #1c2128;
+    padding: 7px 12px;
+    font-weight: bold;
+    font-size: 11px;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #e6edf3;
+    flex-shrink: 0;
+  }
   .refresh-note { font-weight: normal; font-size: 10px; color: #484f58; }
 
+  /* ── Tables ──────────────────────────────────────────────── */
+  .scroll-x  { overflow-x: auto; }
+  .scroll-y  { overflow-y: auto; max-height: 220px; }
+
   table { border-collapse: collapse; width: 100%; }
-  th { background: #1c2128; padding: 6px 10px; text-align: right; border: 1px solid #30363d; font-size: 11px; white-space: nowrap; color: #8b949e; }
+  th {
+    background: #1c2128;
+    padding: 5px 10px;
+    text-align: right;
+    border-bottom: 1px solid #30363d;
+    border-right: 1px solid #30363d;
+    font-size: 11px;
+    white-space: nowrap;
+    color: #8b949e;
+    position: sticky; top: 0;
+  }
   th.left { text-align: left; }
-  td { padding: 5px 10px; text-align: right; border: 1px solid #21262d; white-space: nowrap; font-size: 12px; color: #c9d1d9; }
-  td.sym-cell { text-align: left; font-weight: bold; background: #1c2128; color: #e6edf3; }
-  td.mid-cell { font-weight: bold; background: #1c2128; color: #e6edf3; }
-  td.left { text-align: left; }
-  td.up { background: #0d2e0d; color: #3fb950; }
-  td.dn { background: #2e0d0d; color: #f85149; }
-  td.blank { color: #484f58; }
-  td.best-bid { background: #0d2e0d; color: #3fb950; font-weight: bold; }
-  td.best-ask { background: #2e0d0d; color: #f85149; font-weight: bold; }
-  td.muted { color: #8b949e; }
-  td.buy  { color: #3fb950; font-weight: bold; }
-  td.sell { color: #f85149; font-weight: bold; }
-  tr.arb-row td { background: #1e2010; }
-  tr.arb-row td.profit-pos { background: #0d2e0d; color: #3fb950; font-weight: bold; }
+  td {
+    padding: 5px 10px;
+    text-align: right;
+    border-bottom: 1px solid #21262d;
+    border-right: 1px solid #21262d;
+    white-space: nowrap;
+    font-size: 12px;
+    color: #c9d1d9;
+  }
+  td.sym-cell  { text-align: left; font-weight: bold; background: #1c2128; color: #e6edf3; }
+  td.mid-cell  { font-weight: bold; color: #e6edf3; }
+  td.left      { text-align: left; }
+  td.up        { background: #0d2e0d; color: #3fb950; }
+  td.dn        { background: #2e0d0d; color: #f85149; }
+  td.blank     { color: #484f58; }
+  td.best-bid  { background: #0d2e0d; color: #3fb950; font-weight: bold; }
+  td.best-ask  { background: #2e0d0d; color: #f85149; font-weight: bold; }
+  td.muted     { color: #8b949e; }
+  td.buy       { color: #3fb950; font-weight: bold; }
+  td.sell      { color: #f85149; font-weight: bold; }
+  tr.arb-row td             { background: #1c1e10; }
+  tr.arb-row td.profit-pos  { background: #0d2e0d; color: #3fb950; font-weight: bold; }
 
-  /* OHLC stats bar */
+  /* ── OHLC stat bar ───────────────────────────────────────── */
   .ohlc-bar { display: flex; flex-wrap: wrap; }
-  .ohlc-stat { flex: 1 1 80px; min-width: 80px; padding: 10px 14px; border-right: 1px solid #21262d; }
+  .ohlc-stat {
+    flex: 1 1 60px;
+    min-width: 60px;
+    padding: 10px 14px;
+    border-right: 1px solid #21262d;
+  }
   .ohlc-stat:last-child { border-right: none; }
-  .ohlc-label { font-size: 10px; color: #484f58; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-  .ohlc-value { font-size: 14px; font-weight: bold; color: #e6edf3; }
-  .empty-msg { padding: 14px 12px; color: #484f58; font-size: 12px; }
+  .ohlc-label { font-size: 10px; color: #484f58; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+  .ohlc-value { font-size: 13px; font-weight: bold; color: #e6edf3; }
 
-  /* Volume by venue */
+  /* ── Volume bars ─────────────────────────────────────────── */
   .vol-bars { padding: 10px 14px; }
-  .vol-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .vol-row  { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
   .vol-row:last-child { margin-bottom: 0; }
-  .vol-venue { width: 72px; color: #8b949e; text-align: right; font-size: 11px; flex-shrink: 0; }
-  .vol-bar-bg { flex: 1; background: #21262d; height: 12px; border-radius: 2px; overflow: hidden; }
-  .vol-bar { height: 100%; border-radius: 2px; }
-  .vol-val { width: 72px; color: #c9d1d9; font-size: 11px; flex-shrink: 0; }
+  .vol-venue  { width: 68px; color: #8b949e; text-align: right; font-size: 11px; flex-shrink: 0; }
+  .vol-bar-bg { flex: 1; background: #21262d; height: 10px; border-radius: 2px; overflow: hidden; }
+  .vol-bar    { height: 100%; border-radius: 2px; }
+  .vol-val    { width: 68px; color: #c9d1d9; font-size: 11px; }
 
-  /* Trades scroll */
-  .trades-scroll { max-height: 200px; overflow-y: auto; }
+  /* ── Shared empty state ──────────────────────────────────── */
+  .empty-msg { padding: 16px 14px; color: #484f58; font-size: 12px; }
 
-  /* Charts */
-  .chart-wrap { padding: 12px; }
-  svg.chart { display: block; width: 100%; }
+  /* ── Charts ──────────────────────────────────────────────── */
+  .chart-wrap { padding: 10px 12px; }
+  svg.chart   { display: block; width: 100%; }
   .chart-label { font-size: 10px; fill: #484f58; }
-  .chart-axis { stroke: #30363d; stroke-width: 1; }
-  .chart-grid { stroke: #21262d; stroke-width: 1; }
-  .chart-line { fill: none; stroke: #58a6ff; stroke-width: 1.5; stroke-linejoin: round; }
-  .no-data { text-anchor: middle; font-size: 12px; fill: #484f58; }
+  .chart-axis  { stroke: #30363d; stroke-width: 1; }
+  .chart-grid  { stroke: #21262d; stroke-width: 1; }
+  .no-data     { text-anchor: middle; font-size: 12px; fill: #484f58; }
 
-  /* Sparkline cells */
+  /* ── Sparklines ──────────────────────────────────────────── */
   td.spark-cell { padding: 3px 8px; }
   svg.sparkline { display: block; }
-  .spark-line { fill: none; stroke-width: 1.2; stroke-linejoin: round; }
+  .spark-line   { fill: none; stroke-width: 1.2; stroke-linejoin: round; }
 </style>
 </head>
 <body>
 
+<!-- Top bar -->
 <div class="topbar">
   <h1>TorQ-Crypto</h1>
   <span id="status" class="status-pill status-reconnecting">Reconnecting</span>
   <label>Instrument:&nbsp;<select id="sym-select"><option value="">—</option></select></label>
 </div>
 
-<!-- Live Prices -->
-<div class="section">
-  <div class="section-header"><span>Live Prices</span><span class="refresh-note">live</span></div>
-  <div style="overflow-x:auto">
-    <table>
-      <thead><tr id="grid-head"><th class="left">Instrument</th></tr></thead>
-      <tbody id="grid-body"></tbody>
-    </table>
-  </div>
-</div>
+<div class="grid">
 
-<!-- Order Book -->
-<div class="section">
-  <div class="section-header"><span>Order Book — <span id="ob-title">—</span></span><span class="refresh-note">live</span></div>
-  <div style="overflow-x:auto">
-    <table>
-      <thead><tr><th class="left">Venue</th><th>Bid</th><th>Ask</th><th>Spread</th><th>Mid</th></tr></thead>
-      <tbody id="ob-body"><tr><td colspan="5" class="empty-msg">Select an instrument</td></tr></tbody>
-    </table>
+  <!-- Row 1: Live Prices (full width) -->
+  <div class="section full">
+    <div class="section-header"><span>Live Prices</span><span class="refresh-note">live</span></div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr id="grid-head"><th class="left">Instrument</th></tr></thead>
+        <tbody id="grid-body"></tbody>
+      </table>
+    </div>
   </div>
-</div>
 
-<!-- Recent Trades -->
-<div class="section">
-  <div class="section-header"><span>Recent Trades — <span id="trades-title">—</span></span><span class="refresh-note">auto-refresh 5s</span></div>
-  <div class="trades-scroll">
-    <table>
-      <thead><tr>
-        <th class="left">Time</th><th class="left">Venue</th><th>Price</th><th>Size</th><th>Side</th>
-      </tr></thead>
-      <tbody id="trades-body"><tr><td colspan="5" class="empty-msg">Select an instrument</td></tr></tbody>
-    </table>
+  <!-- Row 2 left: Order Book -->
+  <div class="section">
+    <div class="section-header"><span>Order Book — <span id="ob-title">—</span></span><span class="refresh-note">live</span></div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th class="left">Venue</th><th>Bid</th><th>Ask</th><th>Spread</th><th>Mid</th></tr></thead>
+        <tbody id="ob-body"><tr><td colspan="5" class="empty-msg">Select an instrument</td></tr></tbody>
+      </table>
+    </div>
   </div>
-</div>
 
-<!-- Consolidated Mid chart -->
-<div class="section">
-  <div class="section-header">
-    <span>Consolidated Mid — <span id="chart-title">—</span> (last 30 min)</span>
-    <span class="refresh-note">auto-refresh 5s</span>
+  <!-- Row 2 right: Recent Trades -->
+  <div class="section">
+    <div class="section-header"><span>Recent Trades — <span id="trades-title">—</span></span><span class="refresh-note">auto-refresh 5s</span></div>
+    <div class="scroll-x scroll-y">
+      <table>
+        <thead><tr>
+          <th class="left">Time</th><th class="left">Venue</th><th>Price</th><th>Size</th><th>Side</th>
+        </tr></thead>
+        <tbody id="trades-body"><tr><td colspan="5" class="empty-msg">Select an instrument</td></tr></tbody>
+      </table>
+    </div>
   </div>
-  <div class="chart-wrap">
-    <svg id="chart" class="chart" viewBox="0 0 800 160" style="height:180px" preserveAspectRatio="xMidYMid meet">
-      <text x="400" y="80" class="no-data">Select an instrument</text>
-    </svg>
-  </div>
-</div>
 
-<!-- Session OHLC -->
-<div class="section">
-  <div class="section-header">
-    <span>Session OHLC — <span id="ohlc-title">—</span></span>
-    <span class="refresh-note">auto-refresh 60s</span>
+  <!-- Row 3 left: Consolidated Mid chart -->
+  <div class="section">
+    <div class="section-header">
+      <span>Consolidated Mid — <span id="chart-title">—</span> (30 min)</span>
+      <span class="refresh-note">auto-refresh 5s</span>
+    </div>
+    <div class="chart-wrap">
+      <svg id="chart" class="chart" viewBox="0 0 800 160" style="height:170px" preserveAspectRatio="xMidYMid meet">
+        <text x="400" y="80" class="no-data">Select an instrument</text>
+      </svg>
+    </div>
   </div>
-  <div id="ohlc-body"><div class="empty-msg">Select an instrument</div></div>
-</div>
 
-<!-- Volume by Venue -->
-<div class="section">
-  <div class="section-header">
-    <span>Volume by Venue — <span id="vol-title">—</span></span>
-    <span class="refresh-note">auto-refresh 60s</span>
+  <!-- Row 3 right: OHLC + Volume stacked -->
+  <div class="right-col">
+    <div class="section">
+      <div class="section-header">
+        <span>Session OHLC — <span id="ohlc-title">—</span></span>
+        <span class="refresh-note">auto-refresh 60s</span>
+      </div>
+      <div id="ohlc-body"><div class="empty-msg">Select an instrument</div></div>
+    </div>
+    <div class="section" style="flex:1">
+      <div class="section-header">
+        <span>Volume by Venue — <span id="vol-title">—</span></span>
+        <span class="refresh-note">auto-refresh 60s</span>
+      </div>
+      <div id="vol-body"><div class="empty-msg">Select an instrument</div></div>
+    </div>
   </div>
-  <div id="vol-body"><div class="empty-msg">Select an instrument</div></div>
-</div>
 
-<!-- Spread Over Time + Arbitrage combined -->
-<div class="section">
-  <div class="section-header">
-    <span>Spread &amp; Arbitrage — <span id="arb-title">—</span> (last 30 min, 5s buckets)</span>
-    <span class="refresh-note">auto-refresh 10s</span>
+  <!-- Row 4: Spread chart + Arbitrage table (full width) -->
+  <div class="section full">
+    <div class="section-header">
+      <span>Spread &amp; Arbitrage — <span id="arb-title">—</span> (30 min, 5s buckets)</span>
+      <span class="refresh-note">auto-refresh 10s</span>
+    </div>
+    <div class="chart-wrap">
+      <svg id="spread-chart" class="chart" viewBox="0 0 800 120" style="height:130px" preserveAspectRatio="xMidYMid meet">
+        <text x="400" y="60" class="no-data">Select an instrument</text>
+      </svg>
+    </div>
+    <div class="scroll-x">
+      <div id="arb-body"><div class="empty-msg">Select an instrument</div></div>
+    </div>
   </div>
-  <div class="chart-wrap">
-    <svg id="spread-chart" class="chart" viewBox="0 0 800 130" style="height:140px" preserveAspectRatio="xMidYMid meet">
-      <text x="400" y="65" class="no-data">Select an instrument</text>
-    </svg>
-  </div>
-  <div style="overflow-x:auto">
-    <div id="arb-body"><div class="empty-msg">Select an instrument</div></div>
-  </div>
+
 </div>
 
 <script>
