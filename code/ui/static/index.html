@@ -707,9 +707,16 @@ function drawSpreadChart(svg, rows, venues) {
 
   var seriesData = venues.map(function(v) {
     return rows.map(function(r) {
-      var bid = Number(r[v + "Bid"]), ask = Number(r[v + "Ask"]);
-      return { t: new Date(r.time).getTime(), spread: ask - bid };
-    }).filter(function(d) { return !isNaN(d.t) && !isNaN(d.spread) && d.spread >= 0; });
+      // Null bid/ask (kdb+ 0n → JSON null) must be excluded — Number(null)=0
+      // would produce a fake spread equal to the full price.
+      // Null time (kdb+ 0Np → JSON null) must also be excluded — new Date(null)
+      // returns epoch 1970, compressing all points to the far left of the axis.
+      if (r.time === null || r[v+"Bid"] === null || r[v+"Ask"] === null) return null;
+      var bid = Number(r[v+"Bid"]), ask = Number(r[v+"Ask"]);
+      var t = new Date(r.time).getTime();
+      if (isNaN(bid) || isNaN(ask) || isNaN(t) || ask < bid) return null;
+      return { t: t, spread: ask - bid };
+    }).filter(Boolean);
   });
 
   var allT = [], allS = [];
