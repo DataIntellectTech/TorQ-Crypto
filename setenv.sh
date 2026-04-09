@@ -28,6 +28,7 @@ export KDBAPPCONFIG=${TORQAPPHOME}/appconfig
 export KDBAPPCODE=${TORQAPPHOME}/code
 # Ports — change these to reconfigure the stack
 export KDBBASEPORT=9000
+export KDB_GATEWAY_PORT=$((KDBBASEPORT+7))
 export UI_PORT=8888
 # set TORQPROCESSES to the default process csv
 export TORQPROCESSES=${KDBAPPCONFIG}/process.csv
