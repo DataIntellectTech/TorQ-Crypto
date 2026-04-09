@@ -32,6 +32,9 @@
   td.blank { color: #484f58; }
   tr.arb-row td { background: #1e2010; }
   tr.arb-row td.profit-pos { background: #0d2e0d; color: #3fb950; font-weight: bold; }
+  td.best-bid { background: #0d2e0d; color: #3fb950; font-weight: bold; }
+  td.best-ask { background: #2e0d0d; color: #f85149; font-weight: bold; }
+  td.spread-cell { color: #8b949e; }
 
   /* OHLC stats bar */
   .ohlc-bar { display: flex; flex-wrap: wrap; gap: 0; padding: 10px 12px; }
@@ -64,6 +67,25 @@
     <table>
       <thead><tr id="grid-head"><th class="sym-col">Instrument</th></tr></thead>
       <tbody id="grid-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <span>Order Book — <span id="ob-title">—</span></span>
+    <span class="refresh-note">live</span>
+  </div>
+  <div style="overflow-x:auto">
+    <table id="ob-table">
+      <thead><tr>
+        <th class="left">Venue</th>
+        <th>Bid</th>
+        <th>Ask</th>
+        <th>Spread</th>
+        <th>Mid</th>
+      </tr></thead>
+      <tbody id="ob-body"><tr><td colspan="5" class="ohlc-empty">Select an instrument</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -174,6 +196,7 @@ function onConsolidated(rows) {
   } else {
     updateCells(rows);
   }
+  renderOrderBook();
 }
 
 // ---------------------------------------------------------------------------
@@ -270,8 +293,10 @@ document.getElementById("sym-select").addEventListener("change", function() {
 function onSymChange() {
   var sym = state.selectedSym || "—";
   document.getElementById("chart-title").textContent = sym;
+  document.getElementById("ob-title").textContent    = sym;
   document.getElementById("ohlc-title").textContent  = sym;
   document.getElementById("arb-title").textContent   = sym;
+  renderOrderBook();
   if (state.selectedSym) {
     loadChart();
     loadOhlc();
@@ -349,6 +374,48 @@ function drawChart(data) {
     "<line class='chart-axis' x1='" + pad.left + "' y1='" + (pad.top + iH) + "' x2='" + (VW - pad.right) + "' y2='" + (pad.top + iH) + "'/>" +
     "<polyline class='chart-line' points='" + pts + "'/>" +
     xLabels;
+}
+
+// ---------------------------------------------------------------------------
+// Order book — driven by live WebSocket data
+// ---------------------------------------------------------------------------
+function renderOrderBook() {
+  var tbody = document.getElementById("ob-body");
+  var sym = state.selectedSym;
+  if (!sym || !state.data[sym]) {
+    tbody.innerHTML = "<tr><td colspan='5' class='ohlc-empty'>No data</td></tr>";
+    return;
+  }
+
+  var venueData = state.venues
+    .map(function(v) { return state.data[sym] && state.data[sym][v]; })
+    .filter(Boolean);
+
+  if (!venueData.length) {
+    tbody.innerHTML = "<tr><td colspan='5' class='ohlc-empty'>No data</td></tr>";
+    return;
+  }
+
+  var bids = venueData.map(function(r) { return Number(r.bid); });
+  var asks = venueData.map(function(r) { return Number(r.ask); });
+  var bestBid = Math.max.apply(null, bids);
+  var bestAsk = Math.min.apply(null, asks);
+
+  tbody.innerHTML = venueData.map(function(r) {
+    var bid    = Number(r.bid);
+    var ask    = Number(r.ask);
+    var mid    = Number(r.mid);
+    var spread = ask - bid;
+    var bidClass = (bid === bestBid) ? " class='best-bid'" : "";
+    var askClass = (ask === bestAsk) ? " class='best-ask'" : "";
+    return "<tr>" +
+      "<td class='left sym-cell'>" + esc(String(r.venue)) + "</td>" +
+      "<td" + bidClass + ">" + fmtPrice(bid) + "</td>" +
+      "<td" + askClass + ">" + fmtPrice(ask) + "</td>" +
+      "<td class='spread-cell'>" + fmtPrice(spread) + "</td>" +
+      "<td>" + fmtPrice(mid) + "</td>" +
+      "</tr>";
+  }).join("");
 }
 
 // ---------------------------------------------------------------------------
