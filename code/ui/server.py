@@ -5,19 +5,19 @@ TorQ-Crypto UI Server
 Asyncio HTTP + WebSocket server. No web framework.
 
 Configuration (environment variables):
-  KDB_GATEWAY_HOST  — kdb+ gateway hostname (default: localhost)
-  KDB_GATEWAY_PORT  — kdb+ gateway port     (default: 9007 = KDBBASEPORT+7)
-  UI_PORT           — HTTP/WS listen port   (default: 8888)
+  KDB_GATEWAY_HOST     — kdb+ gateway hostname (default: localhost)
+  KDB_GATEWAY_PORT     — kdb+ gateway port     (default: KDBBASEPORT+7)
+  KDB_GATEWAY_USER     — kdb+ gateway username (default: uiserver)
+  KDB_GATEWAY_PASSWORD — kdb+ gateway password (default: pass)
+  UI_PORT              — HTTP/WS listen port   (default: 8888)
 
 Endpoints:
-  ws://host:UI_PORT/ws             — Live WebSocket feed (broadcast every 2 s)
-  GET /api/history?sym=X&mins=30   — Historical consolidated mid JSON
-  GET /                            — Serves code/ui/static/index.html
-  GET /<path>                      — Serves files from code/ui/static/
-
-Smoke test:
-  python code/ui/server.py
-  open http://localhost:8888
+  ws://host:UI_PORT/ws                          — Live WebSocket feed (consolidated prices, 2 s)
+  GET /api/history?sym=X&mins=30                — Consolidated mid timeseries
+  GET /api/ohlc?sym=X                           — Today's OHLC session stats
+  GET /api/arbitrage?sym=X&mins=30              — Time-bucketed arbitrage opportunities
+  GET /                                         — Serves code/ui/static/index.html
+  GET /<path>                                   — Serves files from code/ui/static/
 """
 
 from __future__ import annotations
@@ -215,20 +215,7 @@ async def poller() -> None:
         try:
             gw = await get_gw()
             result = await gw(".crypto.getconsolidated[`]")
-            df = result.pd()
-            rows = []
-            for _, row in df.iterrows():
-                d: dict = {}
-                for col in df.columns:
-                    v = row[col]
-                    if hasattr(v, "isoformat"):
-                        d[col] = v.isoformat()
-                    else:
-                        try:
-                            d[col] = float(v)
-                        except (TypeError, ValueError):
-                            d[col] = str(v)
-                rows.append(d)
+            rows = _df_to_json(result.pd())
             await broadcast(json.dumps({"type": "consolidated", "data": rows}))
         except Exception as exc:
             log.error(f"Poller error: {exc}")
@@ -236,7 +223,7 @@ async def poller() -> None:
         await asyncio.sleep(2)
 
 # ---------------------------------------------------------------------------
-# HTTP handlers
+# Shared helpers
 # ---------------------------------------------------------------------------
 
 _SYM_RE = re.compile(r"^[A-Za-z0-9_\-\.]+$")
@@ -246,12 +233,49 @@ _STATUS_TEXT = {
     404: "Not Found", 405: "Method Not Allowed", 503: "Service Unavailable",
 }
 
+_ERR_GW  = json.dumps({"error": "gateway unavailable"}).encode()
+_ERR_SYM = json.dumps({"error": "invalid sym"}).encode()
+_ERR_MIN = json.dumps({"error": "invalid mins"}).encode()
+_JSON_CT = [("Content-Type", "application/json")]
+
+
+def _df_to_json(df) -> list[dict]:
+    """Convert a pandas DataFrame returned by pykx to a JSON-serialisable list."""
+    rows = []
+    for _, row in df.iterrows():
+        d: dict = {}
+        for col in df.columns:
+            v = row[col]
+            if hasattr(v, "isoformat"):
+                d[col] = v.isoformat()
+            elif hasattr(v, "item"):       # numpy scalar (bool, int, float, …)
+                d[col] = v.item()
+            else:
+                try:
+                    d[col] = float(v)
+                except (TypeError, ValueError):
+                    d[col] = str(v)
+        rows.append(d)
+    return rows
+
+
+def _json_ok(rows: list[dict]) -> tuple[int, list[tuple], bytes]:
+    body = json.dumps(rows).encode()
+    return 200, [("Content-Type", "application/json"), ("Content-Length", str(len(body)))], body
+
+
+def _gw_error(label: str, exc: Exception) -> tuple[int, list[tuple], bytes]:
+    log.error(f"{label}: {exc}")
+    return 503, _JSON_CT, _ERR_GW
+
+# ---------------------------------------------------------------------------
+# HTTP handlers
+# ---------------------------------------------------------------------------
 
 async def _history(params: dict) -> tuple[int, list[tuple], bytes]:
     sym = params.get("sym", ["BTC-USD"])[0]
     if not _SYM_RE.match(sym):
-        body = json.dumps({"error": "invalid sym"}).encode()
-        return 400, [("Content-Type", "application/json")], body
+        return 400, _JSON_CT, _ERR_SYM
 
     mins_raw = params.get("mins", ["30"])[0]
     try:
@@ -259,31 +283,74 @@ async def _history(params: dict) -> tuple[int, list[tuple], bytes]:
         if mins <= 0:
             raise ValueError
     except ValueError:
-        body = json.dumps({"error": "invalid mins"}).encode()
-        return 400, [("Content-Type", "application/json")], body
+        return 400, _JSON_CT, _ERR_MIN
 
     q = f".crypto.gethistory[`{sym};{mins}j]"
     try:
         gw = await get_gw()
         result = await gw(q)
         df = result.pd()
-        rows = []
-        for _, row in df.iterrows():
-            t = row["time"]
-            t_str = t.isoformat() if hasattr(t, "isoformat") else str(t)
-            rows.append({"time": t_str, "mid": float(row["mid"])})
-        body = json.dumps(rows).encode()
-        return 200, [("Content-Type", "application/json"), ("Content-Length", str(len(body)))], body
+        rows = [
+            {"time": (row["time"].isoformat() if hasattr(row["time"], "isoformat") else str(row["time"])),
+             "mid": float(row["mid"])}
+            for _, row in df.iterrows()
+        ]
+        return _json_ok(rows)
     except (ConnectionError, OSError, BrokenPipeError) as exc:
-        log.error(f"History gateway connection error: {exc}")
         await reset_gw()
-        body = json.dumps({"error": "gateway unavailable"}).encode()
-        return 503, [("Content-Type", "application/json")], body
+        return _gw_error("history connection", exc)
     except Exception as exc:
-        log.error(f"History query error: {exc}")
         await reset_gw()
-        body = json.dumps({"error": "gateway unavailable"}).encode()
-        return 503, [("Content-Type", "application/json")], body
+        return _gw_error("history query", exc)
+
+
+async def _ohlc(params: dict) -> tuple[int, list[tuple], bytes]:
+    sym = params.get("sym", ["BTC-USD"])[0]
+    if not _SYM_RE.match(sym):
+        return 400, _JSON_CT, _ERR_SYM
+
+    # Pass sym as a symbol list (type 11h) — date defaults to today on rdb
+    q = f".crypto.ohlc[(enlist`sym)!enlist enlist `{sym}]"
+    try:
+        gw = await get_gw()
+        result = await gw(q)
+        return _json_ok(_df_to_json(result.pd()))
+    except (ConnectionError, OSError, BrokenPipeError) as exc:
+        await reset_gw()
+        return _gw_error("ohlc connection", exc)
+    except Exception as exc:
+        return _gw_error("ohlc query", exc)
+
+
+async def _arbitrage(params: dict) -> tuple[int, list[tuple], bytes]:
+    sym = params.get("sym", ["BTC-USD"])[0]
+    if not _SYM_RE.match(sym):
+        return 400, _JSON_CT, _ERR_SYM
+
+    mins_raw = params.get("mins", ["30"])[0]
+    try:
+        mins = int(mins_raw)
+        if mins <= 0:
+            raise ValueError
+    except ValueError:
+        return 400, _JSON_CT, _ERR_MIN
+
+    # sym → type 11h, starttime/endtime → type 12h (enlist of timestamp atom)
+    q = (
+        f".crypto.arbitrage[`sym`starttime`endtime!"
+        f"(enlist enlist `{sym};"
+        f"enlist enlist .z.p-{mins}*0D00:01;"
+        f"enlist enlist .z.p)]"
+    )
+    try:
+        gw = await get_gw()
+        result = await gw(q)
+        return _json_ok(_df_to_json(result.pd()))
+    except (ConnectionError, OSError, BrokenPipeError) as exc:
+        await reset_gw()
+        return _gw_error("arbitrage connection", exc)
+    except Exception as exc:
+        return _gw_error("arbitrage query", exc)
 
 
 async def _static(path: str) -> tuple[int, list[tuple], bytes]:
@@ -363,6 +430,10 @@ async def handle_client(reader: asyncio.StreamReader,
         status, hdrs, body = 405, [("Content-Type", "text/plain")], b"Method Not Allowed"
     elif path == "/api/history":
         status, hdrs, body = await _history(params)
+    elif path == "/api/ohlc":
+        status, hdrs, body = await _ohlc(params)
+    elif path == "/api/arbitrage":
+        status, hdrs, body = await _arbitrage(params)
     else:
         status, hdrs, body = await _static(path)
 
