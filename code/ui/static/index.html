@@ -729,37 +729,49 @@ function drawSpreadChart(svg, rows, venues) {
   function tx(t){ return pad.left + (tMax===tMin ? iW/2 : (t-tMin)/(tMax-tMin)*iW); }
   function ty(v){ return pad.top + iH - (v-yMin)/(yMax-yMin)*iH; }
 
+  var fmtT = function(t){ var d=new Date(t); return pad2(d.getHours())+":"+pad2(d.getMinutes()); };
+
   var html = "";
+
+  // Y grid + labels
   [yMin+yPad, (yMin+yMax)/2, yMax-yPad].forEach(function(v) {
     var y = ty(v);
     html += "<line class='chart-grid' x1='"+pad.left+"' y1='"+y+"' x2='"+(VW-pad.right)+"' y2='"+y+"'/>";
     html += "<text class='chart-label' x='"+(pad.left-4)+"' y='"+(y+4)+"' text-anchor='end'>"+v.toFixed(4)+"</text>";
   });
+
+  // X grid + labels (5 evenly-spaced ticks)
+  var xTicks = 5;
+  for (var i = 0; i <= xTicks; i++) {
+    var t = tMin + (tMax - tMin) * i / xTicks;
+    var x = tx(t);
+    html += "<line class='chart-grid' x1='"+x+"' y1='"+pad.top+"' x2='"+x+"' y2='"+(pad.top+iH)+"'/>";
+    html += "<text class='chart-label' x='"+x+"' y='"+(pad.top+iH+14)+"' text-anchor='middle'>"+fmtT(t)+"</text>";
+  }
+
+  // Axes
   html += "<line class='chart-axis' x1='"+pad.left+"' y1='"+pad.top+"' x2='"+pad.left+"' y2='"+(pad.top+iH)+"'/>";
   html += "<line class='chart-axis' x1='"+pad.left+"' y1='"+(pad.top+iH)+"' x2='"+(VW-pad.right)+"' y2='"+(pad.top+iH)+"'/>";
 
+  // Series lines + legend
   venues.forEach(function(v, i) {
     var series = seriesData[i];
     if (series.length < 2) return;
     var color = venueColor(v);
     var pts = series.map(function(d){ return tx(d.t).toFixed(1)+","+ty(d.spread).toFixed(1); }).join(" ");
     html += "<polyline fill='none' stroke='"+color+"' stroke-width='1.5' stroke-linejoin='round' points='"+pts+"'/>";
-    // legend
     var ly = pad.top + i * 18;
     html += "<rect x='"+(VW-pad.right+8)+"' y='"+(ly+4)+"' width='12' height='2' fill='"+color+"'/>";
     html += "<text class='chart-label' x='"+(VW-pad.right+24)+"' y='"+(ly+8)+"'>"+esc(v)+"</text>";
   });
 
-  var fmtT = function(t){ var d=new Date(t); return pad2(d.getHours())+":"+pad2(d.getMinutes()); };
-  html += "<text class='chart-label' x='"+pad.left+"' y='"+(VH-4)+"' text-anchor='middle'>"+fmtT(tMin)+"</text>";
-  html += "<text class='chart-label' x='"+(VW-pad.right)+"' y='"+(VH-4)+"' text-anchor='middle'>"+fmtT(tMax)+"</text>";
   svg.innerHTML = html;
 }
 
 function renderArbTable(el, rows, venues) {
   var headCells = "<th class='left'>Time</th>";
   venues.forEach(function(v) {
-    headCells += "<th>"+esc(v)+" Bid</th><th>"+esc(v)+" Ask</th><th>"+esc(v)+" BidSz</th><th>"+esc(v)+" AskSz</th>";
+    headCells += "<th>"+esc(v)+" Spread</th>";
   });
   headCells += "<th>Profit</th><th>Arb</th>";
 
@@ -767,10 +779,9 @@ function renderArbTable(el, rows, venues) {
     var isArb = r.arbitrage === true || r.arbitrage === 1;
     var cells = "<td class='left'>" + fmtTime(r.time) + "</td>";
     venues.forEach(function(v) {
-      cells += "<td>"+fmtPrice(r[v+"Bid"])+"</td>";
-      cells += "<td>"+fmtPrice(r[v+"Ask"])+"</td>";
-      cells += "<td>"+fmtVol(r[v+"BidSize"])+"</td>";
-      cells += "<td>"+fmtVol(r[v+"AskSize"])+"</td>";
+      var bid = Number(r[v+"Bid"]), ask = Number(r[v+"Ask"]);
+      var spread = (!isNaN(bid) && !isNaN(ask)) ? (ask - bid) : null;
+      cells += "<td class='muted'>"+(spread !== null ? spread.toFixed(4) : "—")+"</td>";
     });
     var profit = Number(r.profit);
     cells += "<td"+(isArb && profit>0 ? " class='profit-pos'" : "")+">"+(isNaN(profit)?"—":profit.toFixed(4))+"</td>";
@@ -778,7 +789,7 @@ function renderArbTable(el, rows, venues) {
     return "<tr"+(isArb?" class='arb-row'":"")+">"+cells+"</tr>";
   }).join("");
 
-  el.innerHTML = "<table><thead><tr>"+headCells+"</tr></thead><tbody>"+bodyRows+"</tbody></table>";
+  el.innerHTML = "<div class='scroll-y'><table><thead><tr>"+headCells+"</tr></thead><tbody>"+bodyRows+"</tbody></table></div>";
 }
 
 function scheduleArbRefresh() {
