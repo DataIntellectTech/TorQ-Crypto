@@ -1,17 +1,17 @@
 host,port,proctype,procname,U,localtime,g,T,w,load,startwithall,extras,qcmd
-localhost,{KDBBASEPORT}+1,discovery,discovery1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,0,,,${KDBCODE}/processes/discovery.q,0,,q
-localhost,{KDBBASEPORT},tickerplant,tickerplant1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,0,,,${KDBCODE}/processes/tickerplant.q,0,-schemafile ${TORQAPPHOME}/database -tplogdir ${TORQDATAHOME}/hdb,q
-localhost,{KDBBASEPORT}+2,rdb,rdb1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,1,180,,${KDBCODE}/processes/rdb.q,0,-parentproctype cryptofunctions -P 17,q
-localhost,{KDBBASEPORT}+3,hdb,hdb1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,1,60,4000,${KDBHDB},0,-parentproctype cryptofunctions,q
-localhost,{KDBBASEPORT}+4,hdb,hdb2,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,1,60,4000,${KDBHDB},0,-parentproctype cryptofunctions,q
-localhost,{KDBBASEPORT}+5,wdb,wdb1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,1,,,${KDBCODE}/processes/wdb.q,0,,q
-localhost,{KDBBASEPORT}+6,sort,sort1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,1,,,${KDBCODE}/processes/wdb.q,0,-s -2,q
-localhost,{KDBBASEPORT}+7,gateway,gateway1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,1,,4000,${KDBCODE}/processes/gateway.q,0,,q
-localhost,{KDBBASEPORT}+9,monitor,monitor1,,0,0,,,${KDBCODE}/processes/monitor.q,0,,q
-localhost,{KDBBASEPORT}+10,housekeeping,housekeeping1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,0,,,${KDBCODE}/processes/housekeeping.q,0,,q
-localhost,{KDBBASEPORT}+11,reporter,reporter1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,0,,,${KDBCODE}/processes/reporter.q,0,,q
-localhost,{KDBBASEPORT}+12,chainedtp,chainedtp1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,0,,,${KDBCODE}/processes/chainedtp.q,0,,q
-localhost,{KDBBASEPORT}+13,sortslave,sortslave1,,0,1,,,${KDBCODE}/processes/wdb.q,0,,q
-localhost,{KDBBASEPORT}+14,sortslave,sortslave2,,0,1,,,${KDBCODE}/processes/wdb.q,0,,q
-localhost,{KDBBASEPORT}+20,pythonfeed,pythonfeed1,,0,0,,,${KDBAPPCODE}/processes/pythonfeed.q,0,,q
-localhost,{KDBBASEPORT}+21,cryptoagg,cryptoagg1,,0,0,,,${KDBAPPCODE}/processes/cryptoagg.q,0,,q
+localhost,{KDBBASEPORT}+1,discovery,discovery1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,0,,,${KDBCODE}/processes/discovery.q,1,,q
+localhost,{KDBBASEPORT},tickerplant,tickerplant1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,0,,,${KDBCODE}/processes/tickerplant.q,1,-schemafile ${TORQAPPHOME}/database -tplogdir ${TORQDATAHOME}/hdb,q
+localhost,{KDBBASEPORT}+2,rdb,rdb1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,1,180,,${KDBCODE}/processes/rdb.q,1,-parentproctype cryptofunctions -P 17,q
+localhost,{KDBBASEPORT}+3,hdb,hdb1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,1,60,4000,${KDBHDB},1,-parentproctype cryptofunctions,q
+localhost,{KDBBASEPORT}+4,hdb,hdb2,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,1,60,4000,${KDBHDB},1,-parentproctype cryptofunctions,q
+localhost,{KDBBASEPORT}+5,wdb,wdb1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,1,,,${KDBCODE}/processes/wdb.q,1,,q
+localhost,{KDBBASEPORT}+6,sort,sort1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,1,,,${KDBCODE}/processes/wdb.q,1,-s -2,q
+localhost,{KDBBASEPORT}+7,gateway,gateway1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,1,,4000,${KDBCODE}/processes/gateway.q,1,,q
+localhost,{KDBBASEPORT}+9,monitor,monitor1,,0,0,,,${KDBCODE}/processes/monitor.q,1,,q
+localhost,{KDBBASEPORT}+10,housekeeping,housekeeping1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,0,,,${KDBCODE}/processes/housekeeping.q,1,,q
+localhost,{KDBBASEPORT}+11,reporter,reporter1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,0,,,${KDBCODE}/processes/reporter.q,1,,q
+localhost,{KDBBASEPORT}+12,chainedtp,chainedtp1,${TORQAPPHOME}/appconfig/passwords/accesslist.txt,0,0,,,${KDBCODE}/processes/chainedtp.q,1,,q
+localhost,{KDBBASEPORT}+13,sortslave,sortslave1,,0,1,,,${KDBCODE}/processes/wdb.q,1,,q
+localhost,{KDBBASEPORT}+14,sortslave,sortslave2,,0,1,,,${KDBCODE}/processes/wdb.q,1,,q
+localhost,{KDBBASEPORT}+20,pythonfeed,pythonfeed1,,0,0,,,${KDBAPPCODE}/processes/pythonfeed.q,1,,q
+localhost,{KDBBASEPORT}+21,cryptoagg,cryptoagg1,,0,0,,,${KDBAPPCODE}/processes/cryptoagg.q,1,,q
