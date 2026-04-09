@@ -74,7 +74,7 @@ arbitrage:{[d]
 gettrades:{[sym;n]
   h:.servers.gethandlebytype[`rdb;`any];
   if[null h; '"no rdb available"];
-  h({[s;n] select[neg n] time,venue,price,size,side from trade where sym=s};sym;n)
+  h({[s;n] select[neg n] time,venue,price,size,side from `trade where sym=s};sym;n)
   };
 
 \d .
