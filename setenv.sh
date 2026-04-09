@@ -26,8 +26,9 @@ export QCON="qcon"
 # set the application specific configuration directory
 export KDBAPPCONFIG=${TORQAPPHOME}/appconfig
 export KDBAPPCODE=${TORQAPPHOME}/code
-# set KDBBASEPORT to the default value for a TorQ Installation
+# Ports — change these to reconfigure the stack
 export KDBBASEPORT=9000
+export UI_PORT=8888
 # set TORQPROCESSES to the default process csv
 export TORQPROCESSES=${KDBAPPCONFIG}/process.csv
 # if using the email facility, modify the library path for the email lib depending on OS

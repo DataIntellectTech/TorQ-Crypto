@@ -135,7 +135,7 @@ start_ui() {
     echo "UI server started"
     echo "  pid:  ${ui_pid}"
     echo "  log:  ${UI_LOG_FILE}"
-    echo "  url:  http://localhost:${UI_PORT:-8888}"
+    echo "  url:  http://localhost:${UI_PORT}"
 }
 
 # ---------------------------------------------------------------------------
