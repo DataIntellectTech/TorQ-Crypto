@@ -55,13 +55,12 @@ pricefor:{[s;v]
   }
 
 // Build a single consolidatedmid dict for sym s at time now.
-// Returns () if fewer than 2 fresh venues are available.
 // spread_dispersion: (max_mid - min_mid) / median_mid * 10000 (bps)
 // outlier_flag: 1b when spread_dispersion > outlierthreshold
 buildmidrow:{[s;now]
   fresh:0! select from .cryptoagg.lastbook where sym=s,
     time > now - .cryptoagg.stalenesswindow;
-  if[2 > count fresh; :()];
+  if[0 = count fresh; :()];
   mids:(fresh[`bid] + fresh[`ask]) % 2f;
   med_mid:med mids;
   disp:$[med_mid>0f; 10000f * (max[mids] - min[mids]) % med_mid; 0f];
@@ -73,13 +72,12 @@ buildmidrow:{[s;now]
 // consolidate — recompute per-venue snapshot for one sym
 // ---------------------------------------------------------------------------
 // Called on every quote upd for each distinct sym in the batch.
-// Silently skips if fewer than 2 venues have fresh data.
 
 consolidate:{[s]
   now:.proc.cp[];
   fresh:0! select from .cryptoagg.lastbook where sym=s,
     time > now - .cryptoagg.stalenesswindow;
-  if[2 > count fresh; :()];
+  if[0 = count fresh; :()];
   fresh:update mid:(bid+ask)%2f from fresh;
   fresh:update price:.cryptoagg.pricefor[s;] each venue from fresh;
   `.cryptoagg.lastprice upsert
@@ -112,7 +110,6 @@ aggpublish:{[]
     :()];
   now:.proc.cp[];
   allsyms:distinct exec sym from .cryptoagg.lastbook;
-  // Build one row per sym; filter syms with fewer than 2 fresh venues
   rowlist:.cryptoagg.buildmidrow[;now] each allsyms;
   rowlist:rowlist where {not ()~x} each rowlist;
   if[count rowlist;
