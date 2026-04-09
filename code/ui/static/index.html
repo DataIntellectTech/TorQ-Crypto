@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TorQ-Crypto Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Courier New', monospace; font-size: 13px; background: #f0f0f0; padding: 16px; }
+  .topbar { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  h1 { font-size: 16px; font-weight: bold; }
+  .status-pill { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+  .status-live { background: #c6f0c2; color: #1a6b14; border: 1px solid #a8dba4; }
+  .status-reconnecting { background: #fde8e8; color: #8c1a1a; border: 1px solid #f5b7b7; }
+  label { font-size: 12px; }
+  select { font-family: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid #ccc; background: white; }
+
+  .section { background: white; border: 1px solid #ddd; margin-bottom: 16px; }
+  .section-header { background: #e8e8e8; padding: 6px 12px; font-weight: bold; font-size: 12px; border-bottom: 1px solid #ddd; }
+
+  table { border-collapse: collapse; width: 100%; }
+  th { background: #f0f0f0; padding: 6px 10px; text-align: right; border: 1px solid #ddd; font-size: 11px; white-space: nowrap; }
+  th.sym-col { text-align: left; }
+  td { padding: 6px 10px; text-align: right; border: 1px solid #e0e0e0; white-space: nowrap; font-size: 12px; }
+  td.sym-cell { text-align: left; font-weight: bold; background: #f8f8f8; }
+  td.mid-cell { font-weight: bold; background: #f5f5f5; }
+  td.up { background: #d4f0d4; }
+  td.dn { background: #f0d4d4; }
+  td.blank { color: #bbb; }
+
+  .chart-wrap { padding: 12px; }
+  svg.chart { display: block; width: 100%; height: 180px; }
+  .chart-label { font-size: 10px; fill: #666; }
+  .chart-axis { stroke: #ccc; stroke-width: 1; }
+  .chart-grid { stroke: #eee; stroke-width: 1; }
+  .chart-line { fill: none; stroke: #1a56d9; stroke-width: 1.5; stroke-linejoin: round; }
+  .no-data { text-anchor: middle; font-size: 12px; fill: #aaa; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>TorQ-Crypto</h1>
+  <span id="status" class="status-pill status-reconnecting">Reconnecting</span>
+  <label>Chart instrument:&nbsp;<select id="sym-select"><option value="">—</option></select></label>
+</div>
+
+<div class="section">
+  <div class="section-header">Live Prices</div>
+  <div style="overflow-x:auto">
+    <table>
+      <thead><tr id="grid-head"><th class="sym-col">Instrument</th></tr></thead>
+      <tbody id="grid-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header">Consolidated Mid — <span id="chart-title">—</span> (last 30 min)</div>
+  <div class="chart-wrap">
+    <svg id="chart" class="chart" viewBox="0 0 800 160" preserveAspectRatio="xMidYMid meet">
+      <text x="400" y="80" class="no-data">Select an instrument</text>
+    </svg>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+var state = {
+  venues: [],          // sorted venue list
+  syms: [],            // sorted sym list
+  data: {},            // { sym: { venue: rowObj } }
+  prevPrice: {},       // { "sym|venue": float }
+  selectedSym: null
+};
+
+// ---------------------------------------------------------------------------
+// WebSocket
+// ---------------------------------------------------------------------------
+var ws = null;
+var wsTimer = null;
+
+function wsConnect() {
+  var proto = location.protocol === "https:" ? "wss:" : "ws:";
+  ws = new WebSocket(proto + "//" + location.host + "/ws");
+
+  ws.onopen = function() {
+    document.getElementById("status").textContent = "Live";
+    document.getElementById("status").className = "status-pill status-live";
+    if (wsTimer) { clearTimeout(wsTimer); wsTimer = null; }
+  };
+
+  ws.onmessage = function(evt) {
+    var msg;
+    try { msg = JSON.parse(evt.data); } catch(e) { return; }
+    if (msg.type === "consolidated") onConsolidated(msg.data);
+  };
+
+  ws.onclose = function() {
+    document.getElementById("status").textContent = "Reconnecting";
+    document.getElementById("status").className = "status-pill status-reconnecting";
+    wsTimer = setTimeout(wsConnect, 3000);
+  };
+
+  ws.onerror = function() { ws.close(); };
+}
+
+// ---------------------------------------------------------------------------
+// Data update
+// ---------------------------------------------------------------------------
+function onConsolidated(rows) {
+  var newVenues = new Set(state.venues);
+  var newSyms   = new Set(state.syms);
+
+  rows.forEach(function(r) {
+    var sym   = String(r.sym);
+    var venue = String(r.venue);
+    newVenues.add(venue);
+    newSyms.add(sym);
+    if (!state.data[sym]) state.data[sym] = {};
+    state.data[sym][venue] = r;
+  });
+
+  var sortedVenues = Array.from(newVenues).sort();
+  var sortedSyms   = Array.from(newSyms).sort();
+
+  var structChanged =
+    sortedVenues.join("|") !== state.venues.join("|") ||
+    sortedSyms.join("|")   !== state.syms.join("|");
+
+  if (structChanged) {
+    state.venues = sortedVenues;
+    state.syms   = sortedSyms;
+    rebuildGrid();
+    rebuildSymSelect();
+  } else {
+    updateCells(rows);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Grid build/update
+// ---------------------------------------------------------------------------
+function rebuildGrid() {
+  // Header
+  var headRow = "<tr><th class='sym-col'>Instrument</th>";
+  state.venues.forEach(function(v) {
+    headRow += "<th>" + esc(v) + "</th>";
+  });
+  headRow += "<th>Consolidated Mid</th></tr>";
+  document.getElementById("grid-head").outerHTML =
+    "<thead><tr>" + headRow.slice(4); // replace
+  document.getElementById("grid-head").innerHTML = headRow.slice(headRow.indexOf(">") + 1, headRow.lastIndexOf("</tr>"));
+
+  // Rebuild header properly
+  var thead = document.querySelector("#grid-head");
+  if (!thead) {
+    thead = document.createElement("tr");
+    thead.id = "grid-head";
+    document.querySelector("thead").innerHTML = "";
+    document.querySelector("thead").appendChild(thead);
+  }
+  thead.innerHTML = "<th class='sym-col'>Instrument</th>"
+    + state.venues.map(function(v){ return "<th>" + esc(v) + "</th>"; }).join("")
+    + "<th>Consolidated Mid</th>";
+
+  // Body
+  var tbody = document.getElementById("grid-body");
+  tbody.innerHTML = "";
+  state.syms.forEach(function(sym) {
+    var tr = document.createElement("tr");
+    var html = "<td class='sym-cell'>" + esc(sym) + "</td>";
+    state.venues.forEach(function(venue) {
+      var row = state.data[sym] && state.data[sym][venue];
+      var price = row ? fmtPrice(row.price) : "—";
+      var blank = row ? "" : " blank";
+      html += "<td id='c-" + esc(sym) + "-" + esc(venue) + "' class='" + blank + "'>" + price + "</td>";
+    });
+    html += "<td class='mid-cell' id='m-" + esc(sym) + "'>" + calcMid(sym) + "</td>";
+    tr.innerHTML = html;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateCells(rows) {
+  rows.forEach(function(r) {
+    var sym   = String(r.sym);
+    var venue = String(r.venue);
+    var cell  = document.getElementById("c-" + sym + "-" + venue);
+    if (!cell) return;
+
+    var key  = sym + "|" + venue;
+    var prev = state.prevPrice[key];
+    var price = Number(r.price);
+
+    cell.textContent = fmtPrice(price);
+    cell.className   = "";
+    if (prev != null) {
+      if (price > prev)      { cell.className = "up"; }
+      else if (price < prev) { cell.className = "dn"; }
+      setTimeout(function() { if (cell) cell.className = ""; }, 1200);
+    }
+    state.prevPrice[key] = price;
+
+    var midCell = document.getElementById("m-" + sym);
+    if (midCell) midCell.textContent = calcMid(sym);
+  });
+}
+
+function calcMid(sym) {
+  var mids = state.venues
+    .map(function(v) { return state.data[sym] && state.data[sym][v] && state.data[sym][v].mid; })
+    .filter(function(m) { return m != null && !isNaN(Number(m)); })
+    .map(Number);
+  if (!mids.length) return "—";
+  var avg = mids.reduce(function(a,b){return a+b;}, 0) / mids.length;
+  return avg.toFixed(4);
+}
+
+// ---------------------------------------------------------------------------
+// Sym select
+// ---------------------------------------------------------------------------
+function rebuildSymSelect() {
+  var sel  = document.getElementById("sym-select");
+  var prev = sel.value;
+  sel.innerHTML = "";
+  state.syms.forEach(function(sym) {
+    var opt = document.createElement("option");
+    opt.value = sym;
+    opt.textContent = sym;
+    if (sym === prev || (!prev && sym === state.syms[0])) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  var selected = sel.value;
+  if (selected && selected !== state.selectedSym) {
+    state.selectedSym = selected;
+    document.getElementById("chart-title").textContent = selected;
+    loadChart();
+  } else if (!state.selectedSym && state.syms.length) {
+    state.selectedSym = state.syms[0];
+    sel.value = state.selectedSym;
+    document.getElementById("chart-title").textContent = state.selectedSym;
+    loadChart();
+  }
+}
+
+document.getElementById("sym-select").addEventListener("change", function() {
+  state.selectedSym = this.value;
+  document.getElementById("chart-title").textContent = this.value || "—";
+  if (this.value) loadChart();
+});
+
+// ---------------------------------------------------------------------------
+// Chart (SVG polyline)
+// ---------------------------------------------------------------------------
+var chartData = [];
+var chartRefreshTimer = null;
+
+async function loadChart() {
+  var sym = state.selectedSym;
+  if (!sym) return;
+  try {
+    var resp = await fetch("/api/history?sym=" + encodeURIComponent(sym) + "&mins=30");
+    if (!resp.ok) { drawChart([]); return; }
+    var rows = await resp.json();
+    chartData = rows
+      .map(function(r) { return { t: new Date(r.time).getTime(), mid: Number(r.mid) }; })
+      .filter(function(r) { return !isNaN(r.t) && !isNaN(r.mid); })
+      .sort(function(a, b) { return a.t - b.t; });
+    drawChart(chartData);
+  } catch(e) {
+    drawChart([]);
+  }
+}
+
+function drawChart(data) {
+  var svg = document.getElementById("chart");
+  var VW = 800, VH = 160;
+  var pad = { top: 10, right: 20, bottom: 24, left: 58 };
+  var iW = VW - pad.left - pad.right;
+  var iH = VH - pad.top - pad.bottom;
+
+  if (!data || data.length < 2) {
+    svg.innerHTML = "<text x='" + (VW/2) + "' y='" + (VH/2) + "' class='no-data'>No data</text>";
+    return;
+  }
+
+  var ts   = data.map(function(d){return d.t;});
+  var mids = data.map(function(d){return d.mid;});
+  var tMin = Math.min.apply(null, ts),   tMax = Math.max.apply(null, ts);
+  var yMin = Math.min.apply(null, mids), yMax = Math.max.apply(null, mids);
+  var yPad = (yMax - yMin) * 0.05 || 1;
+  yMin -= yPad; yMax += yPad;
+
+  function tx(t)   { return pad.left + (tMax === tMin ? iW/2 : (t - tMin) / (tMax - tMin) * iW); }
+  function ty(m)   { return pad.top  + iH - (m - yMin) / (yMax - yMin) * iH; }
+  function fmtT(t) {
+    var d = new Date(t);
+    var h = String(d.getHours()).padStart(2,"0");
+    var m = String(d.getMinutes()).padStart(2,"0");
+    return h + ":" + m;
+  }
+
+  // Y grid + labels (3 levels)
+  var gridLines = "";
+  var yLevels = [yMin + yPad, (yMin + yMax) / 2, yMax - yPad];
+  yLevels.forEach(function(v) {
+    var y = ty(v);
+    gridLines +=
+      "<line class='chart-grid' x1='" + pad.left + "' y1='" + y + "' x2='" + (VW - pad.right) + "' y2='" + y + "'/>" +
+      "<text class='chart-label' x='" + (pad.left - 4) + "' y='" + (y + 4) + "' text-anchor='end'>" + v.toFixed(2) + "</text>";
+  });
+
+  // X labels (start / end)
+  var xLabels =
+    "<text class='chart-label' x='" + pad.left + "' y='" + (VH - 4) + "' text-anchor='middle'>" + fmtT(tMin) + "</text>" +
+    "<text class='chart-label' x='" + (VW - pad.right) + "' y='" + (VH - 4) + "' text-anchor='middle'>" + fmtT(tMax) + "</text>";
+
+  // Polyline points
+  var pts = data.map(function(d){ return tx(d.t).toFixed(1) + "," + ty(d.mid).toFixed(1); }).join(" ");
+
+  svg.innerHTML =
+    gridLines +
+    "<line class='chart-axis' x1='" + pad.left + "' y1='" + pad.top + "' x2='" + pad.left + "' y2='" + (pad.top + iH) + "'/>" +
+    "<line class='chart-axis' x1='" + pad.left + "' y1='" + (pad.top + iH) + "' x2='" + (VW - pad.right) + "' y2='" + (pad.top + iH) + "'/>" +
+    "<polyline class='chart-line' points='" + pts + "'/>" +
+    xLabels;
+}
+
+// Auto-refresh chart every 5 s
+function scheduleChartRefresh() {
+  if (chartRefreshTimer) clearInterval(chartRefreshTimer);
+  chartRefreshTimer = setInterval(loadChart, 5000);
+}
+scheduleChartRefresh();
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+function fmtPrice(v) {
+  var n = Number(v);
+  if (isNaN(n)) return "—";
+  return n >= 1000 ? n.toFixed(2) : n >= 1 ? n.toFixed(4) : n.toPrecision(5);
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// ---------------------------------------------------------------------------
+// Start
+// ---------------------------------------------------------------------------
+wsConnect();
+</script>
+</body>
+</html>

@@ -27,9 +27,10 @@ run_q_test() {
 # ---------------------------------------------------------------------------
 # q unit tests
 # ---------------------------------------------------------------------------
-run_q_test "test_schemas"   "tests/test_schemas.q"
+run_q_test "test_schemas"    "tests/test_schemas.q"
 run_q_test "test_cryptoagg" "tests/test_cryptoagg.q"
-run_q_test "test_eod"       "tests/test_eod.q"
+run_q_test "test_eod"        "tests/test_eod.q"
+run_q_test "test_cryptolib"  "tests/test_cryptolib.q"
 
 # ---------------------------------------------------------------------------
 # Python unit tests
@@ -52,8 +53,7 @@ run_pytest "test_symmap"       "tests/test_symmap.py"
 run_pytest "test_binance_feed" "tests/test_binance_feed.py"
 run_pytest "test_kraken_feed"  "tests/test_kraken_feed.py"
 run_pytest "test_okx_feed"     "tests/test_okx_feed.py"
-# run_pytest "test_okx_feed"      "tests/test_okx_feed.py"
-# run_pytest "test_ui_server"     "tests/test_ui_server.py"
+run_pytest "test_ui_server"    "tests/test_ui_server.py"
 # run_pytest "test_replay"        "tests/test_replay.py"
 
 # q integration tests (manual — require running stack)

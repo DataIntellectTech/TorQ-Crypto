@@ -19,3 +19,4 @@ huobifeed:pass
 bhexfeed:pass
 pythonfeed:pass
 cryptoagg:pass
+uiserver:pass

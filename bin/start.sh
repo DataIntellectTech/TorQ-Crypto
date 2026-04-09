@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-# Start kdb+ processes, Python feeds, or both.
+# Start kdb+ processes, Python feeds, UI server, or all.
 #
 # Usage:
-#   bin/start.sh [kdb|feeds|all]   (default: all)
+#   bin/start.sh [kdb|feeds|ui|all]   (default: all)
 #
-# kdb  — start all kdb+ processes listed in process.csv (startwithall=1)
-#         Requires torq.sh to be present in TORQHOME (i.e. after deploy.sh).
+# kdb   — start all kdb+ processes listed in process.csv (startwithall=1)
+#          Requires torq.sh to be present in TORQHOME (i.e. after deploy.sh).
 # feeds — start the Python feed manager (binance, kraken, okx) in the background.
 #          Requires .venv to exist in TORQHOME (created by deploy.sh or manually).
-# all  — start kdb first, wait 10 s for processes to come up, then start feeds.
+# ui    — start the asyncio HTTP/WebSocket UI server (code/ui/server.py).
+#          Requires .venv and code/ui/requirements.txt to be installed.
+# all   — start kdb first, wait 10 s for processes to come up, then start feeds + ui.
 
 set -euo pipefail
 
@@ -31,6 +33,9 @@ VENV_PYTHON="${TORQHOME}/.venv/bin/python"
 FEED_MANAGER_DIR="${KDBAPPCODE}/processes/feedhandler"
 FEED_PID_FILE="${KDBLOG}/feed_manager.pid"
 FEED_LOG_FILE="${KDBLOG}/feed_manager.log"
+UI_SERVER="${KDBAPPCODE}/ui/server.py"
+UI_PID_FILE="${KDBLOG}/ui_server.pid"
+UI_LOG_FILE="${KDBLOG}/ui_server.log"
 
 # ---------------------------------------------------------------------------
 # start_kdb: launch all startwithall=1 processes via torq.sh
@@ -92,6 +97,48 @@ start_feeds() {
 }
 
 # ---------------------------------------------------------------------------
+# start_ui: launch server.py in the background
+# ---------------------------------------------------------------------------
+start_ui() {
+    if [ -f "${UI_PID_FILE}" ]; then
+        local existing_pid
+        existing_pid=$(cat "${UI_PID_FILE}")
+        if kill -0 "${existing_pid}" 2>/dev/null; then
+            echo "UI server already running (pid ${existing_pid})"
+            echo "  log: ${UI_LOG_FILE}"
+            return 0
+        else
+            echo "Removing stale PID file (pid ${existing_pid} is not running)"
+            rm -f "${UI_PID_FILE}"
+        fi
+    fi
+
+    if [ ! -f "${VENV_PYTHON}" ]; then
+        echo "ERROR: Python venv not found at ${TORQHOME}/.venv"
+        echo "       Run 'bash deploy.sh' or create the venv manually:"
+        echo "         python3 -m venv ${TORQHOME}/.venv"
+        echo "         ${TORQHOME}/.venv/bin/pip install -r ${KDBAPPCODE}/ui/requirements.txt"
+        exit 1
+    fi
+
+    if [ ! -f "${UI_SERVER}" ]; then
+        echo "ERROR: UI server not found at ${UI_SERVER}"
+        exit 1
+    fi
+
+    mkdir -p "${KDBLOG}"
+
+    nohup "${VENV_PYTHON}" "${UI_SERVER}" >> "${UI_LOG_FILE}" 2>&1 &
+    local ui_pid=$!
+    echo "${ui_pid}" > "${UI_PID_FILE}"
+
+    echo "UI server started"
+    echo "  pid:  ${ui_pid}"
+    echo "  log:  ${UI_LOG_FILE}"
+    echo "  url:  http://localhost:${UI_PORT:-8888}"
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 TARGET="${1:-all}"
@@ -103,18 +150,24 @@ case "${TARGET}" in
     feeds)
         start_feeds
         ;;
+    ui)
+        start_ui
+        ;;
     all)
         start_kdb
         echo ""
-        echo "Waiting 10 s for kdb+ processes to initialise before starting feeds..."
+        echo "Waiting 10 s for kdb+ processes to initialise before starting feeds and UI..."
         sleep 10
         start_feeds
+        echo ""
+        start_ui
         ;;
     *)
-        echo "Usage: $0 [kdb|feeds|all]"
+        echo "Usage: $0 [kdb|feeds|ui|all]"
         echo "  kdb   — start kdb+ processes only"
         echo "  feeds — start Python feed manager only"
-        echo "  all   — start kdb+ then Python feeds (default)"
+        echo "  ui    — start UI server only"
+        echo "  all   — start kdb+, feeds, and UI (default)"
         exit 1
         ;;
 esac

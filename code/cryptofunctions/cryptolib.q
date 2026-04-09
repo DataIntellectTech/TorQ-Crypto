@@ -1,207 +1,211 @@
-// TorQ-Crypto functions
+// code/cryptofunctions/cryptolib.q — Crypto query library
+//
+// Loaded on RDB and HDB via -parentproctype cryptofunctions (process.csv).
+// All functions live in the .crypto namespace.
+//
+// Tables referenced:
+//   trade  — time sym venue price size side venue_sym seq
+//   quote  — time sym venue bid ask bsize asize venue_sym
+//   lastprice (RDB only)     — [sym venue] time price bid ask mid
+//   consolidatedmid (RDB only) — time sym mid n_venues spread_dispersion outlier_flag
 
-/
-                          **** OPEN HIGH LOW CLOSE (OHLC) FUNCTION ****
-  Returns the OHLC quote data for specified dates with the option to break down by exchange.
-  Takes a dictionary as an argument. The only mandatory key is sym, the others will revert to defaults.
+\d .crypto
 
-  Example usage:
-  ohlc[`date`sym`exchanges`quote`byexchange!(2020.03.29 2020.03.30;`BTCUSDT;`finex`okex`zb;`bid;1b)]  ->  Get BTCUSDT data broken down by exchange
-\
+// ---------------------------------------------------------------------------
+// Utility functions
+// ---------------------------------------------------------------------------
+
+errfunc:{.lg.e[x;"Crypto User Error: ",y];'y};
+
+// Return column names from table matching a glob pattern
+getcols:{[table;word] col where (col:cols table) like word};
+
+// Merge default dict with user dict, keeping user values where present
+setdefaults:{[def;dict] def,(where not all each null dict)#dict};
+
+// Validate types and required keys of a user-supplied dictionary
+typecheck:{[typedict;requiredkeylist;dict]
+  if[not 99=type dict; errfunc[`typecheck;"The argument must be a dictionary."]];
+  if[not all keyresult:key[dict] in key typedict;
+    errfunc[`typecheck;"Incorrect keys: ",(", " sv string key[dict] where 0=keyresult),
+      ". Allowed: ",", " sv string key typedict]];
+  requiredkeys:(key typedict) where requiredkeylist;
+  if[not all requiredkeys in key dict;
+    errfunc[`requiredkeys;"Required key(s) missing: ",", " sv string requiredkeys]];
+  typematch:typedict[key dict]=abs type each dict;
+  if[not all typematch;
+    errfunc[`typematch;"Wrong type(s) for key(s): ",", " sv string key[dict] where not typematch]]
+  };
+
+// ---------------------------------------------------------------------------
+// ohlc — OHLC of trade price by date+sym, optionally broken down by venue
+//
+// Runs on RDB (intraday) or HDB (historical).
+//
+// Argument dictionary keys:
+//   sym       (required) — symbol atom or list,  e.g. `BTC-USD
+//   date      (optional) — date atom or list;    default: today
+//   venues    (optional) — venue symbol list;    default: all
+//   byvenue   (optional) — 1b = break down by venue; default: 0b
+//
+// Returns: table with columns date sym [venue] open high low close vwap volume
+// ---------------------------------------------------------------------------
 
 ohlc:{[dict]
-  allkeys:`date`sym`exchanges`quote`byexchange;
-  typecheck[allkeys!14 11 11 11 1h;01000b;dict];
+  allkeys:`date`sym`venues`byvenue;
+  typecheck[allkeys!14 11 11 1h;0100b;dict];
 
-  // Set default null dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
-  defaultdate:$[`rdb in .proc.proctype; .proc.cd[]; last date];
-  d:setdefaults[allkeys!(defaultdate;`;`;`ask`bid;0b);dict];
+  // Default date: today on RDB (via .proc.cd[]), last HDB date otherwise
+  defaultdate:$[`rdb~.proc.proctype; enlist .proc.cd[]; enlist last date];
+  d:setdefaults[allkeys!(defaultdate;`;`;0b);dict];
 
-  // Create sym and exchange lists, bid and ask dicts for functional select
-  biddict:`openBid`closeBid`bidHigh`bidLow!((first;`bid);(last;`bid);(max;`bid);(min;`bid));
-  askdict:`openAsk`closeAsk`askHigh`askLow!((first;`ask);(last;`ask);(max;`ask);(min;`ask));
+  // On RDB the partition key is a virtual time.date; on HDB it is the date column
+  c:$[`rdb~.proc.proctype; `time.date; `date];
 
-  // Save exchangeTime.date/date colname as variable based on proctype
-  c:$[`rdb~.proc.proctype;`exchangeTime.date;`date];
+  wherecl:`date`sym`venues!(
+    (in;c;enlist d`date);
+    (in;`sym;enlist d`sym);
+    (in;`venue;enlist d`venues));
+  wherecl@:where[not all each null d] except `byvenue;
 
-  // Conditionals to form the ohlc column dict, where clause and by clause
-  coldict:$[any i:`bid`ask in d`quote;(,/)(biddict;askdict) where i;(enlist`)!(enlist())];
-  wherecl:`date`sym`exchanges!
-    ((in;c;enlist d`date);(in;`sym;enlist d`sym);(in;`exchange;enlist d`exchanges));
-  wherecl@:where[not all each null d]except `quote`byexchange;
+  bycl:(`date`sym!c,`sym),$[d`byvenue;(enlist`venue)!(enlist`venue);()!()];
 
-  bycl:(`date`sym!c,`sym),$[d`byexchange;{x!x}enlist`exchange;()!()];
+  coldict:`open`high`low`close`vwap`volume!(
+    (first;`price);
+    (max;`price);
+    (min;`price);
+    (last;`price);
+    (wavg;`size;`price);
+    (sum;`size));
 
-  // Perform query - (select coldict by date:exchangeTime.date,sym from t (where exchangeTime.date in d`date, sym in syms, exchange in exchanges))
-  ?[exchange_top; wherecl; bycl; coldict]
- };
+  // `trade resolves in root namespace regardless of calling namespace
+  0!?[`trade;wherecl;bycl;coldict]
+  };
 
-/ 
-                                **** ORDER BOOK FUNCTION ****
-  Returns level 2 orderbook at a specific point in time considering only quotes within the look-back window.
-  Takes a dictionary as an argument. The only mandatory key is sym, the others will revert to defaults.
-
-  Example usage:
-  orderbook[`sym`timestamp`exchanges`window!(`BTCUSDT;2020.03.29D15:00:00;`finex`okex`zb;00:01:00)]  ->  Get `BTCUSDT orderbook with a lookback window of 1 minute 
-\
-
-orderbook:{[dict]
-  allkeys:`timestamp`sym`exchanges`window;
-  typecheck[allkeys!12 11 11 18h;0100b;dict];
-  if[not(1=count dict`sym)and not any null dict`sym;errfunc[`orderbook;"Please enter one non-null sym."]];
-
-  // Set default dict and default date input depending on whether HDB or RDB is target (this allows user to omit keys)
-  defaulttime:$[`rdb in .proc.proctype;
-    exec last exchangeTime from exchange;
-    first exec exchangeTime from select last exchangeTime from exchange where date=last date];
-  d:setdefaults[allkeys!(defaulttime;`;`;`second$2*.crypto.deffreq);dict];
-
-  // Create extra key if on HDB and order dictionary by date
-  if[`hdb~.proc.proctype;d:`date xcols update date:timestamp from d];
-
-  // Edit where clause based on proctype
-  // If proctype is HDB, add on date to where clause at the start,
-  // then join on default clause, then pass in dictionary elements which are not null
-  wherecl:()!();
-  window:enlist d[`timestamp] -d[`window],1;
-  if[`hdb~.proc.proctype;wherecl[`date]:(within;`date;`date$window)];
-  wherecl,:`timestamp`sym`exchanges!(
-    (within;`exchangeTime;window);
-    (=;`sym;enlist d`sym);
-    (in;`exchange;enlist d`exchanges));
-  wherecl@:(where not all each null d) except `window;
-  // Define book builder projected function
-  book:{[wherecl;columns]ungroup columns#0!?[exchange;wherecl;{x!x}enlist`exchange;()]}wherecl;
-
-  // Create bid and ask books and join to create order book
-  bid:`exchange_b`bidSize`bid xcols `exchange_b xcol `bid xdesc book[`exchange`bid`bidSize];
-  ask:`ask`askSize`exchange_a xcols `exchange_a xcol `ask xasc book[`exchange`ask`askSize];
-  dt:abs(-/)c:count each tl:(bid;ask);
-  :uj[(,'/)min[c]#/:tl;neg[dt]#tl first where max[c]=c]
- };
-
-/
-                                  **** TOP OF BOOK FUNCTION ****
-  Returns top of book data on a per exchange basis at set buckets between two timestamps.
-  Takes a dictionary as an argument. The only mandatory key is sym, the others will revert to defaults.
-
-  Example usage:
-  topofbook[`sym`exchanges`starttime`endtime!(`ETHUSDT;`zb`huobi;2020.03.29D15:00:00.;2020.03.29D15:05:00)] -> Top of book data for ETHUSDT across zb and huobi exchanges 
-\
+// ---------------------------------------------------------------------------
+// topofbook — per-venue top-of-book snapshots bucketed over a time range
+//
+// Runs on RDB (intraday) or HDB (historical).
+//
+// Argument dictionary keys:
+//   sym       (required) — symbol atom,   e.g. `BTC-USD
+//   starttime (optional) — timestamp;     default: start of today (RDB) or yesterday (HDB)
+//   endtime   (optional) — timestamp;     default: now (RDB) or end of yesterday (HDB)
+//   venues    (optional) — venue list;    default: all
+//   bucket    (optional) — second span;   default: 5s
+//
+// Returns: table keyed by time with columns {venue}Bid {venue}Ask {venue}BidSize {venue}AskSize
+// ---------------------------------------------------------------------------
 
 topofbook:{[dict]
-  allkeys:`starttime`endtime`sym`exchanges`bucket;
+  allkeys:`starttime`endtime`sym`venues`bucket;
   typecheck[allkeys!12 12 11 11 18h;00100b;dict];
-  if[any 1 0<(count;sum)@\: null dict[`sym];errfunc[`topofbook;"Please enter one non-null sym."]];
+  if[any 1 0<(count;sum)@\: null dict[`sym]; errfunc[`topofbook;"Please enter one non-null sym."]];
 
-  // Set defaults and sanitise input
-  defaulttimes:$[`rdb~.proc.proctype;"p"$(.proc.cd[];.proc.cp[]);0 -1 + "p"$0 1 + last date];
-  d:setdefaults[allkeys!raze(defaulttimes;`;`;`second$2*.crypto.deffreq);dict];
+  // Defaults depend on proctype
+  defaulttimes:$[`rdb~.proc.proctype;
+    "p"$(.proc.cd[];.proc.cp[]);
+    0 -1 + "p"$0 1 + last date];
+  d:setdefaults[allkeys!raze(defaulttimes;`;`;0D00:00:05);dict];
   d:@[d;`starttime`endtime`bucket;first];
   d[`bucket]:`long$d`bucket;
 
-  // Create extra date key if proctype=HDB and order dictionary by date
-  if[`hdb~.proc.proctype;d:`date xcols update date:distinct "d"$d`starttime`endtime from d];
+  // Add date partition key for HDB where clause
+  if[`hdb~.proc.proctype;
+    d:`date xcols update date:distinct "d"$d`starttime`endtime from d];
 
-  // Check that dates passed in are valid
-  if[any (all .proc.cp[]<;>/)@\:d`starttime`endtime;errfunc[`topofbook;"Invalid start and end times."]];
+  if[any (all .proc.cp[]<;>/)@\:d`starttime`endtime;
+    errfunc[`topofbook;"Invalid start and end times."]];
 
-  // If proctype=HDB, add date to beginning of where clause and join remaining dict args to where clause
-  wherecl:$[`hdb~.proc.proctype;(enlist `date)!enlist(within;`date;enlist,"d"$d`starttime`endtime);()!()];
-  wherecl[`starttime]:(within;`exchangeTime;enlist,d`starttime`endtime);
+  wherecl:$[`hdb~.proc.proctype;
+    (enlist`date)!enlist(within;`date;enlist,"d"$d`starttime`endtime);
+    ()!()];
+  wherecl[`starttime]:(within;`time;enlist,d`starttime`endtime);
   wherecl[`sym]:(in;`sym;enlist d`sym);
-  wherecl[`exchanges]:(in;`exchange;enlist d`exchanges);
+  wherecl[`venues]:(in;`venue;enlist d`venues);
   wherecl@:where not all each null `endtime`bucket _d;
 
-  // Perform query - (select exchangeTime, exchange, bid, ask, bisSize, askSize from exchange_top where (wherecl))
-  t:?[exchange_top;wherecl;0b;cls!cls:`exchangeTime`exchange`bid`ask`bidSize`askSize];
+  // `quote resolves in root namespace regardless of calling namespace
+  t:?[`quote;wherecl;0b;cls!cls:`time`venue`bid`ask`bsize`asize];
 
-  // Get exchanges and use them to generate table names
-  exchanges:exec distinct exchange from t;
+  venues:exec distinct venue from t;
 
-  // If no data is available, return an empty table 
-  if[0=count t;r:{(raze(`exchangeTime;`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))) xcol y}[;t] each d`exchanges;:$[98h~type r;r;(,'/)r]];
+  // Empty result — return correctly-named empty table
+  if[0=count t;
+    r:{(`time,`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))xcol y}[;t] each d`venues;
+    :`$[98h~type r;r;(,'/)r]];
 
-  // Creates a list of tables with the best bid and ask for each exchange
-  exchangebook:{[x;y;z] 
-    (`exchangeTime,`$string[x],/:("Bid";"Ask";"BidSize";"AskSize"))xcol 
-    select bid:last bid,ask:last ask ,bidSize:last bidSize ,askSize:last askSize 
-      by exchangeTime:(`date$exchangeTime)+z+z xbar exchangeTime.second 
-      from y where exchange=x
-   }[;t;d`bucket] each exchanges;
+  // Pivot per venue, bucket by time
+  exchangebook:{[vn;data;bkt]
+    (`time,`$string[vn],/:("Bid";"Ask";"BidSize";"AskSize")) xcol
+      select bid:last bid, ask:last ask, bidSize:last bsize, askSize:last asize
+        by time:(`date$time)+bkt+bkt xbar time.second
+        from data where venue=vn
+    }[;t;d`bucket] each venues;
 
-  // If more than one exchange, join together all datasets, reorder the columns and return result
-  :0!`exchangeTime xasc (,'/) exchangebook;
- };
+  0!`time xasc (,'/) exchangebook
+  };
 
-/
-                                  **** TOP OF BOOK FUNCTION ****
-  Returns top of book with additional profit and arbitrage columns.
-  Takes a dictionary as an argument. The only mandatory key is sym, the others will revert to defaults.
-
-  Example usage:
-  arbitrage[`sym`exchanges`starttime`endtime!(`ETHUSDT;`zb`huobi;2020.03.29D15:00:00.;2020.03.29D15:05:00)] -> Top of book with arbitrage indicator for ETHUSDT across zb and huobi exchanges
-\
+// ---------------------------------------------------------------------------
+// arbitrage — top-of-book with cross-venue profit and arbitrage indicator
+//
+// Wrapper around topofbook; accepts the same dictionary.
+// Adds columns: profit (float), arbitrage (boolean)
+// ---------------------------------------------------------------------------
 
 arbitrage:{[d]
-  // Generate topofbook table
   arbtable:topofbook[d];
+  if[(0=count arbtable) or (5=count cols arbtable);
+    :update profit:0f,arbitrage:0b from arbtable];
 
-  // If no data is available or only one non-null exchange is passed, update arbtable with profit and arbitrage as 0
-  if[(0=count arbtable) or (5=count cols arbtable);:update profit:0,arbitrage:0 from arbtable];
-
-  // Aggregate profit-column function - calculates profit to be made
   calprofit:{[b;bs;a;as]
     enlist({[b;bs;a;as]
-      // Find best bid
       b:max@'l:(,'/)b;
-      // Find best BidSize
       bs:@'[flip bs;where'[b=l]];
-      // Find best ask
       a:min@'l:(,'/)a;
-      // Find best AskSize
       as:@'[flip as;where'[a=l]];
-      // Calculates profit
       p:min'[(bs,'as)]*b-a;
-      ?[0>p;0;p]
-     };
-    // Enlists args to aggregate clause
+      ?[0>p;0f;p]};
     enlist,b;enlist,bs;enlist,a;enlist,as)
-   };
- 
-  // Input columns for aggregate profit-col function
-  cc:calprofit . getcols[arbtable;] each ("*Bid";"*BidSize";"*Ask";"*AskSize");
+    };
 
-  // Perform query - (update arbitrage:profit>0 from (update profit:cc from arbtable))
-  :update arbitrage:profit>0 from ![arbtable;();0b;enlist[`profit]!cc]
- };
+  cc:calprofit . .crypto.getcols[arbtable;] each ("*Bid";"*BidSize";"*Ask";"*AskSize");
+  update arbitrage:profit>0f from ![arbtable;();0b;enlist[`profit]!cc]
+  };
 
-/
-                                    **** UTILITY FUNCTIONS ****
-  errfunc[] Function for logging and signalling errors
-  getcols[] gets columns from a table which match a particular pattern, ie. "*Bid"
-  setdefaults[] produces a dictionary where missing values are filled in with defaults
-  typecheck[] checks the types of dictionary values that are passed in by the user
-\
+// ---------------------------------------------------------------------------
+// getconsolidated — unkeyed lastprice snapshot (RDB only)
+//
+// syms: ` for all, or a symbol list
+// Returns columns: sym venue time price bid ask mid
+// ---------------------------------------------------------------------------
 
-errfunc:{.lg.e[x;"Crypto User Error:",y];'y};
+if[`rdb~.proc.proctype;
+  getconsolidated:{[syms]
+    lp:0!value`lastprice;   // value`x resolves in root regardless of calling namespace
+    if[not `~syms; lp:select from lp where sym in syms];
+    lp
+    }
+  ];
 
-getcols:{[table;word]col where(col:cols table)like word};
+// ---------------------------------------------------------------------------
+// gethistory — consolidatedmid timeseries look-back (RDB only)
+//
+// s:    symbol atom (e.g. `BTC-USD)
+// mins: integer — look-back window in minutes
+// Returns columns: time mid
+// ---------------------------------------------------------------------------
 
-setdefaults:{[def;dict]def,(where not all each null dict)#dict};
+if[`rdb~.proc.proctype;
+  gethistory:{[s;nmin]
+    // functional select: `consolidatedmid resolves in root namespace
+    // use (in;`sym;enlist s): bare symbol treated as column ref in kdb+5
+    // parameter named nmin not mins: mins is a kdb+ built-in
+    ?[`consolidatedmid;
+      ((in;`sym;enlist s);(>=;`time;.proc.cp[]-nmin*0D00:01));
+      0b;
+      `time`mid!`time`mid]
+    }
+  ];
 
-typecheck:{[typedict;requiredkeylist;dict]
-  // Checks the arguments are given in the correct form and the right keys are given
-  if[not 99=type dict;errfunc[`typecheck;"The argument passed must be a dictionary."]];
-  if[not all keyresult:key[dict] in key typedict;
-    errfunc[`typecheck;"The following dictionary keys are incorrect: ",(", " sv string key[dict] where 0=keyresult),". The allowed keys are: ",", " sv string key typedict]];
-
-  // Determine required keys and throw an error if any are missing
-  requiredkeys:(key typedict) where requiredkeylist;
-  if[not all requiredkeys in key dict;errfunc[`requiredkeys;"The following key(s) must be included: ",", " sv  string requiredkeys]];
- 
-  // Determine if arguments passed in are of the correct types
-  typematch:typedict[key dict]=abs type each dict;
-  if[not all typematch;
-    errfunc[`typematch;"The dictionary parameter(s) ",(", "sv string where not typematch)," must be of type(s): ",", "sv string {key'[x$\:()]}typedict where not typematch]]
- };
+\d .

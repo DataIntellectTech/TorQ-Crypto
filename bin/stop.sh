@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Stop kdb+ processes, Python feeds, or both.
+# Stop kdb+ processes, Python feeds, UI server, or all.
 #
 # Usage:
-#   bin/stop.sh [kdb|feeds|all]   (default: all)
+#   bin/stop.sh [kdb|feeds|ui|all]   (default: all)
 #
 # kdb   — stop all kdb+ processes via torq.sh stop all.
 #          Requires torq.sh to be present in TORQHOME.
 # feeds — send SIGTERM to the feed manager process (identified by PID file).
-# all   — stop feeds first, then kdb+ processes.
+# ui    — send SIGTERM to the UI server process (identified by PID file).
+# all   — stop feeds and UI first, then kdb+ processes.
 
 set -euo pipefail
 
@@ -27,6 +28,7 @@ fi
 
 TORQSH="${TORQHOME}/torq.sh"
 FEED_PID_FILE="${KDBLOG}/feed_manager.pid"
+UI_PID_FILE="${KDBLOG}/ui_server.pid"
 
 # ---------------------------------------------------------------------------
 # stop_kdb: gracefully stop all kdb+ processes via torq.sh
@@ -78,6 +80,41 @@ stop_feeds() {
 }
 
 # ---------------------------------------------------------------------------
+# stop_ui: SIGTERM the UI server process
+# ---------------------------------------------------------------------------
+stop_ui() {
+    if [ ! -f "${UI_PID_FILE}" ]; then
+        echo "No ui_server.pid found at ${UI_PID_FILE} — UI server may not be running."
+        return 0
+    fi
+
+    local pid
+    pid=$(cat "${UI_PID_FILE}")
+
+    if kill -0 "${pid}" 2>/dev/null; then
+        echo "Stopping UI server (pid ${pid})..."
+        kill "${pid}"
+
+        local waited=0
+        while kill -0 "${pid}" 2>/dev/null && [ "${waited}" -lt 10 ]; do
+            sleep 1
+            (( waited++ )) || true
+        done
+
+        if kill -0 "${pid}" 2>/dev/null; then
+            echo "Process did not exit in 10 s — sending SIGKILL..."
+            kill -9 "${pid}" 2>/dev/null || true
+        else
+            echo "UI server stopped."
+        fi
+    else
+        echo "UI server not running (stale PID file)."
+    fi
+
+    rm -f "${UI_PID_FILE}"
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 TARGET="${1:-all}"
@@ -89,17 +126,23 @@ case "${TARGET}" in
     feeds)
         stop_feeds
         ;;
+    ui)
+        stop_ui
+        ;;
     all)
-        # Stop feeds before kdb so feeds do not keep retrying IPC connections
+        # Stop Python processes before kdb so they do not keep retrying IPC connections
         stop_feeds
+        echo ""
+        stop_ui
         echo ""
         stop_kdb
         ;;
     *)
-        echo "Usage: $0 [kdb|feeds|all]"
+        echo "Usage: $0 [kdb|feeds|ui|all]"
         echo "  kdb   — stop kdb+ processes only"
         echo "  feeds — stop Python feed manager only"
-        echo "  all   — stop Python feeds then kdb+ (default)"
+        echo "  ui    — stop UI server only"
+        echo "  all   — stop feeds, UI, then kdb+ (default)"
         exit 1
         ;;
 esac
