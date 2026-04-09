@@ -1,11 +1,13 @@
 """
 okx_feed.py — OKX WebSocket v5 feed for TorQ-Crypto.
 
-Connects to the OKX WebSocket v5 public endpoint and subscribes to the
-trades channel for all OKX-enabled instruments in symmap.csv.
+Connects to the OKX WebSocket v5 public endpoint and subscribes to:
+  trades channel  — real-time trade events
+  books5 channel  — top-5 order book snapshots (best bid/ask)
 
 Data flow:
   trade events  -> upd("trade", column_vectors)  via pythonfeed IPC
+  books5 events -> upd("quote", column_vectors)  via pythonfeed IPC
 
 Reconnect:  exponential backoff 1 s -> FEED_RECONNECT_MAX (default 60 s)
 Heartbeat:  send literal "ping" text every 25 s — if "pong" not received
@@ -19,6 +21,7 @@ import asyncio
 import json
 import logging
 import os
+import time
 from typing import Any, Optional
 
 import pandas as pd
@@ -105,15 +108,65 @@ def _trade_cols(rows: list[dict[str, Any]]) -> list:
     ]
 
 
+def _quote_cols(rows: list[dict[str, Any]]) -> list:
+    """Convert quote row dicts to a kdb+ column-vector list for upd["quote"; ...]."""
+    return [
+        kx.toq(pd.to_datetime([r["time"] for r in rows], unit="ns")),
+        kx.SymbolVector([r["sym"] for r in rows]),
+        kx.SymbolVector([r["venue"] for r in rows]),
+        kx.FloatVector([r["bid"] for r in rows]),
+        kx.FloatVector([r["ask"] for r in rows]),
+        kx.FloatVector([r["bsize"] for r in rows]),
+        kx.FloatVector([r["asize"] for r in rows]),
+        kx.SymbolVector([r["venue_sym"] for r in rows]),
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Subscription message builder
 # ---------------------------------------------------------------------------
 
+def _parse_books5(entry: dict[str, Any]) -> Optional[dict[str, Any]]:
+    """Normalise a single entry from an OKX books5 channel data array.
+
+    Each element of msg["data"] has:
+      instId  — venue symbol (e.g. "BTC-USDT")
+      bids    — list of [price, size, ...] sorted best first
+      asks    — list of [price, size, ...] sorted best first
+      ts      — unix milliseconds (string integer)
+    """
+    try:
+        inst_id: str = entry["instId"]
+        canonical = _symmap.get_canonical(inst_id, EXCHANGE)
+        if canonical is None:
+            return None
+
+        bids = entry.get("bids", [])
+        asks = entry.get("asks", [])
+        if not bids or not asks:
+            return None
+
+        return {
+            "time": int(entry.get("ts", 0)) * 1_000_000 or int(time.time() * 1e9),
+            "sym": canonical,
+            "venue": EXCHANGE,
+            "bid": float(bids[0][0]),
+            "ask": float(asks[0][0]),
+            "bsize": float(bids[0][1]),
+            "asize": float(asks[0][1]),
+            "venue_sym": inst_id,
+        }
+    except (KeyError, ValueError, TypeError, IndexError) as exc:
+        logger.warning("[%s] books5 parse error: %s | entry=%s", EXCHANGE, exc, entry)
+        return None
+
+
 def _build_subscribe_msg(venue_symbols: list[str]) -> str:
-    return json.dumps({
-        "op": "subscribe",
-        "args": [{"channel": "trades", "instId": s} for s in venue_symbols],
-    })
+    args = (
+        [{"channel": "trades", "instId": s} for s in venue_symbols] +
+        [{"channel": "books5", "instId": s} for s in venue_symbols]
+    )
+    return json.dumps({"op": "subscribe", "args": args})
 
 
 # ---------------------------------------------------------------------------
@@ -249,6 +302,19 @@ def _handle_message(msg: dict[str, Any], conn: Any) -> None:
             asyncio.ensure_future(_publish_trades(conn, rows))
         return
 
+    if channel == "books5":
+        data = msg.get("data", [])
+        if not isinstance(data, list):
+            return
+        rows = []
+        for entry in data:
+            row = _parse_books5(entry)
+            if row is not None:
+                rows.append(row)
+        if rows:
+            asyncio.ensure_future(_publish_quotes(conn, rows))
+        return
+
     if event is not None or channel is not None:
         logger.debug("[%s] unhandled message: event=%s channel=%s", EXCHANGE, event, channel)
 
@@ -258,3 +324,10 @@ async def _publish_trades(conn: Any, rows: list[dict[str, Any]]) -> None:
         await conn("upd", kx.SymbolAtom("trade"), _trade_cols(rows))
     except Exception as exc:
         logger.error("[%s] trade IPC failed: %s", EXCHANGE, exc)
+
+
+async def _publish_quotes(conn: Any, rows: list[dict[str, Any]]) -> None:
+    try:
+        await conn("upd", kx.SymbolAtom("quote"), _quote_cols(rows))
+    except Exception as exc:
+        logger.error("[%s] quote IPC failed: %s", EXCHANGE, exc)
