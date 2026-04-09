@@ -46,8 +46,8 @@ quote:([]
   asize:1f+0.1*til 10;
   venue_sym:10#`BTCUSDT);
 
-// lastprice keyed table — one entry per sym+venue (single line: kdb+5 multi-line keyed table literals are fragile)
-lastprice:([sym:`BTCUSD`BTCUSD;venue:`binance`kraken] time:2#now;price:50004 50009f;bid:49994 50004f;ask:50014 50014f;mid:50004 50009f);
+// lastprice unkeyed timeseries — two rows, one per sym+venue
+lastprice:([]time:2#now;sym:`BTCUSD`BTCUSD;venue:`binance`kraken;price:50004 50009f;bid:49994 50004f;ask:50014 50014f;mid:50004 50009f);
 
 // consolidatedmid timeseries — two recent rows
 consolidatedmid:([] time:now,now-0D00:01;sym:2#`BTCUSD;mid:50006 50002f;n_venues:2 2i;spread_dispersion:20 18f;outlier_flag:00b);

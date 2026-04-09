@@ -6,7 +6,7 @@
 // Tables referenced:
 //   trade  — time sym venue price size side venue_sym seq
 //   quote  — time sym venue bid ask bsize asize venue_sym
-//   lastprice (RDB only)     — [sym venue] time price bid ask mid
+//   lastprice (RDB only)     — time sym venue price bid ask mid
 //   consolidatedmid (RDB only) — time sym mid n_venues spread_dispersion outlier_flag
 
 \d .crypto
@@ -174,7 +174,10 @@ arbitrage:{[d]
   };
 
 // ---------------------------------------------------------------------------
-// getconsolidated — unkeyed lastprice snapshot (RDB only)
+// getconsolidated — latest per-venue lastprice snapshot (RDB only)
+//
+// lastprice is an unkeyed timeseries on the RDB; take the last row per
+// sym+venue so callers always get one current entry per pair.
 //
 // syms: ` for all, or a symbol list
 // Returns columns: sym venue time price bid ask mid
@@ -182,7 +185,8 @@ arbitrage:{[d]
 
 if[`rdb~.proc.proctype;
   getconsolidated:{[syms]
-    lp:0!value`lastprice;   // value`x resolves in root regardless of calling namespace
+    // `lastprice as symbol resolves in root namespace regardless of calling namespace
+    lp:0! select last time, last price, last bid, last ask, last mid by sym, venue from `lastprice;
     if[not `~syms; lp:select from lp where sym in syms];
     lp
     }

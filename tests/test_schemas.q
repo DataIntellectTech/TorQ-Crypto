@@ -36,24 +36,18 @@ $[12 11 11 9 9 9 9 11h ~ type each value flip quote;
   fail"quote types — expected: timestamp symbol symbol float float float float symbol"];
 
 // ---------------------------------------------------------------------------
-// lastprice (keyed: sym+venue)
+// lastprice (unkeyed: time sym venue price bid ask mid)
 // ---------------------------------------------------------------------------
 $[`lastprice in key `.; pass"lastprice exists"; fail"lastprice exists — table not defined"];
-$[99h = type lastprice;
-  pass"lastprice is keyed table";
-  fail"lastprice is keyed table — got type ",(string type lastprice)];
-$[`sym`venue ~ cols key lastprice;
-  pass"lastprice key cols";
-  fail"lastprice key cols — expected: sym venue"];
-$[11 11h ~ type each value flip key lastprice;
-  pass"lastprice key types";
-  fail"lastprice key types — expected: symbol symbol"];
-$[`time`price`bid`ask`mid ~ cols value lastprice;
-  pass"lastprice value cols";
-  fail"lastprice value cols — expected: time price bid ask mid"];
-$[12 9 9 9 9h ~ type each value flip value lastprice;
-  pass"lastprice value types";
-  fail"lastprice value types — expected: timestamp float float float float"];
+$[98h = type lastprice;
+  pass"lastprice is unkeyed table";
+  fail"lastprice is unkeyed table — got type ",(string type lastprice)];
+$[`time`sym`venue`price`bid`ask`mid ~ cols lastprice;
+  pass"lastprice cols";
+  fail"lastprice cols — expected: time sym venue price bid ask mid"];
+$[12 11 11 9 9 9 9h ~ type each value flip lastprice;
+  pass"lastprice types";
+  fail"lastprice types — expected: timestamp symbol symbol float float float float"];
 
 // ---------------------------------------------------------------------------
 // consolidatedmid

@@ -120,11 +120,11 @@ aggpublish:{[]
     h(`.u.upd;`consolidatedmid;
       (rows`time; rows`sym; rows`mid; rows`n_venues; rows`spread_dispersion; rows`outlier_flag))
     ];
-  // Publish current lastprice snapshot (upsert-style via keyed table insert)
+  // Publish current lastprice snapshot — column order must match database.q schema
   lp:0! .cryptoagg.lastprice;
   if[count lp;
     h(`.u.upd;`lastprice;
-      (lp`sym; lp`venue; lp`time; lp`price; lp`bid; lp`ask; lp`mid))]
+      (lp`time; lp`sym; lp`venue; lp`price; lp`bid; lp`ask; lp`mid))]
   }
 
 // ---------------------------------------------------------------------------

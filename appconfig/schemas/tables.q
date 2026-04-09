@@ -31,10 +31,12 @@ quote:([]
   )
 
 // ---------------------------------------------------------------------------
-// 3. lastprice — keyed intraday snapshot, key: sym+venue
+// 3. lastprice — unkeyed intraday snapshot; latest per sym+venue via select last
 // ---------------------------------------------------------------------------
-lastprice:([sym:`symbol$(); venue:`symbol$()]
+lastprice:([]
   time:`timestamp$();
+  sym:`g#`symbol$();
+  venue:`symbol$();
   price:`float$();
   bid:`float$();
   ask:`float$();
